@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export const Footer: React.FC = () => {
   return (
@@ -11,20 +12,9 @@ export const Footer: React.FC = () => {
     >
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10 border-b border-brand-800">
-          {/* 1. Brand Section (Typographic Brand Mark & Verified Tagline) */}
+          {/* 1. Brand Section (Official Brand Logo & Verified Tagline) */}
           <div className="space-y-3">
-            <Link
-              href="/"
-              className="flex flex-col text-left group shrink-0"
-              aria-label="SUNNAH SOURCE Homepage"
-            >
-              <span className="font-extrabold text-xl tracking-tight leading-none text-white font-sans group-hover:text-accent-amber transition-colors">
-                SUNNAH SOURCE
-              </span>
-              <span className="text-[10px] tracking-widest uppercase font-semibold font-sans text-accent-amber mt-1">
-                Pure & Natural
-              </span>
-            </Link>
+            <BrandLogo />
             <p className="text-xs text-stone-400 leading-relaxed pt-1">
               প্রকৃতির বিশুদ্ধতা, সুন্নাহর অনুপ্রেরণা। ১০০% খাঁটি ও প্রাকৃতিক খাবারের বিশ্বস্ত প্রতিষ্ঠান।
             </p>
