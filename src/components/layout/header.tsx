@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, ShoppingBag, Heart, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export const Header: React.FC = () => {
   const router = useRouter();
@@ -41,7 +42,7 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-surface-border shadow-subtle font-bengali">
       <div className="container mx-auto px-4 max-w-7xl h-18 flex items-center justify-between gap-4">
-        {/* Left: Mobile Menu Trigger & Typographic Brand Mark */}
+        {/* Left: Mobile Menu Trigger & Official Brand Logo */}
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -52,18 +53,7 @@ export const Header: React.FC = () => {
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
-          <Link
-            href="/"
-            className="flex flex-col text-left group shrink-0"
-            aria-label="SUNNAH SOURCE Homepage"
-          >
-            <span className="font-extrabold text-lg sm:text-xl tracking-tight leading-none text-charcoal-900 font-sans group-hover:text-brand-800 transition-colors">
-              SUNNAH SOURCE
-            </span>
-            <span className="text-[9px] tracking-widest uppercase font-semibold font-sans text-brand-700 mt-0.5">
-              Pure & Natural
-            </span>
-          </Link>
+          <BrandLogo priority />
         </div>
 
         {/* Center: Desktop Navigation (Only verified, existing routes) */}
@@ -101,7 +91,7 @@ export const Header: React.FC = () => {
 
         {/* Right: User Actions (Wishlist Counter & Cart Drawer Trigger) */}
         <div className="flex items-center gap-2">
-          {/* Wishlist Indicator (Directs to products on the verified root route) */}
+          {/* Wishlist Indicator */}
           <Link
             href="/#products"
             className="relative p-2 text-charcoal-700 hover:text-brand-700 rounded-lg transition-colors"
@@ -116,7 +106,7 @@ export const Header: React.FC = () => {
             )}
           </Link>
 
-          {/* Cart Drawer Trigger (Interactive button; triggers drawer component without page route) */}
+          {/* Cart Drawer Trigger */}
           <button
             type="button"
             onClick={openDrawer}
@@ -136,7 +126,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Collapsible Navigation Menu (Only verified, existing routes) */}
+      {/* Mobile Collapsible Navigation Menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-surface-border bg-white px-4 py-4 space-y-3 font-bengali">
           <form role="search" onSubmit={handleSearch} className="relative w-full">
