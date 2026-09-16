@@ -52,7 +52,7 @@ export default function HomePage() {
             </div>
             <div className="relative w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl border-4 border-brand-800">
               <Image
-                src="https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=800&q=80"
+                src="https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=80"
                 alt="Sunnah Source Raw Honey"
                 fill
                 className="object-cover"
