@@ -185,7 +185,7 @@ export const Header: React.FC = () => {
                     ক্যাটাগরি
                   </Link>
                   <div className="px-2.5 py-1 text-charcoal-500 border-t border-surface-border text-[11px]">
-                    হেল্প: ০১৭০০-০০০০০০
+                    হেল্প: ০১৯১৪-৬১২০০৭
                   </div>
                 </div>
               </div>
@@ -213,7 +213,7 @@ export const Header: React.FC = () => {
               </li>
             ))}
           </ul>
-          <span className="text-[11px] text-stone-300 font-sans">হটলাইন: ০১৭০০-০০০০০০</span>
+          <span className="text-[11px] text-stone-300 font-sans">হটলাইন: ০১৯১৪-৬১২০০৭</span>
         </div>
       </nav>
 
