@@ -44,9 +44,8 @@ const NAV_ITEMS: NavItem[] = [
   {
     nameBn: "অর্ডারসমূহ",
     nameEn: "Orders",
-    href: "/admin#orders",
+    href: "/admin/orders",
     icon: ShoppingBag,
-    isPlaceholder: true,
   },
   {
     nameBn: "পণ্যসমূহ",
