@@ -1,7 +1,25 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js";
 
-export function createClient() {
+let clientInstance: SupabaseClient | null = null;
+
+export function createClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+
+  if (typeof window === "undefined") {
+    return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  if (!clientInstance) {
+    clientInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        flowType: "implicit",
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  }
+
+  return clientInstance;
 }

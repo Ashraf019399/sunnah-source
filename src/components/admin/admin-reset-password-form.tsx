@@ -30,50 +30,115 @@ export function AdminResetPasswordForm() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let isMounted = true;
     const hash = window.location.hash || "";
     const search = window.location.search || "";
 
     // 1. Check for immediate Supabase error in hash or search
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
+    const searchParams = new URLSearchParams(search);
+
+    const errorCode = hashParams.get("error_code") || searchParams.get("error_code");
+    const errorDescription =
+      hashParams.get("error_description") ||
+      searchParams.get("error_description") ||
+      hashParams.get("error") ||
+      searchParams.get("error");
+
     const isExplicitError =
-      hash.includes("otp_expired") ||
-      hash.includes("access_denied") ||
-      search.includes("otp_expired") ||
-      search.includes("access_denied");
+      errorCode === "otp_expired" ||
+      errorCode === "access_denied" ||
+      Boolean(errorDescription && (errorDescription.includes("expired") || errorDescription.includes("denied")));
 
     if (isExplicitError) {
       setStatus("expired");
       return;
     }
 
-    const supabase = createClient();
+    // Extract tokens from URL hash if present
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    const type = hashParams.get("type");
+    const hasRecoveryTokens = Boolean(accessToken || type === "recovery");
 
-    // 2. Listen to Supabase Auth state changes (PASSWORD_RECOVERY event)
+    const supabase = createClient();
+    let handled = false;
+
+    const markReady = () => {
+      if (!isMounted) return;
+      handled = true;
+      setStatus("ready");
+      // Clean up sensitive tokens from the browser URL bar
+      if (typeof window !== "undefined" && window.location.hash && window.history.replaceState) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    };
+
+    // 2. Listen to Supabase Auth state changes (PASSWORD_RECOVERY, INITIAL_SESSION, SIGNED_IN)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) {
-        setStatus("ready");
+      if (!isMounted) return;
+
+      if (event === "PASSWORD_RECOVERY") {
+        markReady();
+      } else if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        markReady();
+      } else if (event === "INITIAL_SESSION" && !session && !hasRecoveryTokens) {
+        // Direct visit or finished initialization without any session or tokens
+        handled = true;
+        setStatus("expired");
       }
     });
 
-    // 3. Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setStatus("ready");
-      }
-    });
+    // 3. Fallback check: check active session or explicitly set session if tokens in hash
+    const checkSessionAndTokens = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
 
-    // 4. Timeout safety: if no recovery session or tokens within 3 seconds, show expired
-    const timer = setTimeout(() => {
-      setStatus((current) => {
-        if (current === "loading") {
-          return "expired";
+        if (session) {
+          markReady();
+          return;
         }
-        return current;
-      });
-    }, 3000);
+
+        // If recovery tokens exist in URL but Supabase auto-detection hasn't resolved it yet
+        if (accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (!isMounted) return;
+
+          if (data?.session) {
+            markReady();
+            return;
+          }
+
+          if (error) {
+            handled = true;
+            setStatus("expired");
+            return;
+          }
+        }
+      } catch {
+        // Ignore and allow fallback / timeout
+      }
+    };
+
+    checkSessionAndTokens();
+
+    // 4. Timeout safety: if neither session nor tokens resolved within 6 seconds, show expired
+    const timer = setTimeout(() => {
+      if (!isMounted) return;
+      if (!handled) {
+        setStatus((current) => (current === "loading" ? "expired" : current));
+      }
+    }, 6000);
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
       clearTimeout(timer);
     };
