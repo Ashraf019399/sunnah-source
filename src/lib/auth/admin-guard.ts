@@ -4,9 +4,9 @@ import type { User } from "@supabase/supabase-js";
 /**
  * Server-side authorization check to verify if a user has admin privileges.
  * Inspects:
- * 1. user.app_metadata (role === 'admin' | 'superadmin' | is_admin === true)
- * 2. user.user_metadata (role === 'admin' | 'superadmin' | is_admin === true)
- * 3. Database tables (admins, profiles, user_roles) if service-role is available
+ * 1. user.app_metadata & user_metadata (role === 'admin' | 'superadmin' | is_admin === true)
+ * 2. Database table (public.users) via authenticated session client
+ * 3. Fallback database tables (users, admins, profiles, user_roles) if service-role is available
  */
 export async function checkIsAdmin(user: User): Promise<boolean> {
   if (!user) return false;
@@ -28,10 +28,45 @@ export async function checkIsAdmin(user: User): Promise<boolean> {
     return true;
   }
 
-  // 2. Server-side database tables inspection
+  // 2. Primary check: Query public.users via authenticated session client
+  try {
+    const supabase = await createClient();
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (userRow) {
+      const role = (userRow.role || "").toLowerCase();
+      if (role === "admin" || role === "superadmin") {
+        return true;
+      }
+    }
+  } catch {
+    // Continue to fallbacks if authenticated query fails or table is inaccessible
+  }
+
+  // 3. Fallback: Service-role inspection (if SUPABASE_SERVICE_ROLE_KEY is configured)
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const adminClient = await createAdminClient();
+
+      // Check 'users' table via service client
+      try {
+        const { data: userRow } = await adminClient
+          .from("users")
+          .select("id, role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (userRow) {
+          const role = (userRow.role || "").toLowerCase();
+          if (role === "admin" || role === "superadmin") {
+            return true;
+          }
+        }
+      } catch {}
 
       // Check 'admins' table by id, user_id, or email
       try {
