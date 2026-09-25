@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, Heart, Star } from "lucide-react";
 import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
@@ -110,19 +111,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     >
       {/* Product Image & Badges */}
       <div className="relative aspect-square w-full bg-surface-canvas overflow-hidden select-none">
-        {product.images?.[0] ? (
-          <Image
-            src={product.images[0]}
-            alt={product.titleBn || product.titleEn}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-charcoal-400 text-xs">
-            ছবি নেই
-          </div>
-        )}
+        <Link
+          href={`/product/${product.slug}`}
+          className="block w-full h-full cursor-pointer"
+          aria-label={`${product.titleBn} এর বিস্তারিত দেখুন`}
+        >
+          {product.images?.[0] ? (
+            <Image
+              src={product.images[0]}
+              alt={product.titleBn || product.titleEn}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-charcoal-400 text-xs">
+              ছবি নেই
+            </div>
+          )}
+        </Link>
 
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
           {product.badge && (
@@ -169,7 +176,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           )}
 
           <h3 className="font-bold text-charcoal-900 text-sm line-clamp-2 leading-snug">
-            {product.titleBn}
+            <Link
+              href={`/product/${product.slug}`}
+              className="hover:text-brand-700 transition-colors"
+            >
+              {product.titleBn}
+            </Link>
           </h3>
 
           {activeVariant?.displayName && (
