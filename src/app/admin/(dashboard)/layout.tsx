@@ -33,7 +33,7 @@ export default async function AdminDashboardLayout({
   }
 
   // 2. Guard: Check admin authorization
-  const isAdmin = await checkIsAdmin(user);
+  const isAdmin = await checkIsAdmin(user, supabase);
 
   if (!isAdmin) {
     // Logged-in non-admin user must NOT receive admin access

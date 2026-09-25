@@ -1,5 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import type { User } from "@supabase/supabase-js";
+import type { User, SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Server-side authorization check to verify if a user has admin privileges.
@@ -8,7 +8,7 @@ import type { User } from "@supabase/supabase-js";
  * 2. Database table (public.users) via authenticated session client
  * 3. Fallback database tables (users, admins, profiles, user_roles) if service-role is available
  */
-export async function checkIsAdmin(user: User): Promise<boolean> {
+export async function checkIsAdmin(user: User, client?: SupabaseClient | any): Promise<boolean> {
   if (!user) return false;
 
   // 1. Check user claims & metadata
@@ -30,7 +30,7 @@ export async function checkIsAdmin(user: User): Promise<boolean> {
 
   // 2. Primary check: Query public.users via authenticated session client
   try {
-    const supabase = await createClient();
+    const supabase = client || (await createClient());
     const { data: userRow } = await supabase
       .from("users")
       .select("id, role")
@@ -150,6 +150,6 @@ export async function verifyAdminSession() {
     return { user: null, isAdmin: false };
   }
 
-  const isAdmin = await checkIsAdmin(user);
+  const isAdmin = await checkIsAdmin(user, supabase);
   return { user, isAdmin };
 }

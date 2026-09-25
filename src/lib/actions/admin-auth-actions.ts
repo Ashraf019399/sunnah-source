@@ -50,7 +50,7 @@ export async function adminLoginAction(
       };
     }
 
-    const isAdmin = await checkIsAdmin(data.user);
+    const isAdmin = await checkIsAdmin(data.user, supabase);
 
     if (!isAdmin) {
       // Security: Sign out unauthorized non-admin accounts immediately
