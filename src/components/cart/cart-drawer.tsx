@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
@@ -8,6 +10,7 @@ import { formatBDT } from "@/lib/utils";
 import { CartItem } from "@/types/commerce.types";
 
 export const CartDrawer: React.FC = () => {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   // Store selectors and actions
@@ -46,6 +49,22 @@ export const CartDrawer: React.FC = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isDrawerOpen, closeDrawer]);
+
+  // Ensure cart drawer closes automatically upon actual route change (e.g. navigation to /checkout)
+  const prevPathnameRef = React.useRef(pathname);
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      closeDrawer();
+    }
+  }, [pathname, closeDrawer]);
+
+  // Handle checkout navigation: defer drawer closure to next tick so Next.js Link initiates transition uninterrupted
+  const handleCheckoutNavigation = () => {
+    setTimeout(() => {
+      closeDrawer();
+    }, 0);
+  };
 
   // Calculate subtotal using store method if present, with direct reduction fallback
   const subtotal = useMemo(() => {
@@ -101,13 +120,13 @@ export const CartDrawer: React.FC = () => {
     >
       {/* Backdrop overlay */}
       <div
-        className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-xs transition-opacity z-0"
         onClick={closeDrawer}
         aria-hidden="true"
       />
 
       {/* Drawer slide-over container */}
-      <div className="relative w-full max-w-md bg-white h-full shadow-drawer flex flex-col z-10">
+      <div className="relative w-full max-w-md bg-white h-full shadow-drawer flex flex-col z-20 pointer-events-auto">
         {/* Header */}
         <div className="p-4 border-b border-surface-border flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -142,12 +161,11 @@ export const CartDrawer: React.FC = () => {
         <div className="p-3 bg-brand-50 border-b border-brand-100 text-xs">
           {remainingForFree > 0 ? (
             <p className="text-charcoal-700">
-              আর{" "}
+              ৳২,০০০ বা তার বেশি অর্ডারে <strong className="text-brand-700">ফ্রি ডেলিভারি!</strong> আর{" "}
               <span className="font-mono font-bold text-brand-700">
                 {formatBDT(remainingForFree)}
               </span>{" "}
-              টাকার পণ্য যোগ করলেই পাচ্ছেন{" "}
-              <strong className="text-brand-700">ফ্রি ডেলিভারি!</strong>
+              টাকার পণ্য যোগ করলেই পাচ্ছেন ফ্রি ডেলিভারি।
             </p>
           ) : (
             <p className="text-emerald-700 font-bold">
@@ -246,26 +264,21 @@ export const CartDrawer: React.FC = () => {
 
         {/* Footer Subtotal & Action */}
         {items.length > 0 && (
-          <div className="p-4 border-t border-surface-border bg-surface-canvas space-y-3">
+          <div className="p-4 pb-24 lg:pb-4 border-t border-surface-border bg-surface-canvas space-y-3 shrink-0 relative z-20 pointer-events-auto">
             <div className="flex justify-between items-center text-sm font-bold">
               <span className="text-charcoal-900">সাবটোটাল:</span>
               <span className="font-mono text-base text-brand-700">{formatBDT(subtotal)}</span>
             </div>
 
             <div className="space-y-1.5">
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                className="w-full bg-brand-700/60 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-sm cursor-not-allowed"
-                title="চেকআউট পেজ এখনও রিপোজিটরিতে যুক্ত হয়নি"
+              <Link
+                href="/checkout"
+                onClick={handleCheckoutNavigation}
+                className="w-full bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-card hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer relative z-30 pointer-events-auto"
               >
                 <span>অর্ডার সম্পন্ন করুন</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
-              <p className="text-[10px] text-center text-charcoal-500">
-                চেকআউট পেজ এখনও রিপোজিটরিতে যুক্ত হয়নি।
-              </p>
+              </Link>
             </div>
           </div>
         )}
