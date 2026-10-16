@@ -46,40 +46,41 @@ export async function getAdminProducts(): Promise<{
       return { success: false, message: "অননুমোদিত প্রবেশাধিকার। এই তথ্যের অনুমতি নেই।" };
     }
 
-    // Query live stock from Supabase public.product_variants
+    // Query live stock from Supabase public.product_variants using service-role
     const liveStockMap = new Map<string, number>();
     let isLiveConnected = false;
 
-    try {
-      const { data: dbVariants, error: dbError } = await supabase
-        .from("product_variants")
-        .select("id, stock_quantity");
-
-      if (!dbError && dbVariants && dbVariants.length > 0) {
-        isLiveConnected = true;
-        for (const v of dbVariants) {
-          if (v.id && typeof v.stock_quantity === "number") {
-            liveStockMap.set(v.id, v.stock_quantity);
-          }
-        }
-      } else if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        // Fallback with service role client if RLS blocked the session client
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn(
+        "[getAdminProducts] SUPABASE_SERVICE_ROLE_KEY is missing in server environment. Cannot safely read live inventory without service-role privileges."
+      );
+    } else {
+      try {
         const adminClient = await createAdminClient();
-        const { data: adminDbVariants, error: adminDbError } = await adminClient
+        const { data: dbVariants, error: dbError } = await adminClient
           .from("product_variants")
           .select("id, stock_quantity");
 
-        if (!adminDbError && adminDbVariants && adminDbVariants.length > 0) {
+        if (dbError) {
+          console.error("[getAdminProducts] Failed to fetch live variant stock via service-role:", {
+            code: dbError.code,
+            message: dbError.message,
+            details: dbError.details,
+            hint: dbError.hint,
+          });
+        } else if (Array.isArray(dbVariants)) {
           isLiveConnected = true;
-          for (const v of adminDbVariants) {
+          for (const v of dbVariants) {
             if (v.id && typeof v.stock_quantity === "number") {
               liveStockMap.set(v.id, v.stock_quantity);
             }
           }
+        } else {
+          console.warn("[getAdminProducts] Service-role query returned unexpected non-array data:", dbVariants);
         }
+      } catch (err: any) {
+        console.error("[getAdminProducts] Unexpected error invoking createAdminClient:", err?.message || err);
       }
-    } catch (e) {
-      console.warn("[getAdminProducts] Live stock fetch error:", e);
     }
 
     // Merge live stock and category information with catalog products
