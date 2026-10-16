@@ -10,6 +10,7 @@ import {
   OrdersFilterParams,
   PaginatedOrdersResult,
   ORDER_STATUS_LIST,
+  PaymentStatus,
 } from "@/types/orders.types";
 import { OrderStatus } from "@/types/commerce.types";
 import { revalidatePath } from "next/cache";
@@ -290,6 +291,71 @@ export async function updateOrderStatusAction(
     return {
       success: false,
       message: "অর্ডারের স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+    };
+  }
+}
+
+/**
+ * Server action to update an order's payment status.
+ */
+const VALID_PAYMENT_STATUSES: PaymentStatus[] = ["unpaid", "paid", "refunded"];
+
+export async function updatePaymentStatusAction(
+  orderId: string,
+  newStatus: PaymentStatus
+): Promise<{ success: boolean; message: string }> {
+  try {
+    if (!orderId) {
+      return { success: false, message: "অর্ডার আইডি আবশ্যক।" };
+    }
+
+    if (!VALID_PAYMENT_STATUSES.includes(newStatus)) {
+      return {
+        success: false,
+        message: "অবৈধ পেমেন্ট স্ট্যাটাস মান নির্বাচন করা হয়েছে।",
+      };
+    }
+
+    const updateResult = await executeAdminDbQuery(async (client) => {
+      return (await client
+        .from("orders")
+        .update({
+          payment_status: newStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId)
+        .select("id, payment_status")
+        .single()) as any;
+    });
+
+    if (updateResult.error || !updateResult.data) {
+      console.error("[updatePaymentStatusAction] DB error:", updateResult.error);
+      return {
+        success: false,
+        message: "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+      };
+    }
+
+    // Revalidate paths for instant consistency
+    revalidatePath("/admin");
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return {
+      success: true,
+      message: "পেমেন্ট স্ট্যাটাস সফলভাবে আপডেট হয়েছে।",
+    };
+  } catch (err: any) {
+    if (err.message === "UNAUTHORIZED" || err.message === "FORBIDDEN") {
+      return {
+        success: false,
+        message: "অননুমোদিত প্রবেশাধিকার। এই পরিবর্তনের অনুমতি নেই।",
+      };
+    }
+    console.error("[updatePaymentStatusAction] Server error:", err);
+    return {
+      success: false,
+      message: "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
     };
   }
 }

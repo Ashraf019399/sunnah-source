@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAdminOrderById } from "@/lib/actions/admin-order-actions";
 import { OrderStatusUpdater } from "@/components/admin/orders/order-status-updater";
+import { PaymentStatusUpdater } from "@/components/admin/orders/payment-status-updater";
 import {
   ArrowLeft,
   User,
@@ -269,13 +270,19 @@ export default async function AdminOrderDetailsPage({
         {/* Right Column: Status Updater, Customer & Delivery Info    */}
         {/* ======================================================== */}
         <div className="space-y-6">
-          {/* 1. Status Update Control */}
+          {/* 1. Order Status Update Control */}
           <OrderStatusUpdater
             orderId={order.id}
             currentStatus={order.order_status}
           />
 
-          {/* 2. Customer Information Card */}
+          {/* 2. Payment Status Update Control */}
+          <PaymentStatusUpdater
+            orderId={order.id}
+            currentPaymentStatus={order.payment_status}
+          />
+
+          {/* 3. Customer Information Card */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-surface-border shadow-subtle space-y-4">
             <div className="flex items-center gap-2 border-b border-surface-border/70 pb-3">
               <User className="w-4 h-4 text-brand-700" />
@@ -312,7 +319,7 @@ export default async function AdminOrderDetailsPage({
             </div>
           </div>
 
-          {/* 3. Delivery Information Card */}
+          {/* 4. Delivery Information Card */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-surface-border shadow-subtle space-y-4">
             <div className="flex items-center gap-2 border-b border-surface-border/70 pb-3">
               <MapPin className="w-4 h-4 text-brand-700" />
@@ -362,7 +369,7 @@ export default async function AdminOrderDetailsPage({
             </div>
           </div>
 
-          {/* 4. Order & Payment Information Card */}
+          {/* 5. Order & Payment Information Card */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-surface-border shadow-subtle space-y-4">
             <div className="flex items-center gap-2 border-b border-surface-border/70 pb-3">
               <CreditCard className="w-4 h-4 text-brand-700" />
