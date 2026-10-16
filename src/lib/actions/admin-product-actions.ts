@@ -62,12 +62,13 @@ export async function getAdminProducts(): Promise<{
           .select("id, stock_quantity");
 
         if (dbError) {
-          console.error("[getAdminProducts] Failed to fetch live variant stock via service-role:", {
-            code: dbError.code,
-            message: dbError.message,
-            details: dbError.details,
-            hint: dbError.hint,
-          });
+          const errCode = dbError.code || "NO_CODE";
+          const errMsg = dbError.message || dbError.details || "No message provided";
+          const errDetails = dbError.details ? ` | details: ${dbError.details}` : "";
+          const errHint = dbError.hint ? ` | hint: ${dbError.hint}` : "";
+          console.error(
+            `[getAdminProducts] Failed to fetch live variant stock via service-role: code=${errCode} message=${errMsg}${errDetails}${errHint}`
+          );
         } else if (Array.isArray(dbVariants)) {
           isLiveConnected = true;
           for (const v of dbVariants) {
