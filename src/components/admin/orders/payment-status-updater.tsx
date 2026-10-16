@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle, CreditCard } from "lucide-react";
 import { PaymentStatus, PAYMENT_STATUS_CONFIG } from "@/types/orders.types";
@@ -18,29 +18,41 @@ export function PaymentStatusUpdater({
   currentPaymentStatus: initialStatus,
 }: PaymentStatusUpdaterProps) {
   const router = useRouter();
-  const [currentStatus, setCurrentStatus] = useState<PaymentStatus>(initialStatus);
+  const [confirmedStatus, setConfirmedStatus] = useState<PaymentStatus>(initialStatus);
+  const [selectedStatus, setSelectedStatus] = useState<PaymentStatus>(initialStatus);
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const handleStatusChange = async (newStatus: PaymentStatus) => {
-    if (newStatus === currentStatus || isPending) return;
+  // Sync state if server data refreshes with a new initialStatus
+  useEffect(() => {
+    setConfirmedStatus(initialStatus);
+    setSelectedStatus(initialStatus);
+  }, [initialStatus]);
 
+  const handleStatusChange = async (newStatus: PaymentStatus) => {
+    if (newStatus === confirmedStatus || isPending) return;
+
+    // Immediately reflect the selected status in the dropdown and clear old feedback
+    setSelectedStatus(newStatus);
     setFeedback(null);
 
     startTransition(async () => {
       try {
         const result = await updatePaymentStatusAction(orderId, newStatus);
         if (result.success) {
-          setCurrentStatus(newStatus);
+          setConfirmedStatus(newStatus);
+          setSelectedStatus(newStatus);
           setFeedback({
             type: "success",
             message: result.message || "পেমেন্ট স্ট্যাটাস সফলভাবে আপডেট হয়েছে।",
           });
           router.refresh();
         } else {
+          // Revert dropdown visibly to the last confirmed status on failure
+          setSelectedStatus(confirmedStatus);
           setFeedback({
             type: "error",
             message:
@@ -49,6 +61,8 @@ export function PaymentStatusUpdater({
           });
         }
       } catch (err: any) {
+        // Revert dropdown visibly to the last confirmed status on unexpected exception
+        setSelectedStatus(confirmedStatus);
         setFeedback({
           type: "error",
           message: "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
@@ -58,7 +72,7 @@ export function PaymentStatusUpdater({
   };
 
   const activeConfig =
-    PAYMENT_STATUS_CONFIG[currentStatus] || PAYMENT_STATUS_CONFIG.unpaid;
+    PAYMENT_STATUS_CONFIG[confirmedStatus] || PAYMENT_STATUS_CONFIG.unpaid;
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-surface-border shadow-subtle space-y-4">
@@ -90,7 +104,7 @@ export function PaymentStatusUpdater({
       <div className="relative">
         <select
           id="payment-status-select"
-          value={currentStatus}
+          value={selectedStatus}
           disabled={isPending}
           onChange={(e) => handleStatusChange(e.target.value as PaymentStatus)}
           aria-label="পেমেন্ট স্ট্যাটাস নির্বাচন করুন"
@@ -100,7 +114,7 @@ export function PaymentStatusUpdater({
             const config = PAYMENT_STATUS_CONFIG[statusKey];
             return (
               <option key={statusKey} value={statusKey}>
-                {config.labelBn} {statusKey === currentStatus ? "(বর্তমান)" : ""}
+                {config.labelBn} {statusKey === confirmedStatus ? "(বর্তমান)" : ""}
               </option>
             );
           })}
