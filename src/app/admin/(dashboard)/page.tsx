@@ -110,9 +110,12 @@ export default async function AdminDashboardPage() {
               </div>
               <div className="mt-2 flex items-center justify-between text-[11px] text-charcoal-500 border-t border-surface-border/60 pt-2">
                 <span>ইনভেন্টরি ডাটা</span>
-                <span className="font-semibold text-brand-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  সংরক্ষিত
-                </span>
+                <Link
+                  href="/admin/products"
+                  className="font-semibold text-brand-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-full transition-colors"
+                >
+                  সক্রিয়
+                </Link>
               </div>
             </div>
           </div>
@@ -183,31 +186,32 @@ export default async function AdminDashboardPage() {
           </Link>
 
           {/* Products Module Card */}
-          <div
+          <Link
+            href="/admin/products"
             id="products"
-            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700/40"
+            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700 hover:shadow-md group"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-brand-700">
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-brand-700 group-hover:bg-brand-700 group-hover:text-white transition-colors">
                   <Package className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-surface-canvas border border-surface-border text-charcoal-500">
-                  পরবর্তী ধাপ
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+                  সক্রিয়
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-charcoal-900 mb-1">
+              <h4 className="text-sm font-bold text-charcoal-900 group-hover:text-brand-900 mb-1 transition-colors">
                 পণ্য ব্যবস্থাপনা (Products)
               </h4>
               <p className="text-xs text-charcoal-500 leading-relaxed">
-                পণ্য তালিকা, নতুন পণ্য যোগ, ছবি আপলোড, মূল্য ও স্টক কোয়ান্টিটি সমন্বয়।
+                পণ্য তালিকা, সাইজ/ভ্যারিয়েন্ট, লাইভ স্টক ও মূল্য পর্যবেক্ষণ।
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-charcoal-400 flex items-center justify-between">
-              <span>ক্যাটালগ স্ট্রাকচার প্রস্তুত</span>
-              <span className="text-[11px]">মডিউল পেন্ডিং</span>
+            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-brand-800 flex items-center justify-between">
+              <span>পণ্যসমূহ পরিচালনা করুন</span>
+              <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
-          </div>
+          </Link>
 
           {/* Categories Module Card */}
           <div

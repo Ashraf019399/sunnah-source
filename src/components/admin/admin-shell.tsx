@@ -50,9 +50,8 @@ const NAV_ITEMS: NavItem[] = [
   {
     nameBn: "পণ্যসমূহ",
     nameEn: "Products",
-    href: "/admin#products",
+    href: "/admin/products",
     icon: Package,
-    isPlaceholder: true,
   },
   {
     nameBn: "ক্যাটাগরি",

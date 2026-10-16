@@ -252,22 +252,27 @@ export async function updateOrderStatusAction(
     }
 
     const updateResult = await executeAdminDbQuery(async (client) => {
-      return (await client
-        .from("orders")
-        .update({
-          order_status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", orderId)
-        .select("id, order_status")
-        .single()) as any;
+      return (await client.rpc("update_order_status_with_inventory", {
+        p_order_id: orderId,
+        p_new_status: newStatus,
+      })) as any;
     });
 
     if (updateResult.error || !updateResult.data) {
       console.error("[updateOrderStatusAction] DB error:", updateResult.error);
       return {
         success: false,
-        message: "অর্ডারের স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+        message:
+          updateResult.error?.message ||
+          "অর্ডারের স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+      };
+    }
+
+    const rpcData = updateResult.data as { success: boolean; message: string };
+    if (!rpcData.success) {
+      return {
+        success: false,
+        message: rpcData.message || "অর্ডারের স্ট্যাটাস আপডেট করা যায়নি।",
       };
     }
 
@@ -278,7 +283,7 @@ export async function updateOrderStatusAction(
 
     return {
       success: true,
-      message: "অর্ডারের স্ট্যাটাস সফলভাবে আপডেট হয়েছে।",
+      message: rpcData.message || "অর্ডারের স্ট্যাটাস সফলভাবে আপডেট হয়েছে।",
     };
   } catch (err: any) {
     if (err.message === "UNAUTHORIZED" || err.message === "FORBIDDEN") {
