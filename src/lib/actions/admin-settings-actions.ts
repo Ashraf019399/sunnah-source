@@ -7,18 +7,8 @@ import {
   DeliveryRuleConfig,
   DeliverySettingsFormData,
   AdminSettingsMutationResult,
+  DEFAULT_DELIVERY_SETTINGS,
 } from "@/types/settings.types";
-
-export const DEFAULT_DELIVERY_SETTINGS: DeliveryRuleConfig = {
-  insideDhakaFee: 70,
-  outsideDhakaFee: 130,
-  freeDeliveryThreshold: 2000,
-  paymentMethod: "ক্যাশ অন ডেলিভারি (COD)",
-  isFromDb: false,
-  updatedAt: null,
-  updatedBy: null,
-  sourceFilePath: "src/lib/actions/checkout-actions.ts",
-};
 
 /**
  * Reads delivery settings from Supabase store_settings table.
