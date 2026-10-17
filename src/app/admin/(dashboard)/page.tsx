@@ -270,31 +270,32 @@ export default async function AdminDashboardPage() {
           </Link>
 
           {/* Settings Module Card */}
-          <div
+          <Link
+            href="/admin/settings"
             id="settings"
-            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700/40 md:col-span-2 lg:col-span-2"
+            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700 hover:shadow-md group md:col-span-2 lg:col-span-2"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700">
+                <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 group-hover:bg-brand-700 group-hover:text-white transition-colors">
                   <Settings className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-surface-canvas border border-surface-border text-charcoal-500">
-                  পরবর্তী ধাপ
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  সক্রিয়
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-charcoal-900 mb-1">
-                সিস্টেম ও ইন্টিগ্রেশন সেটিংস (Settings)
+              <h4 className="text-sm font-bold text-charcoal-900 group-hover:text-brand-900 mb-1 transition-colors">
+                সিস্টেম ও স্টোর কনফিগারেশন (Settings)
               </h4>
               <p className="text-xs text-charcoal-500 leading-relaxed">
-                পেমেন্ট গেটওয়ে (bKash, SSLCommerz), কুরিয়ার লজিস্টিকস (Steadfast Courier API) এবং এসএমএস গেটওয়ে (Greenweb) কনফিগারেশন।
+                স্টোর প্রোফাইল, ডেলিভারি রুলস, সিস্টেম হেলথ মনিটর ও নোটিফিকেশন টেমপ্লেট ওভারভিউ।
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-charcoal-400 flex items-center justify-between">
-              <span>এনভায়রনমেন্ট ভ্যারিয়েবল সাপোর্ট প্রস্তুত</span>
-              <span className="text-[11px]">মডিউল পেন্ডিং</span>
+            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-brand-800 flex items-center justify-between">
+              <span>সেটিংস ও ইন্টিগ্রেশন দেখুন</span>
+              <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
-          </div>
+          </Link>
         </div>
       </section>
 

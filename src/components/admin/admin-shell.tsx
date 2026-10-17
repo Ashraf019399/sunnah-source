@@ -68,9 +68,8 @@ const NAV_ITEMS: NavItem[] = [
   {
     nameBn: "সেটিংস",
     nameEn: "Settings",
-    href: "/admin#settings",
+    href: "/admin/settings",
     icon: Settings,
-    isPlaceholder: true,
   },
 ];
 
