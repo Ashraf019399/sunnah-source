@@ -22,7 +22,7 @@ export const CATEGORIES_DATA: Category[] = [
     descriptionBn: "আমাদের মধু কোনো প্রকার হিটিং বা কৃত্রিম সুগার সিরাপের প্রক্রিয়াজাতকরণ ছাড়াই সরাসরি সুন্দরবন ও বিভিন্ন অঞ্চলের মৌয়ালদের থেকে সংগৃহীত।",
     sourcingOriginBn: "সুন্দরবন ম্যানগ্রোভ বন, সাতক্ষীরা ও শরীয়তপুর",
     purityPromiseBn: "হাইড্রোমিটার ও ল্যাব টেস্টে আর্দ্রতা ও সুক্রোজের প্রাকৃতিক মাত্রা উত্তীর্ণ।",
-    imageUrl: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80",
     displayOrder: 1,
     isActive: true,
   },

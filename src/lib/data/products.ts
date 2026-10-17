@@ -16,8 +16,8 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1587049352847-4a222e784d38?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1587049352851-8d4e89133924?auto=format&fit=crop&w=800&q=80",
     ],
     variants: [
       {

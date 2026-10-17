@@ -27,6 +27,33 @@ interface ProductsListProps {
   hasLiveInventory?: boolean;
 }
 
+function ProductThumbnail({ src, alt }: { src?: string; alt: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  React.useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  if (!src || hasError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-charcoal-300 bg-surface-canvas">
+        <Package className="w-6 h-6" />
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className="object-cover"
+      sizes="64px"
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
 export function ProductsList({ products, hasLiveInventory = false }: ProductsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -305,19 +332,7 @@ export function ProductsList({ products, hasLiveInventory = false }: ProductsLis
                   <div className="flex items-start sm:items-center gap-3.5">
                     {/* Thumbnail */}
                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden bg-surface-canvas border border-surface-border relative shrink-0">
-                      {product.images?.[0] ? (
-                        <Image
-                          src={product.images[0]}
-                          alt={product.titleBn}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-charcoal-300">
-                          <Package className="w-6 h-6" />
-                        </div>
-                      )}
+                      <ProductThumbnail src={product.images?.[0]} alt={product.titleBn} />
                     </div>
 
                     {/* Titles & Category */}
