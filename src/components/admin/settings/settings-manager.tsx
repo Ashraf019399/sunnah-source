@@ -94,20 +94,27 @@ export function SettingsManager({ data }: SettingsManagerProps) {
     }
 
     startSavingTransition(async () => {
-      const res = await updateAdminDeliverySettingsAction({
-        insideDhakaFee: inside,
-        outsideDhakaFee: outside,
-        freeDeliveryThreshold: threshold,
-      });
+      try {
+        const res = await updateAdminDeliverySettingsAction({
+          insideDhakaFee: inside,
+          outsideDhakaFee: outside,
+          freeDeliveryThreshold: threshold,
+        });
 
-      if (res.success && res.data) {
-        setRules(res.data);
-        setFeedback({ type: "success", message: res.message });
-      } else {
-        setFeedback({ type: "error", message: res.message });
-        if (res.fieldErrors) {
-          setFieldErrors(res.fieldErrors);
+        if (res.success && res.data) {
+          setRules(res.data);
+          setFeedback({ type: "success", message: res.message });
+        } else {
+          setFeedback({ type: "error", message: res.message || "সংরক্ষণ করতে সমস্যা হয়েছে।" });
+          if (res.fieldErrors) {
+            setFieldErrors(res.fieldErrors);
+          }
         }
+      } catch (err: any) {
+        setFeedback({
+          type: "error",
+          message: err?.message || "সার্ভার এরর ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+        });
       }
     });
   };
@@ -336,24 +343,6 @@ export function SettingsManager({ data }: SettingsManagerProps) {
             </div>
           </div>
 
-          {/* Feedback Alert */}
-          {feedback && (
-            <div
-              className={`p-4 rounded-2xl border text-xs flex items-center gap-2.5 transition-all animate-fadeIn ${
-                feedback.type === "success"
-                  ? "bg-emerald-50 text-emerald-900 border-emerald-200"
-                  : "bg-rose-50 text-rose-900 border-rose-200"
-              }`}
-            >
-              {feedback.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-              )}
-              <span className="font-medium">{feedback.message}</span>
-            </div>
-          )}
-
           {/* Live Rate Preview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Inside Dhaka */}
@@ -541,6 +530,24 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                 )}
               </div>
             </div>
+
+            {/* Inline Feedback Alert directly above action buttons */}
+            {feedback && (
+              <div
+                className={`p-4 rounded-2xl border text-xs sm:text-sm flex items-center gap-2.5 transition-all animate-fadeIn ${
+                  feedback.type === "success"
+                    ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                    : "bg-rose-50 text-rose-900 border-rose-200"
+                }`}
+              >
+                {feedback.type === "success" ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                )}
+                <span className="font-semibold">{feedback.message}</span>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-surface-border/60">
