@@ -1,9 +1,10 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Settings, ShieldCheck } from "lucide-react";
+import { Settings } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { SettingsViewData, IntegrationServiceItem } from "@/types/settings.types";
 import { SettingsManager } from "@/components/admin/settings/settings-manager";
+import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +127,8 @@ export default async function AdminSettingsPage() {
   ];
 
   // 3. Consolidated View Data
+  const deliveryRules = await getAdminDeliverySettings();
+
   const viewData: SettingsViewData = {
     storeProfile: {
       nameBn: "সুন্নাহ সোর্স",
@@ -144,14 +147,7 @@ export default async function AdminSettingsPage() {
         "মদিনা মুনাওয়ারা, সৌদি আরব (প্রাকৃতিক আজওয়া খেজুর)",
       ],
     },
-    deliveryRules: {
-      insideDhakaFee: 70,
-      outsideDhakaFee: 130,
-      freeDeliveryThreshold: 2000,
-      paymentMethod: "ক্যাশ অন ডেলিভারি (COD)",
-      isHardcodedInSource: true,
-      sourceFilePath: "src/lib/actions/checkout-actions.ts",
-    },
+    deliveryRules,
     integrations,
     notificationTemplates: [
       {

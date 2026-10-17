@@ -11,6 +11,7 @@ import {
   resolveVariantDbId,
 } from "@/lib/data/catalog-mapping";
 import { processOrderCouponServerSide } from "@/lib/actions/coupon-actions";
+import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
 
 interface AggregatedOrderItem {
   productId: string;
@@ -106,14 +107,15 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       a.variantId.localeCompare(b.variantId)
     );
 
-    // 3. Trusted financial calculations
+    // 3. Trusted financial calculations based on dynamic store settings
     const trustedSubtotal = orderItems.reduce((sum, it) => sum + it.lineTotal, 0);
-    const isFreeDelivery = trustedSubtotal >= 2000;
+    const deliverySettings = await getAdminDeliverySettings();
+    const isFreeDelivery = trustedSubtotal >= deliverySettings.freeDeliveryThreshold;
     const trustedDeliveryFee = isFreeDelivery
       ? 0
       : customer.zone === "inside_dhaka"
-      ? 70
-      : 130;
+      ? deliverySettings.insideDhakaFee
+      : deliverySettings.outsideDhakaFee;
     // 4. Server-side coupon validation and discount calculation
     const couponResult = await processOrderCouponServerSide(
       payload.couponCode,
@@ -220,4 +222,20 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
     console.error("[checkout-actions] Unexpected server error:", err);
     return { success: false, message: err?.message || "সার্ভার এরর ঘটেছে।" };
   }
+}
+
+/**
+ * Public action to retrieve current store delivery settings for storefront & checkout UI.
+ */
+export async function getPublicDeliverySettingsAction(): Promise<{
+  insideDhakaFee: number;
+  outsideDhakaFee: number;
+  freeDeliveryThreshold: number;
+}> {
+  const settings = await getAdminDeliverySettings();
+  return {
+    insideDhakaFee: settings.insideDhakaFee,
+    outsideDhakaFee: settings.outsideDhakaFee,
+    freeDeliveryThreshold: settings.freeDeliveryThreshold,
+  };
 }

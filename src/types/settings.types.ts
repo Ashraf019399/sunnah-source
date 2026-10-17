@@ -16,8 +16,27 @@ export interface DeliveryRuleConfig {
   outsideDhakaFee: number;
   freeDeliveryThreshold: number;
   paymentMethod: string;
-  isHardcodedInSource: boolean;
-  sourceFilePath: string;
+  isFromDb: boolean;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  sourceFilePath?: string;
+}
+
+export interface DeliverySettingsFormData {
+  insideDhakaFee: number;
+  outsideDhakaFee: number;
+  freeDeliveryThreshold: number;
+}
+
+export interface AdminSettingsMutationResult {
+  success: boolean;
+  message: string;
+  data?: DeliveryRuleConfig;
+  fieldErrors?: {
+    insideDhakaFee?: string;
+    outsideDhakaFee?: string;
+    freeDeliveryThreshold?: string;
+  };
 }
 
 export type IntegrationHealthStatus = "connected" | "configured_unverified" | "not_configured" | "error";

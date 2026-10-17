@@ -23,7 +23,7 @@ import {
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT, isValidBDPhone } from "@/lib/utils";
 import { DeliveryZone, OrderCreationPayload } from "@/types/commerce.types";
-import { submitOrderServerAction } from "@/lib/actions/checkout-actions";
+import { submitOrderServerAction, getPublicDeliverySettingsAction } from "@/lib/actions/checkout-actions";
 import { validateCouponAction } from "@/lib/actions/coupon-actions";
 import { CouponDiscountType } from "@/types/coupons.types";
 import { BrandLogo } from "@/components/layout/brand-logo";
@@ -120,10 +120,35 @@ export default function CheckoutPage() {
     message: string;
   } | null>(null);
 
+  // Delivery Settings State (dynamic with reliable fallbacks)
+  const [deliverySettings, setDeliverySettings] = useState<{
+    insideDhakaFee: number;
+    outsideDhakaFee: number;
+    freeDeliveryThreshold: number;
+  }>({
+    insideDhakaFee: 70,
+    outsideDhakaFee: 130,
+    freeDeliveryThreshold: 2000,
+  });
+
   // Avoid hydration mismatch from localStorage-backed Zustand store and close drawer
   useEffect(() => {
     setMounted(true);
     closeDrawer();
+    getPublicDeliverySettingsAction()
+      .then((settings) => {
+        if (
+          settings &&
+          typeof settings.insideDhakaFee === "number" &&
+          typeof settings.outsideDhakaFee === "number" &&
+          typeof settings.freeDeliveryThreshold === "number"
+        ) {
+          setDeliverySettings(settings);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load dynamic delivery settings, using default values:", err);
+      });
   }, [closeDrawer]);
 
   // Sync district when zone changes
@@ -149,8 +174,12 @@ export default function CheckoutPage() {
   }, [getSubtotal, items]);
 
   // Verified delivery fee logic
-  const isFreeDelivery = subtotal >= 2000;
-  const deliveryFee = isFreeDelivery ? 0 : zone === "inside_dhaka" ? 70 : 130;
+  const isFreeDelivery = subtotal >= deliverySettings.freeDeliveryThreshold;
+  const deliveryFee = isFreeDelivery
+    ? 0
+    : zone === "inside_dhaka"
+    ? deliverySettings.insideDhakaFee
+    : deliverySettings.outsideDhakaFee;
 
   // Coupon discount calculation based on current subtotal and delivery fee
   const discountAmount = useMemo(() => {
@@ -674,7 +703,7 @@ export default function CheckoutPage() {
                           {isFreeDelivery ? (
                             <span className="text-emerald-700 font-extrabold">ফ্রি!</span>
                           ) : (
-                            "৳৭০"
+                            formatBDT(deliverySettings.insideDhakaFee)
                           )}
                         </span>
                       </div>
@@ -706,7 +735,7 @@ export default function CheckoutPage() {
                           {isFreeDelivery ? (
                             <span className="text-emerald-700 font-extrabold">ফ্রি!</span>
                           ) : (
-                            "৳১৩০"
+                            formatBDT(deliverySettings.outsideDhakaFee)
                           )}
                         </span>
                       </div>
@@ -911,9 +940,9 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2 text-charcoal-700">
                       <Truck className="w-4 h-4 text-brand-700 shrink-0" />
                       <span>
-                        ৳২,০০০ বা তার বেশি অর্ডারে সারাদেশে ফ্রি ডেলিভারি! আর{" "}
+                        {formatBDT(deliverySettings.freeDeliveryThreshold)} বা তার বেশি অর্ডারে সারাদেশে ফ্রি ডেলিভারি! আর{" "}
                         <strong className="font-mono text-brand-700 font-bold">
-                          {formatBDT(Math.max(0, 2000 - subtotal))}
+                          {formatBDT(Math.max(0, deliverySettings.freeDeliveryThreshold - subtotal))}
                         </strong>{" "}
                         টাকার পণ্য যোগ করলেই পাচ্ছেন ফ্রি ডেলিভারি।
                       </span>

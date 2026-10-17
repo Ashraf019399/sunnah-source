@@ -8,6 +8,7 @@ import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT } from "@/lib/utils";
 import { CartItem } from "@/types/commerce.types";
+import { getPublicDeliverySettingsAction } from "@/lib/actions/checkout-actions";
 
 export const CartDrawer: React.FC = () => {
   const pathname = usePathname();
@@ -78,10 +79,26 @@ export const CartDrawer: React.FC = () => {
     return items.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
   }, [getSubtotal, items]);
 
-  // Verified free delivery threshold from repository commerce rules (৳২,০০০)
-  const freeThreshold = 2000;
+  // Verified free delivery threshold (৳২,০০০ default, dynamically synced from store settings)
+  const [freeThreshold, setFreeThreshold] = useState<number>(2000);
+
+  useEffect(() => {
+    getPublicDeliverySettingsAction()
+      .then((settings) => {
+        if (
+          settings &&
+          typeof settings.freeDeliveryThreshold === "number" &&
+          settings.freeDeliveryThreshold >= 0
+        ) {
+          setFreeThreshold(settings.freeDeliveryThreshold);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const remainingForFree = Math.max(0, freeThreshold - subtotal);
-  const freePercent = Math.min(100, Math.round((subtotal / freeThreshold) * 100));
+  const freePercent =
+    freeThreshold > 0 ? Math.min(100, Math.round((subtotal / freeThreshold) * 100)) : 100;
 
   if (!mounted || !isDrawerOpen) return null;
 
@@ -161,7 +178,7 @@ export const CartDrawer: React.FC = () => {
         <div className="p-3 bg-brand-50 border-b border-brand-100 text-xs">
           {remainingForFree > 0 ? (
             <p className="text-charcoal-700">
-              ৳২,০০০ বা তার বেশি অর্ডারে <strong className="text-brand-700">ফ্রি ডেলিভারি!</strong> আর{" "}
+              {formatBDT(freeThreshold)} বা তার বেশি অর্ডারে <strong className="text-brand-700">ফ্রি ডেলিভারি!</strong> আর{" "}
               <span className="font-mono font-bold text-brand-700">
                 {formatBDT(remainingForFree)}
               </span>{" "}

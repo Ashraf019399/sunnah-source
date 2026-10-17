@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Store,
@@ -27,9 +27,14 @@ import {
   KeyRound,
   Shield,
   CircleDollarSign,
+  Save,
+  Loader2,
+  RotateCcw,
+  AlertCircle,
 } from "lucide-react";
-import { SettingsViewData } from "@/types/settings.types";
+import { SettingsViewData, DeliveryRuleConfig } from "@/types/settings.types";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
+import { updateAdminDeliverySettingsAction } from "@/lib/actions/admin-settings-actions";
 
 interface SettingsManagerProps {
   data: SettingsViewData;
@@ -40,6 +45,72 @@ type TabType = "store" | "delivery" | "integrations" | "templates" | "security";
 export function SettingsManager({ data }: SettingsManagerProps) {
   const [activeTab, setActiveTab] = useState<TabType>("store");
   const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null);
+
+  // Delivery Rules State
+  const [rules, setRules] = useState<DeliveryRuleConfig>(data.deliveryRules);
+  const [insideDhakaInput, setInsideDhakaInput] = useState<string>(String(data.deliveryRules.insideDhakaFee));
+  const [outsideDhakaInput, setOutsideDhakaInput] = useState<string>(String(data.deliveryRules.outsideDhakaFee));
+  const [thresholdInput, setThresholdInput] = useState<string>(String(data.deliveryRules.freeDeliveryThreshold));
+
+  const [isSaving, startSavingTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    insideDhakaFee?: string;
+    outsideDhakaFee?: string;
+    freeDeliveryThreshold?: string;
+  }>({});
+
+  const handleResetDelivery = () => {
+    setInsideDhakaInput(String(rules.insideDhakaFee));
+    setOutsideDhakaInput(String(rules.outsideDhakaFee));
+    setThresholdInput(String(rules.freeDeliveryThreshold));
+    setFeedback(null);
+    setFieldErrors({});
+  };
+
+  const handleSaveDelivery = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFeedback(null);
+    setFieldErrors({});
+
+    const inside = Number(insideDhakaInput);
+    const outside = Number(outsideDhakaInput);
+    const threshold = Number(thresholdInput);
+
+    const errs: Record<string, string> = {};
+    if (isNaN(inside) || inside < 0) {
+      errs.insideDhakaFee = "বৈধ ধনাত্মক সংখ্যা প্রদান করুন।";
+    }
+    if (isNaN(outside) || outside < 0) {
+      errs.outsideDhakaFee = "বৈধ ধনাত্মক সংখ্যা প্রদান করুন।";
+    }
+    if (isNaN(threshold) || threshold < 0) {
+      errs.freeDeliveryThreshold = "বৈধ ধনাত্মক সংখ্যা প্রদান করুন।";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+
+    startSavingTransition(async () => {
+      const res = await updateAdminDeliverySettingsAction({
+        insideDhakaFee: inside,
+        outsideDhakaFee: outside,
+        freeDeliveryThreshold: threshold,
+      });
+
+      if (res.success && res.data) {
+        setRules(res.data);
+        setFeedback({ type: "success", message: res.message });
+      } else {
+        setFeedback({ type: "error", message: res.message });
+        if (res.fieldErrors) {
+          setFieldErrors(res.fieldErrors);
+        }
+      }
+    });
+  };
 
   const handleCopyText = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -228,23 +299,62 @@ export function SettingsManager({ data }: SettingsManagerProps) {
         </div>
       )}
 
-      {/* Tab 2: Delivery Rules */}
+      {/* Tab 2: Delivery Rules (Editable) */}
       {activeTab === "delivery" && (
         <div className="space-y-6 animate-fadeIn">
-          {/* Notice Banner */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-amber-50/80 border border-amber-200 text-amber-950 flex items-start gap-3.5">
-            <Info className="w-5 h-5 text-accent-dark shrink-0 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <span className="font-bold block text-sm">
-                সরাসরি চেকআউট সোর্স কোড থেকে যাচাইকৃত ডেলিভারি নীতি
-              </span>
-              <p className="text-amber-900 leading-relaxed">
-                নিচের ডেলিভারি চার্জ ও ফ্রি-ডেলিভারি থ্রেশহোল্ড চেকআউট অ্যাকশন (<code className="bg-amber-100 px-1 py-0.5 rounded text-[11px] font-mono">{data.deliveryRules.sourceFilePath}</code>)-এ সক্রিয়ভাবে ব্যবহৃত হচ্ছে। নিরাপত্তা এবং টেম্পারিং রোধে বর্তমানে এটি সোর্স-কোড লেভেলে সুরক্ষিত (Hardcoded)।
-              </p>
+          {/* Status & Notice Banner */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-white border border-surface-border shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
+                <Truck className="w-5 h-5" />
+              </div>
+              <div className="text-xs space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-charcoal-900">
+                    ডেলিভারি চার্জ ও ফ্রি ডেলিভারি নীতি
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      rules.isFromDb
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {rules.isFromDb ? "লাইভ ডেটাবেস সক্রিয়" : "ডিফল্ট ফলব্যাক সক্রিয়"}
+                  </span>
+                </div>
+                <p className="text-charcoal-500 leading-relaxed">
+                  {rules.isFromDb
+                    ? `সর্বশেষ আপডেট: ${rules.updatedAt ? new Date(rules.updatedAt).toLocaleString("bn-BD") : "সম্প্রতি"} (${rules.updatedBy || "Admin"})`
+                    : "store_settings টেবিল সক্রিয় হলে এটি ডাটাবেসে স্থায়ীভাবে সংরক্ষিত হবে। বর্তমানে নিরাপদ ফলব্যাক মান কার্যকর রয়েছে।"}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-[11px] font-mono text-charcoal-400 bg-surface-canvas/60 px-3 py-1.5 rounded-xl border border-surface-border shrink-0">
+              Source: {rules.sourceFilePath || "Server Settings"}
             </div>
           </div>
 
-          {/* Rate Cards */}
+          {/* Feedback Alert */}
+          {feedback && (
+            <div
+              className={`p-4 rounded-2xl border text-xs flex items-center gap-2.5 transition-all animate-fadeIn ${
+                feedback.type === "success"
+                  ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                  : "bg-rose-50 text-rose-900 border-rose-200"
+              }`}
+            >
+              {feedback.type === "success" ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span className="font-medium">{feedback.message}</span>
+            </div>
+          )}
+
+          {/* Live Rate Preview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Inside Dhaka */}
             <div className="bg-white rounded-3xl p-6 border border-surface-border shadow-subtle flex flex-col justify-between">
@@ -257,16 +367,17 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                     ঢাকার ভেতরে
                   </span>
                 </div>
-                <span className="text-xs text-charcoal-400 block mb-1">স্ট্যান্ডার্ড হোম ডেলিভারি ফি</span>
+                <span className="text-xs text-charcoal-400 block mb-1">কার্যকর হোম ডেলিভারি ফি</span>
                 <div className="text-2xl sm:text-3xl font-black text-charcoal-900">
-                  {formatBDT(data.deliveryRules.insideDhakaFee)}
+                  {formatBDT(rules.insideDhakaFee)}
                 </div>
                 <p className="text-xs text-charcoal-500 mt-2">
-                  ঢাকা মেট্রোপলিটন এলাকার জন্য প্রযোজ্য।
+                  ঢাকা মেট্রোপলিটন এলাকার অর্ডারে প্রযোজ্য।
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-surface-border/60 text-[11px] text-charcoal-400">
-                Zone: <code className="font-mono text-charcoal-700">inside_dhaka</code>
+              <div className="mt-4 pt-3 border-t border-surface-border/60 text-[11px] text-charcoal-400 flex items-center justify-between">
+                <span>Zone: <code className="font-mono text-charcoal-700">inside_dhaka</code></span>
+                <span className="font-bold text-emerald-700">সক্রিয়</span>
               </div>
             </div>
 
@@ -281,16 +392,17 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                     ঢাকার বাইরে
                   </span>
                 </div>
-                <span className="text-xs text-charcoal-400 block mb-1">সমগ্র বাংলাদেশ হোম ডেলিভারি</span>
+                <span className="text-xs text-charcoal-400 block mb-1">কার্যকর হোম ডেলিভারি ফি</span>
                 <div className="text-2xl sm:text-3xl font-black text-charcoal-900">
-                  {formatBDT(data.deliveryRules.outsideDhakaFee)}
+                  {formatBDT(rules.outsideDhakaFee)}
                 </div>
                 <p className="text-xs text-charcoal-500 mt-2">
                   ঢাকার বাইরের জেলা, উপজেলা ও থানা পর্যায়ে।
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-surface-border/60 text-[11px] text-charcoal-400">
-                Zone: <code className="font-mono text-charcoal-700">outside_dhaka</code>
+              <div className="mt-4 pt-3 border-t border-surface-border/60 text-[11px] text-charcoal-400 flex items-center justify-between">
+                <span>Zone: <code className="font-mono text-charcoal-700">outside_dhaka</code></span>
+                <span className="font-bold text-blue-700">সক্রিয়</span>
               </div>
             </div>
 
@@ -307,17 +419,167 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                 </div>
                 <span className="text-xs text-charcoal-400 block mb-1">ন্যূনতম অর্ডার মূল্য</span>
                 <div className="text-2xl sm:text-3xl font-black text-purple-900">
-                  {formatBDT(data.deliveryRules.freeDeliveryThreshold)}
+                  {formatBDT(rules.freeDeliveryThreshold)}
                 </div>
                 <p className="text-xs text-charcoal-500 mt-2">
-                  অর্ডারের সাবটোটাল {toBanglaDigits(data.deliveryRules.freeDeliveryThreshold)}৳ বা তদূর্ধ্ব হলে ডেলিভারি সম্পূর্ণ ফ্রি।
+                  অর্ডারের সাবটোটাল {toBanglaDigits(rules.freeDeliveryThreshold)}৳ বা তদূর্ধ্ব হলে ডেলিভারি সম্পূর্ণ ফ্রি।
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-surface-border/60 text-[11px] text-charcoal-400">
-                Condition: <code className="font-mono text-charcoal-700">subtotal &gt;= 2000</code>
+              <div className="mt-4 pt-3 border-t border-surface-border/60 text-[11px] text-charcoal-400 flex items-center justify-between">
+                <span>Condition: <code className="font-mono text-charcoal-700">&gt;= {rules.freeDeliveryThreshold}</code></span>
+                <span className="font-bold text-purple-700">সক্রিয়</span>
               </div>
             </div>
           </div>
+
+          {/* Edit Form Card */}
+          <form
+            onSubmit={handleSaveDelivery}
+            className="bg-white rounded-3xl p-6 sm:p-8 border border-surface-border shadow-subtle space-y-6"
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-surface-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center">
+                  <Save className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-charcoal-900">
+                    ডেলিভারি চার্জ ও ফ্রি ডেলিভারি সীমা সম্পাদন করুন
+                  </h3>
+                  <p className="text-xs text-charcoal-500">
+                    নতুন মান প্রদান করে সংরক্ষণ করুন। এটি চেকআউটের সার্ভার-সাইড গণনায় সরাসরি কার্যকর হবে।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {/* Field 1: Inside Dhaka */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-charcoal-800 block">
+                  ঢাকার ভেতরে ডেলিভারি চার্জ (টাকা) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative rounded-2xl border border-surface-border focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 bg-surface-canvas/30 overflow-hidden">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 font-bold text-sm">
+                    ৳
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="5000"
+                    step="1"
+                    value={insideDhakaInput}
+                    onChange={(e) => setInsideDhakaInput(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full py-2.5 pl-8 pr-4 bg-transparent text-sm font-bold text-charcoal-900 focus:outline-none"
+                    placeholder="70"
+                    required
+                  />
+                </div>
+                {fieldErrors.insideDhakaFee ? (
+                  <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.insideDhakaFee}</p>
+                ) : (
+                  <p className="text-[11px] text-charcoal-400">বর্তমান: {formatBDT(rules.insideDhakaFee)}</p>
+                )}
+              </div>
+
+              {/* Field 2: Outside Dhaka */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-charcoal-800 block">
+                  ঢাকার বাইরে ডেলিভারি চার্জ (টাকা) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative rounded-2xl border border-surface-border focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 bg-surface-canvas/30 overflow-hidden">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 font-bold text-sm">
+                    ৳
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="5000"
+                    step="1"
+                    value={outsideDhakaInput}
+                    onChange={(e) => setOutsideDhakaInput(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full py-2.5 pl-8 pr-4 bg-transparent text-sm font-bold text-charcoal-900 focus:outline-none"
+                    placeholder="130"
+                    required
+                  />
+                </div>
+                {fieldErrors.outsideDhakaFee ? (
+                  <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.outsideDhakaFee}</p>
+                ) : (
+                  <p className="text-[11px] text-charcoal-400">বর্তমান: {formatBDT(rules.outsideDhakaFee)}</p>
+                )}
+              </div>
+
+              {/* Field 3: Free Delivery Threshold */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-charcoal-800 block">
+                  ফ্রি ডেলিভারি সীমা (টাকা) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative rounded-2xl border border-surface-border focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 bg-surface-canvas/30 overflow-hidden">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 font-bold text-sm">
+                    ৳
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100000"
+                    step="50"
+                    value={thresholdInput}
+                    onChange={(e) => setThresholdInput(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full py-2.5 pl-8 pr-4 bg-transparent text-sm font-bold text-charcoal-900 focus:outline-none"
+                    placeholder="2000"
+                    required
+                  />
+                </div>
+                {fieldErrors.freeDeliveryThreshold ? (
+                  <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.freeDeliveryThreshold}</p>
+                ) : (
+                  <p className="text-[11px] text-charcoal-400">বর্তমান: {formatBDT(rules.freeDeliveryThreshold)} বা তদূর্ধ্ব</p>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-surface-border/60">
+              <span className="text-xs text-charcoal-400 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-brand-700" />
+                <span>শুধুমাত্র অনুমোদিত অ্যাডমিনরা সেটিংস পরিবর্তন করতে পারেন।</span>
+              </span>
+
+              <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleResetDelivery}
+                  disabled={isSaving}
+                  className="px-4 py-2.5 rounded-xl border border-surface-border bg-surface-canvas/60 text-charcoal-600 hover:text-charcoal-900 hover:bg-surface-canvas text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-none"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>রিসেট</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 flex-1 sm:flex-none"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>সংরক্ষণ হচ্ছে...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>সেটিংস সংরক্ষণ করুন</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
 
           {/* Payment Method Specification */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-surface-border shadow-subtle space-y-4">
@@ -329,13 +591,13 @@ export function SettingsManager({ data }: SettingsManagerProps) {
               <div className="p-4 rounded-2xl bg-surface-canvas/40 border border-surface-border">
                 <span className="font-bold text-charcoal-800 block mb-1">ডিফল্ট পেমেন্ট মেথড:</span>
                 <p className="text-charcoal-500 leading-relaxed">
-                  ক্যাশ অন ডেলিভারি (Cash on Delivery — COD)। পণ্য হাতে পেয়ে মূল্য পরিশোধের সুবিধা।
+                  ক্যাশ অন ডেলিভারি (Cash on Delivery — COD)। গ্রাহক পণ্য হাতে পেয়ে মূল্য পরিশোধ করবেন।
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-surface-canvas/40 border border-surface-border">
                 <span className="font-bold text-charcoal-800 block mb-1">কুপন ও ছাড়ের প্রভাব:</span>
                 <p className="text-charcoal-500 leading-relaxed">
-                  কুপন বা ডিসকাউন্ট সাবটোটালের ওপর প্রয়োগ হয়। ফ্রি শিপিং কুপন ব্যতীত স্ট্যান্ডার্ড ডেলিভারি চার্জ বজায় থাকে।
+                  কুপন বা ডিসকাউন্ট সাবটোটালের ওপর প্রয়োগ হয়। ফ্রি শিপিং কুপন সক্রিয় হলে কার্যকর ডেলিভারি চার্জ সম্পূর্ণ মওকুফ হবে।
                 </p>
               </div>
             </div>
