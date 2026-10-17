@@ -214,58 +214,60 @@ export default async function AdminDashboardPage() {
           </Link>
 
           {/* Categories Module Card */}
-          <div
+          <Link
+            href="/admin/categories"
             id="categories"
-            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700/40"
+            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700 hover:shadow-md group"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2.5 rounded-xl bg-amber-50 text-accent-dark">
+                <div className="p-2.5 rounded-xl bg-amber-50 text-accent-dark group-hover:bg-brand-700 group-hover:text-white transition-colors">
                   <FolderTree className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-surface-canvas border border-surface-border text-charcoal-500">
-                  পরবর্তী ধাপ
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+                  সক্রিয়
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-charcoal-900 mb-1">
+              <h4 className="text-sm font-bold text-charcoal-900 group-hover:text-brand-900 mb-1 transition-colors">
                 ক্যাটাগরি ব্যবস্থাপনা (Categories)
               </h4>
               <p className="text-xs text-charcoal-500 leading-relaxed">
                 পণ্য ক্যাটাগরি তৈরি, এডিট ও ডিসপ্লে অর্ডার সাজানোর প্যানেল।
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-charcoal-400 flex items-center justify-between">
-              <span>ক্যাটাগরি ডাটা প্রস্তুত</span>
-              <span className="text-[11px]">মডিউল পেন্ডিং</span>
+            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-brand-800 flex items-center justify-between">
+              <span>ক্যাটাগরি পরিচালনা করুন</span>
+              <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
-          </div>
+          </Link>
 
           {/* Coupons Module Card */}
-          <div
+          <Link
+            href="/admin/coupons"
             id="coupons"
-            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700/40"
+            className="p-5 rounded-2xl bg-white border border-surface-border shadow-subtle flex flex-col justify-between transition-all hover:border-brand-700 hover:shadow-md group"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700">
+                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700 group-hover:bg-purple-700 group-hover:text-white transition-colors">
                   <Tag className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-surface-canvas border border-surface-border text-charcoal-500">
-                  পরবর্তী ধাপ
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                  সক্রিয়
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-charcoal-900 mb-1">
+              <h4 className="text-sm font-bold text-charcoal-900 group-hover:text-brand-900 mb-1 transition-colors">
                 কুপন ও ডিসকাউন্ট (Coupons)
               </h4>
               <p className="text-xs text-charcoal-500 leading-relaxed">
-                ডিসকাউন্ট কোড জেনারেশন, মেয়াদ নির্ধারণ ও ব্যবহারের সীমা নিয়ন্ত্রণ।
+                ডিসকাউন্ট কোড তৈরি, ব্যবহারের সীমা ও মেয়াদ নির্ধারণের প্যানেল।
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-charcoal-400 flex items-center justify-between">
-              <span>চেকআউট সাপোর্ট প্রস্তুত</span>
-              <span className="text-[11px]">মডিউল পেন্ডিং</span>
+            <div className="mt-4 pt-3 border-t border-surface-border/60 text-xs font-semibold text-purple-900 flex items-center justify-between">
+              <span>কুপন পরিচালনা করুন</span>
+              <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
-          </div>
+          </Link>
 
           {/* Settings Module Card */}
           <div

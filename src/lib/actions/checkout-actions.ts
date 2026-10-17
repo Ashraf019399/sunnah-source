@@ -10,6 +10,7 @@ import {
   resolveProductDbId,
   resolveVariantDbId,
 } from "@/lib/data/catalog-mapping";
+import { processOrderCouponServerSide } from "@/lib/actions/coupon-actions";
 
 interface AggregatedOrderItem {
   productId: string;
@@ -113,16 +114,31 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       : customer.zone === "inside_dhaka"
       ? 70
       : 130;
-    const trustedDiscount = 0;
-    const trustedGrandTotal = trustedSubtotal + trustedDeliveryFee - trustedDiscount;
+    // 4. Server-side coupon validation and discount calculation
+    const couponResult = await processOrderCouponServerSide(
+      payload.couponCode,
+      trustedSubtotal,
+      trustedDeliveryFee
+    );
 
-    // 4. Order metadata
+    if (!couponResult.isValid) {
+      return {
+        success: false,
+        message: couponResult.message || "প্রদত্ত কুপনটি বর্তমানে কার্যকর নয়।",
+      };
+    }
+
+    const trustedDiscount = couponResult.discountAmount;
+    const validatedCouponCode = couponResult.couponCode;
+    const trustedGrandTotal = Math.max(0, trustedSubtotal + trustedDeliveryFee - trustedDiscount);
+
+    // 5. Order metadata
     const orderId = crypto.randomUUID();
     const orderNumber =
       "SS-" + Date.now().toString().slice(-6) + Math.floor(10 + Math.random() * 90);
     const cleanPhone = customer.phone.replace(/\D/g, "").slice(-11);
 
-    // 5. Ensure service-role key is available
+    // 6. Ensure service-role key is available
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error("[checkout-actions] SUPABASE_SERVICE_ROLE_KEY is missing in server environment.");
       return {
@@ -131,7 +147,7 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       };
     }
 
-    // 6. Execute atomic RPC via service-role client
+    // 7. Execute atomic RPC via service-role client
     const adminClient = await createAdminClient();
     const rpcPayload = {
       p_order_id: orderId,
@@ -142,7 +158,7 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       p_subtotal: trustedSubtotal,
       p_delivery_fee: trustedDeliveryFee,
       p_discount_amount: trustedDiscount,
-      p_coupon_code: payload.couponCode?.trim() || null,
+      p_coupon_code: validatedCouponCode,
       p_grand_total: trustedGrandTotal,
       p_payment_method: ["cod", "bkash", "nagad", "sslcommerz"].includes(paymentMethod)
         ? paymentMethod
@@ -164,6 +180,14 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
     if (rpcResult.error) {
       console.error("[checkout-actions] create_order_with_inventory error:", rpcResult.error);
       const rawMsg = rpcResult.error.message || "";
+      if (rawMsg.includes("COUPON_ERROR:")) {
+        const parts = rawMsg.split("COUPON_ERROR:")[1]?.split("\n")[0] || "";
+        const couponMsg = parts.trim() || "কুপন যাচাইকরণে সমস্যা হয়েছে।";
+        return {
+          success: false,
+          message: couponMsg,
+        };
+      }
       if (rawMsg.includes("OUT_OF_STOCK:")) {
         const parts = rawMsg.split("OUT_OF_STOCK:")[1]?.split(":") || [];
         const itemTitle = parts[0]?.trim() || "পণ্য";

@@ -56,16 +56,14 @@ const NAV_ITEMS: NavItem[] = [
   {
     nameBn: "ক্যাটাগরি",
     nameEn: "Categories",
-    href: "/admin#categories",
+    href: "/admin/categories",
     icon: FolderTree,
-    isPlaceholder: true,
   },
   {
     nameBn: "কুপন ও অফার",
     nameEn: "Coupons",
-    href: "/admin#coupons",
+    href: "/admin/coupons",
     icon: Tag,
-    isPlaceholder: true,
   },
   {
     nameBn: "সেটিংস",

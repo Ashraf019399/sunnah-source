@@ -17,11 +17,15 @@ import {
   Clock,
   Loader2,
   ExternalLink,
+  Tag,
+  X,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT, isValidBDPhone } from "@/lib/utils";
 import { DeliveryZone, OrderCreationPayload } from "@/types/commerce.types";
 import { submitOrderServerAction } from "@/lib/actions/checkout-actions";
+import { validateCouponAction } from "@/lib/actions/coupon-actions";
+import { CouponDiscountType } from "@/types/coupons.types";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 const DHAKA_THANAS = [
@@ -95,6 +99,25 @@ export default function CheckoutPage() {
     address: string;
     zoneText: string;
     itemCount: number;
+    couponCode?: string | null;
+    discountAmount?: number;
+  } | null>(null);
+
+  // Coupon & Discount State
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id?: string;
+    code: string;
+    discountType: CouponDiscountType;
+    discountValue: number;
+    minOrderAmount: number;
+    maxDiscountAmount?: number | null;
+    description?: string | null;
+  } | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponFeedback, setCouponFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
   } | null>(null);
 
   // Avoid hydration mismatch from localStorage-backed Zustand store and close drawer
@@ -128,7 +151,81 @@ export default function CheckoutPage() {
   // Verified delivery fee logic
   const isFreeDelivery = subtotal >= 2000;
   const deliveryFee = isFreeDelivery ? 0 : zone === "inside_dhaka" ? 70 : 130;
-  const grandTotal = subtotal + deliveryFee;
+
+  // Coupon discount calculation based on current subtotal and delivery fee
+  const discountAmount = useMemo(() => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.minOrderAmount > 0 && subtotal < appliedCoupon.minOrderAmount) {
+      return 0;
+    }
+    let amount = 0;
+    if (appliedCoupon.discountType === "percentage") {
+      amount = Math.round((subtotal * appliedCoupon.discountValue) / 100);
+      if (appliedCoupon.maxDiscountAmount && appliedCoupon.maxDiscountAmount > 0) {
+        amount = Math.min(amount, appliedCoupon.maxDiscountAmount);
+      }
+      return Math.max(0, Math.min(amount, subtotal));
+    } else if (appliedCoupon.discountType === "free_shipping") {
+      return Math.max(0, Math.round(deliveryFee));
+    } else {
+      amount = Math.round(appliedCoupon.discountValue);
+      return Math.max(0, Math.min(amount, subtotal));
+    }
+  }, [appliedCoupon, subtotal, deliveryFee]);
+
+  const grandTotal = Math.max(0, subtotal + deliveryFee - discountAmount);
+
+  const handleApplyCoupon = async () => {
+    const cleanCode = couponCodeInput.trim().toUpperCase();
+    if (!cleanCode) {
+      setCouponFeedback({ type: "error", message: "অনুগ্রহ করে একটি কুপন কোড লিখুন।" });
+      return;
+    }
+    if (subtotal <= 0) {
+      setCouponFeedback({ type: "error", message: "কুপন ব্যবহারের জন্য কার্টে পণ্য থাকতে হবে।" });
+      return;
+    }
+
+    setIsApplyingCoupon(true);
+    setCouponFeedback(null);
+
+    try {
+      const result = await validateCouponAction(cleanCode, subtotal, deliveryFee);
+      if (result.isValid && result.coupon) {
+        setAppliedCoupon({
+          id: result.coupon.id,
+          code: result.coupon.code,
+          discountType: result.coupon.discountType,
+          discountValue: result.coupon.discountValue,
+          minOrderAmount: result.coupon.minOrderAmount,
+          maxDiscountAmount: result.coupon.maxDiscountAmount,
+          description: result.coupon.description,
+        });
+        setCouponFeedback({
+          type: "success",
+          message: `${result.coupon.code} কুপন সফলভাবে যুক্ত হয়েছে!`,
+        });
+      } else {
+        setCouponFeedback({
+          type: "error",
+          message: result.message || "কুপন কোডটি সঠিক নয়।",
+        });
+      }
+    } catch (err: any) {
+      setCouponFeedback({
+        type: "error",
+        message: err?.message || "কুপন যাচাইকরণে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+      });
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput("");
+    setCouponFeedback(null);
+  };
 
   // Phone validation status
   const isPhoneValid = useMemo(() => {
@@ -194,7 +291,8 @@ export default function CheckoutPage() {
         items,
         subtotal,
         deliveryFee,
-        discountAmount: 0,
+        discountAmount,
+        couponCode: appliedCoupon?.code,
         grandTotal,
         paymentMethod: "cod",
       };
@@ -210,6 +308,8 @@ export default function CheckoutPage() {
           address: `${fullAddress.trim()}, ${thana.trim()}, ${district.trim()}`,
           zoneText: zone === "inside_dhaka" ? "ঢাকা সিটি" : "ঢাকার বাইরে",
           itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+          couponCode: appliedCoupon?.code,
+          discountAmount,
         });
 
         // Clear cart upon successful order
@@ -299,6 +399,16 @@ export default function CheckoutPage() {
               <span className="text-charcoal-500 font-medium">পেমেন্ট মেথড:</span>
               <span className="font-bold text-emerald-700">ক্যাশ অন ডেলিভারি (COD)</span>
             </div>
+            {placedOrder.discountAmount && placedOrder.discountAmount > 0 ? (
+              <div className="flex justify-between items-center text-emerald-700 bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+                <span className="font-medium">
+                  কুপন ছাড় {placedOrder.couponCode ? `(${placedOrder.couponCode})` : ""}:
+                </span>
+                <span className="font-mono font-bold">
+                  -{formatBDT(placedOrder.discountAmount)}
+                </span>
+              </div>
+            ) : null}
             <div className="flex justify-between items-center pt-2 border-t border-surface-border/60 text-sm sm:text-base font-bold">
               <span className="text-charcoal-900">মোট প্রদেয় মূল্য:</span>
               <span className="font-mono text-brand-700 font-extrabold">
@@ -839,6 +949,109 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
+                {/* Coupon Code Input & Application */}
+                <div className="pt-3 border-t border-surface-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      htmlFor="coupon-code"
+                      className="text-xs font-bold text-charcoal-800 flex items-center gap-1.5"
+                    >
+                      <Tag className="w-3.5 h-3.5 text-brand-700" />
+                      <span>কুপন বা ডিসকাউন্ট কোড</span>
+                    </label>
+                    {appliedCoupon && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        যুক্ত হয়েছে
+                      </span>
+                    )}
+                  </div>
+
+                  {!appliedCoupon ? (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-2">
+                        <input
+                          id="coupon-code"
+                          type="text"
+                          value={couponCodeInput}
+                          onChange={(e) => {
+                            setCouponCodeInput(e.target.value.toUpperCase());
+                            if (couponFeedback) setCouponFeedback(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleApplyCoupon();
+                            }
+                          }}
+                          placeholder="যেমন: SUNNAH10"
+                          disabled={isApplyingCoupon}
+                          className="flex-1 uppercase font-mono tracking-wider px-3.5 py-2.5 rounded-xl border border-surface-border bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-brand-700/20 focus:border-brand-700 transition-all placeholder:text-charcoal-400 font-bold"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                          className={`px-4 py-2.5 rounded-xl font-bold text-xs shrink-0 transition-all flex items-center justify-center gap-1.5 ${
+                            isApplyingCoupon || !couponCodeInput.trim()
+                              ? "bg-stone-200 text-charcoal-400 cursor-not-allowed"
+                              : "bg-brand-700 hover:bg-brand-800 text-white active:scale-95 shadow-subtle"
+                          }`}
+                        >
+                          {isApplyingCoupon ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <span>প্রয়োগ করুন</span>
+                          )}
+                        </button>
+                      </div>
+                      {couponFeedback && (
+                        <p
+                          className={`text-[11px] leading-tight mt-1 ${
+                            couponFeedback.type === "success"
+                              ? "text-emerald-700 font-semibold"
+                              : "text-rose-600 font-medium"
+                          }`}
+                        >
+                          {couponFeedback.message}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold font-mono text-xs">
+                          %
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-black text-xs text-emerald-900 tracking-wide">
+                              {appliedCoupon.code}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-900">
+                              {appliedCoupon.discountType === "percentage"
+                                ? `${appliedCoupon.discountValue}% ছাড়`
+                                : `৳${appliedCoupon.discountValue} ছাড়`}
+                            </span>
+                          </div>
+                          {appliedCoupon.description && (
+                            <p className="text-[11px] text-emerald-700 line-clamp-1 mt-0.5">
+                              {appliedCoupon.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-100 hover:text-rose-600 transition-colors"
+                        title="কুপন বাদ দিন"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Financial Breakdown */}
                 <div className="pt-3 border-t border-surface-border space-y-2.5 text-xs sm:text-sm">
                   <div className="flex justify-between items-center text-charcoal-600">
@@ -857,6 +1070,17 @@ export default function CheckoutPage() {
                       )}
                     </span>
                   </div>
+                  {appliedCoupon && discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-emerald-700 bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>কুপন ছাড় ({appliedCoupon.code}):</span>
+                      </div>
+                      <span className="font-mono font-black text-emerald-800">
+                        -{formatBDT(discountAmount)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center pt-3 border-t border-surface-border/80 text-base sm:text-lg font-black text-charcoal-900">
                     <span>সর্বমোট প্রদেয়:</span>
                     <span className="font-mono text-brand-700 text-xl font-black">
