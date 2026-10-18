@@ -31,6 +31,7 @@ export interface AdminOrder {
   payment_method: PaymentMethod;
   payment_status: PaymentStatus;
   order_status: OrderStatus;
+  idempotency_key?: string | null;
   created_at: string;
   updated_at?: string;
 }

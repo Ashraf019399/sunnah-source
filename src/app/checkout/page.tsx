@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -27,6 +27,47 @@ import { submitOrderServerAction, getPublicDeliverySettingsAction } from "@/lib/
 import { validateCouponAction } from "@/lib/actions/coupon-actions";
 import { CouponDiscountType } from "@/types/coupons.types";
 import { BrandLogo } from "@/components/layout/brand-logo";
+
+const IDEMPOTENCY_STORAGE_PREFIX = "sunnah_checkout_idempotency_";
+
+function getSavedIdempotencyKey(cartSig: string): string | null {
+  if (typeof window === "undefined" || !cartSig) return null;
+  try {
+    const stored = window.sessionStorage?.getItem(`${IDEMPOTENCY_STORAGE_PREFIX}${cartSig}`);
+    return stored ? stored.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveIdempotencyKey(cartSig: string, key: string) {
+  if (typeof window === "undefined" || !cartSig || !key) return;
+  try {
+    window.sessionStorage?.setItem(`${IDEMPOTENCY_STORAGE_PREFIX}${cartSig}`, key);
+  } catch {
+    // Ignore storage quota or disabled storage
+  }
+}
+
+function clearSavedIdempotencyKey(cartSig?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    if (cartSig) {
+      window.sessionStorage?.removeItem(`${IDEMPOTENCY_STORAGE_PREFIX}${cartSig}`);
+    } else {
+      const storage = window.sessionStorage;
+      if (!storage) return;
+      for (let i = storage.length - 1; i >= 0; i--) {
+        const k = storage.key(i);
+        if (k && k.startsWith(IDEMPOTENCY_STORAGE_PREFIX)) {
+          storage.removeItem(k);
+        }
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 const DHAKA_THANAS = [
   "মিরপুর",
@@ -89,6 +130,37 @@ export default function CheckoutPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // Stable Idempotency Key per checkout attempt
+  // Persisted in sessionStorage bound to cartSignature to survive page reloads and navigation.
+  // Reused across retries (network timeouts, transient errors, user retry clicks).
+  // Refreshed only when cart contents change or an order completes.
+  const cartSignature = useMemo(
+    () => items.map((it) => `${it.productId}:${it.variantId}:${it.quantity}`).join("|"),
+    [items]
+  );
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => {
+    return getSavedIdempotencyKey(cartSignature) || crypto.randomUUID();
+  });
+  const prevCartSigRef = useRef(cartSignature);
+
+  useEffect(() => {
+    if (prevCartSigRef.current !== cartSignature) {
+      prevCartSigRef.current = cartSignature;
+      if (cartSignature) {
+        const existingKey = getSavedIdempotencyKey(cartSignature);
+        if (existingKey) {
+          setIdempotencyKey(existingKey);
+        } else {
+          const newKey = crypto.randomUUID();
+          saveIdempotencyKey(cartSignature, newKey);
+          setIdempotencyKey(newKey);
+        }
+      }
+    } else if (cartSignature && !getSavedIdempotencyKey(cartSignature)) {
+      saveIdempotencyKey(cartSignature, idempotencyKey);
+    }
+  }, [cartSignature, idempotencyKey]);
 
   // Successful Order State
   const [placedOrder, setPlacedOrder] = useState<{
@@ -307,6 +379,11 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      const effectiveKey = idempotencyKey || getSavedIdempotencyKey(cartSignature) || crypto.randomUUID();
+      if (cartSignature && effectiveKey) {
+        saveIdempotencyKey(cartSignature, effectiveKey);
+      }
+
       const payload: OrderCreationPayload = {
         customer: {
           fullName: fullName.trim(),
@@ -324,6 +401,7 @@ export default function CheckoutPage() {
         couponCode: appliedCoupon?.code,
         grandTotal,
         paymentMethod: "cod",
+        idempotencyKey: effectiveKey,
       };
 
       const result = await submitOrderServerAction(payload);
@@ -340,6 +418,10 @@ export default function CheckoutPage() {
           couponCode: appliedCoupon?.code,
           discountAmount,
         });
+
+        // Clear saved key for this completed cart and regenerate key for future orders
+        clearSavedIdempotencyKey(cartSignature);
+        setIdempotencyKey(crypto.randomUUID());
 
         // Clear cart upon successful order
         if (typeof clearCart === "function") {

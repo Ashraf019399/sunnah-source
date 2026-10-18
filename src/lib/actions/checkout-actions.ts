@@ -116,7 +116,112 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       : customer.zone === "inside_dhaka"
       ? deliverySettings.insideDhakaFee
       : deliverySettings.outsideDhakaFee;
-    // 4. Server-side coupon validation and discount calculation
+    // 4. Order metadata & Idempotency Key
+    const cleanIdempotencyKey =
+      payload.idempotencyKey && typeof payload.idempotencyKey === "string"
+        ? payload.idempotencyKey.trim().slice(0, 64)
+        : null;
+
+    const orderId = crypto.randomUUID();
+    const orderNumber =
+      "SS-" + Date.now().toString().slice(-6) + Math.floor(10 + Math.random() * 90);
+    const cleanPhone = customer.phone.replace(/\D/g, "").slice(-11);
+
+    // 5. Ensure service-role key is available
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("[checkout-actions] SUPABASE_SERVICE_ROLE_KEY is missing in server environment.");
+      return {
+        success: false,
+        message: "সার্ভার কনফিগারেশনজনিত ত্রুটি। অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন।",
+      };
+    }
+
+    const adminClient = await createAdminClient();
+
+    // 6. Return existing order on retry BEFORE coupon availability/usage validation can block it
+    // Preserves server-side price, customer address, and payload-mismatch protection
+    if (cleanIdempotencyKey) {
+      const { data: existingOrder } = await adminClient
+        .from("orders")
+        .select(
+          "id, order_number, grand_total, subtotal, delivery_fee, guest_phone, guest_name, coupon_code, payment_method, shipping_address"
+        )
+        .eq("idempotency_key", cleanIdempotencyKey)
+        .maybeSingle();
+
+      if (existingOrder) {
+        // Enforce strict server-side payload-mismatch protection against altered checkout intent
+        const incomingPhone = cleanPhone;
+        const incomingSubtotal = trustedSubtotal;
+        const incomingDeliveryFee = trustedDeliveryFee;
+        const incomingCoupon = payload.couponCode?.trim().toUpperCase() || null;
+        const incomingPaymentMethod = ["cod", "bkash", "nagad", "sslcommerz"].includes(paymentMethod)
+          ? paymentMethod
+          : "cod";
+        const incomingAddress = customer.fullAddress.trim();
+        const incomingThana = customer.thana.trim();
+        const incomingDistrict = customer.district.trim();
+
+        const existingShipping = (existingOrder.shipping_address as any) || {};
+        let isMismatch =
+          (existingOrder.guest_name || "").trim() !== customer.fullName.trim() ||
+          existingOrder.guest_phone !== incomingPhone ||
+          Number(existingOrder.subtotal) !== incomingSubtotal ||
+          Number(existingOrder.delivery_fee) !== incomingDeliveryFee ||
+          (existingOrder.coupon_code || null) !== incomingCoupon ||
+          existingOrder.payment_method !== incomingPaymentMethod ||
+          (existingShipping.fullAddress || "").trim() !== incomingAddress ||
+          (existingShipping.thana || "").trim() !== incomingThana ||
+          (existingShipping.district || "").trim() !== incomingDistrict;
+
+        if (!isMismatch) {
+          // Verify item-level integrity against existing order items
+          const { data: existingItems } = await adminClient
+            .from("order_items")
+            .select("variant_id, quantity, unit_price")
+            .eq("order_id", existingOrder.id);
+
+          if (!existingItems || existingItems.length !== orderItems.length) {
+            isMismatch = true;
+          } else {
+            const sortedExisting = [...existingItems].sort((a, b) =>
+              (a.variant_id || "").localeCompare(b.variant_id || "")
+            );
+            for (let i = 0; i < orderItems.length; i++) {
+              const incoming = orderItems[i];
+              const existing = sortedExisting[i];
+              if (
+                !existing ||
+                existing.variant_id !== incoming.variantId ||
+                existing.quantity !== incoming.quantity ||
+                Number(existing.unit_price) !== incoming.unitPrice
+              ) {
+                isMismatch = true;
+                break;
+              }
+            }
+          }
+        }
+
+        if (isMismatch) {
+          return {
+            success: false,
+            message: "IDEMPOTENCY_PAYLOAD_MISMATCH: একই আইডেমপোটেন্সি কি দিয়ে ভিন্ন অর্ডারের অনুরোধ করা যাবে না।",
+          };
+        }
+
+        return {
+          success: true,
+          message: "অর্ডার পূর্বেই সফলভাবে গৃহীত হয়েছে।",
+          data: {
+            orderNumber: existingOrder.order_number,
+            isDuplicate: true,
+          },
+        };
+      }
+    }
+
+    // 7. Server-side coupon validation and discount calculation for new orders
     const couponResult = await processOrderCouponServerSide(
       payload.couponCode,
       trustedSubtotal,
@@ -134,24 +239,8 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
     const validatedCouponCode = couponResult.couponCode;
     const trustedGrandTotal = Math.max(0, trustedSubtotal + trustedDeliveryFee - trustedDiscount);
 
-    // 5. Order metadata
-    const orderId = crypto.randomUUID();
-    const orderNumber =
-      "SS-" + Date.now().toString().slice(-6) + Math.floor(10 + Math.random() * 90);
-    const cleanPhone = customer.phone.replace(/\D/g, "").slice(-11);
-
-    // 6. Ensure service-role key is available
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("[checkout-actions] SUPABASE_SERVICE_ROLE_KEY is missing in server environment.");
-      return {
-        success: false,
-        message: "সার্ভার কনফিগারেশনজনিত ত্রুটি। অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন।",
-      };
-    }
-
-    // 7. Execute atomic RPC via service-role client
-    const adminClient = await createAdminClient();
-    const rpcPayload = {
+    // 8. Execute atomic RPC via service-role client with idempotency key
+    const rpcPayload: Record<string, any> = {
       p_order_id: orderId,
       p_order_number: orderNumber,
       p_guest_name: customer.fullName.trim(),
@@ -175,6 +264,7 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
         quantity: it.quantity,
         line_total: it.lineTotal,
       })),
+      ...(cleanIdempotencyKey ? { p_idempotency_key: cleanIdempotencyKey } : {}),
     };
 
     const rpcResult = await adminClient.rpc("create_order_with_inventory", rpcPayload);
@@ -199,13 +289,26 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
           message: `দুঃখিত, "${itemTitle}" এর পর্যাপ্ত স্টক নেই (বর্তমান মজুদ: ${currentStock} টি)।`,
         };
       }
+      if (rawMsg.includes("IDEMPOTENCY_PAYLOAD_MISMATCH:")) {
+        const parts = rawMsg.split("IDEMPOTENCY_PAYLOAD_MISMATCH:")[1]?.split("\n")[0] || "";
+        const mismatchMsg = parts.trim() || "একই আইডেমপোটেন্সি কি দিয়ে ভিন্ন অর্ডারের অনুরোধ করা যাবে না।";
+        return {
+          success: false,
+          message: mismatchMsg,
+        };
+      }
       return {
         success: false,
         message: "অর্ডার সম্পন্ন করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
       };
     }
 
-    const rpcData = rpcResult.data as { success: boolean; message?: string; order_number?: string };
+    const rpcData = rpcResult.data as {
+      success: boolean;
+      message?: string;
+      order_number?: string;
+      is_duplicate?: boolean;
+    };
     if (!rpcData || !rpcData.success) {
       return {
         success: false,
@@ -215,8 +318,11 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
 
     return {
       success: true,
-      message: "অর্ডার সফল হয়েছে!",
-      data: { orderNumber: rpcData.order_number || orderNumber },
+      message: rpcData.message || "অর্ডার সফল হয়েছে!",
+      data: {
+        orderNumber: rpcData.order_number || orderNumber,
+        isDuplicate: Boolean(rpcData.is_duplicate),
+      },
     };
   } catch (err: any) {
     console.error("[checkout-actions] Unexpected server error:", err);

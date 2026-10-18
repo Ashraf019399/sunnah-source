@@ -45,6 +45,7 @@ export interface OrderCreationPayload {
   couponCode?: string;
   grandTotal: number;
   paymentMethod: PaymentMethod;
+  idempotencyKey?: string;
 }
 
 export interface ProductVariant {
