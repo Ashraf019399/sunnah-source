@@ -233,7 +233,20 @@ export async function getAdminOrderById(
 }
 
 /**
+ * Ensures the requesting user has valid admin authorization,
+ * then returns the server-only service_role admin client.
+ * Used for calling service-role-restricted database RPCs directly without
+ * encountering predictable 42501 permission-denied roundtrips against the session client.
+ */
+async function getVerifiedAdminServiceClient() {
+  await getAuthenticatedAdminClient();
+  return await createAdminClient();
+}
+
+/**
  * Server action to update an order's status.
+ * Enforces Finite State Machine (FSM) transitions, atomic inventory restoration,
+ * and single-use promotional coupon quota restoration.
  */
 export async function updateOrderStatusAction(
   orderId: string,
@@ -251,15 +264,23 @@ export async function updateOrderStatusAction(
       };
     }
 
-    const updateResult = await executeAdminDbQuery(async (client) => {
-      return (await client.rpc("update_order_status_with_inventory", {
-        p_order_id: orderId,
-        p_new_status: newStatus,
-      })) as any;
+    // Authenticate admin and obtain server-only service role client directly
+    const adminClient = await getVerifiedAdminServiceClient();
+    const updateResult = await adminClient.rpc("update_order_status_with_inventory", {
+      p_order_id: orderId,
+      p_new_status: newStatus,
     });
 
     if (updateResult.error || !updateResult.data) {
       console.error("[updateOrderStatusAction] DB error:", updateResult.error);
+      const errMsg = updateResult.error?.message || "";
+      if (errMsg.includes("does not exist") || updateResult.error?.code === "PGRST204") {
+        return {
+          success: false,
+          message:
+            "ডাটাবেজে update_order_status_with_inventory RPC পাওয়া যায়নি। অনুগ্রহ করে সর্বশেষ মাইগ্রেশন সম্পন্ন হয়েছে কিনা তা যাচাই করুন।",
+        };
+      }
       return {
         success: false,
         message:
@@ -302,6 +323,12 @@ export async function updateOrderStatusAction(
 
 /**
  * Server action to update an order's payment status.
+ * Invokes the atomic database-level update_order_payment_status RPC,
+ * enforcing business consistency rules inside a single locked transaction:
+ * - Cannot refund an unpaid order.
+ * - Cannot mark a cancelled or returned order as paid.
+ * - Refunding requires order to be in cancelled or returned state.
+ * - Refunded payments cannot be reversed.
  */
 const VALID_PAYMENT_STATUSES: PaymentStatus[] = ["unpaid", "paid", "refunded"];
 
@@ -321,23 +348,36 @@ export async function updatePaymentStatusAction(
       };
     }
 
-    const updateResult = await executeAdminDbQuery(async (client) => {
-      return (await client
-        .from("orders")
-        .update({
-          payment_status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", orderId)
-        .select("id, payment_status")
-        .single()) as any;
+    // Authenticate admin and obtain server-only service role client directly
+    const adminClient = await getVerifiedAdminServiceClient();
+    const updateResult = await adminClient.rpc("update_order_payment_status", {
+      p_order_id: orderId,
+      p_new_payment_status: newStatus,
     });
 
     if (updateResult.error || !updateResult.data) {
       console.error("[updatePaymentStatusAction] DB error:", updateResult.error);
+      const errMsg = updateResult.error?.message || "";
+      if (errMsg.includes("does not exist") || updateResult.error?.code === "PGRST204") {
+        return {
+          success: false,
+          message:
+            "ডাটাবেজে update_order_payment_status RPC পাওয়া যায়নি। অনুগ্রহ করে সর্বশেষ মাইগ্রেশন সম্পন্ন হয়েছে কিনা তা যাচাই করুন।",
+        };
+      }
       return {
         success: false,
-        message: "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+        message:
+          updateResult.error?.message ||
+          "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+      };
+    }
+
+    const rpcData = updateResult.data as { success: boolean; message: string };
+    if (!rpcData.success) {
+      return {
+        success: false,
+        message: rpcData.message || "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি।",
       };
     }
 
@@ -348,7 +388,7 @@ export async function updatePaymentStatusAction(
 
     return {
       success: true,
-      message: "পেমেন্ট স্ট্যাটাস সফলভাবে আপডেট হয়েছে।",
+      message: rpcData.message || "পেমেন্ট স্ট্যাটাস সফলভাবে আপডেট হয়েছে।",
     };
   } catch (err: any) {
     if (err.message === "UNAUTHORIZED" || err.message === "FORBIDDEN") {
@@ -367,6 +407,7 @@ export async function updatePaymentStatusAction(
 
 /**
  * Get high-level dashboard metrics for orders.
+ * Accurately excludes cancelled, returned, and uncollected unpaid orders from realized revenue.
  */
 export async function getAdminDashboardMetrics(): Promise<{
   success: boolean;
@@ -382,10 +423,11 @@ export async function getAdminDashboardMetrics(): Promise<{
     const ordersResult = await executeAdminDbQuery<{
       grand_total: number;
       order_status: OrderStatus;
+      payment_status: PaymentStatus;
     }[]>(async (client) => {
       return (await client
         .from("orders")
-        .select("grand_total, order_status")) as any;
+        .select("grand_total, order_status, payment_status")) as any;
     });
 
     if (ordersResult.error) {
@@ -399,7 +441,16 @@ export async function getAdminDashboardMetrics(): Promise<{
     let deliveredOrders = 0;
 
     for (const item of list) {
-      if (item.order_status !== "cancelled") {
+      // Realized revenue policy:
+      // Strictly excludes cancelled, returned, and refunded orders.
+      // Uncollected COD orders (pending/confirmed/processing/shipped) are not realized revenue until delivered.
+      const isDeliveredNotRefunded =
+        item.order_status === "delivered" && item.payment_status !== "refunded";
+      const isPrepaidActive =
+        item.payment_status === "paid" &&
+        !["cancelled", "returned"].includes(item.order_status);
+
+      if (isDeliveredNotRefunded || isPrepaidActive) {
         totalRevenue += Number(item.grand_total) || 0;
       }
       if (item.order_status === "pending") {

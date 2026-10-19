@@ -47,7 +47,10 @@
 --   Step 2: supabase/migrations/20261017_create_coupons_table.sql
 --   Step 3: supabase/migrations/20261017_create_store_settings_table.sql
 --   Step 4: supabase/migrations/20261018_add_checkout_idempotency.sql
---   Step 5: tests/test_idempotency_workflow.sql (Validation test suite)
+--   Step 5: supabase/migrations/20261019_add_order_lifecycle_management.sql
+--   Step 6: tests/test_idempotency_workflow.sql (Validation test suite)
+--   Step 7: tests/test_order_lifecycle_workflow.sql (Order lifecycle & payment test suite)
+--   Step 8: tests/test_concurrency_procedure.sql (Interactive two-session concurrency test suite)
 -- ==============================================================================
 
 -- 0. Required Extensions

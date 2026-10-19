@@ -7,6 +7,7 @@ import { OrderStatus } from "@/types/commerce.types";
 import {
   ORDER_STATUS_CONFIG,
   ORDER_STATUS_LIST,
+  VALID_ORDER_TRANSITIONS,
 } from "@/types/orders.types";
 import { updateOrderStatusAction } from "@/lib/actions/admin-order-actions";
 
@@ -27,8 +28,19 @@ export function OrderStatusUpdater({
     message: string;
   } | null>(null);
 
+  const allowedTransitions = VALID_ORDER_TRANSITIONS[currentStatus] || [];
+  const isTerminal = allowedTransitions.length === 0;
+
   const handleStatusChange = async (newStatus: OrderStatus) => {
-    if (newStatus === currentStatus || isPending) return;
+    if (newStatus === currentStatus || isPending || isTerminal) return;
+
+    if (!allowedTransitions.includes(newStatus)) {
+      setFeedback({
+        type: "error",
+        message: "বর্তমান স্ট্যাটাস থেকে এই পরিবর্তনে অনুমতি নেই।",
+      });
+      return;
+    }
 
     setFeedback(null);
 
@@ -94,16 +106,18 @@ export function OrderStatusUpdater({
         <select
           id="order-status-select"
           value={currentStatus}
-          disabled={isPending}
+          disabled={isPending || isTerminal}
           onChange={(e) => handleStatusChange(e.target.value as OrderStatus)}
           aria-label="অর্ডার স্ট্যাটাস নির্বাচন করুন"
           className="w-full bg-surface-canvas border border-surface-border text-charcoal-900 font-bold text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-700/20 focus:border-brand-700 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
         >
           {ORDER_STATUS_LIST.map((statusKey) => {
             const config = ORDER_STATUS_CONFIG[statusKey];
+            const isCurrent = statusKey === currentStatus;
+            const isAllowed = isCurrent || allowedTransitions.includes(statusKey);
             return (
-              <option key={statusKey} value={statusKey}>
-                {config.labelBn} {statusKey === currentStatus ? "(বর্তমান)" : ""}
+              <option key={statusKey} value={statusKey} disabled={!isAllowed}>
+                {config.labelBn} {isCurrent ? "(বর্তমান)" : !isAllowed ? "(অননুমোদিত)" : ""}
               </option>
             );
           })}
@@ -115,6 +129,12 @@ export function OrderStatusUpdater({
           </div>
         )}
       </div>
+
+      {isTerminal && (
+        <p className="text-[11px] text-stone-500">
+          অর্ডারটি চূড়ান্ত স্ট্যাটাসে রয়েছে (স্ট্যাটাস পরিবর্তনযোগ্য নয়)।
+        </p>
+      )}
 
       {/* Feedback Messages */}
       {feedback && (

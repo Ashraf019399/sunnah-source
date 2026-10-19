@@ -280,6 +280,7 @@ export default async function AdminOrderDetailsPage({
           <PaymentStatusUpdater
             orderId={order.id}
             currentPaymentStatus={order.payment_status}
+            orderStatus={order.order_status}
           />
 
           {/* 3. Customer Information Card */}

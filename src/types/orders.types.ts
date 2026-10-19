@@ -127,6 +127,20 @@ export const ORDER_STATUS_LIST: OrderStatus[] = [
   "returned",
 ];
 
+/**
+ * Finite State Machine (FSM) defining valid order status transitions.
+ * Prevents invalid state jumps and terminal-state reversals.
+ */
+export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["delivered", "returned"],
+  delivered: ["returned"],
+  cancelled: [],
+  returned: [],
+};
+
 export const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, { labelBn: string; shortBn: string }> = {
   cod: {
     labelBn: "ক্যাশ অন ডেলিভারি (Cash on Delivery)",
