@@ -506,7 +506,7 @@ export default function CheckoutPage() {
   // Pre-filled WhatsApp message for support or offline orders
   const whatsappHelpUrl = useMemo(() => {
     const text = encodeURIComponent(
-      `আসসালামু আলাইকুম, আমি সান্নাহ সোর্স থেকে অর্ডার করতে সহায়তা চাচ্ছি।\nনাম: ${fullName || "গ্রাহক"}\nফোন: ${phone || ""}\nসাবটোটাল: ৳${subtotal}`
+      `আসসালামু আলাইকুম, আমি সুন্নাহ সোর্স থেকে অর্ডার করতে সহায়তা চাচ্ছি।\nনাম: ${fullName || "গ্রাহক"}\nফোন: ${phone || ""}\nসাবটোটাল: ৳${subtotal}`
     );
     return `https://wa.me/8801914612007?text=${text}`;
   }, [fullName, phone, subtotal]);

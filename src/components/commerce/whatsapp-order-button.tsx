@@ -48,7 +48,7 @@ export const WhatsappOrderButton: React.FC<WhatsappOrderButtonProps> = ({
       : `https://sunnahsourcebd.com/product/${productSlug}`;
 
   const messageLines = [
-    "আসসালামু আলাইকুম, আমি সান্নাহ সোর্স থেকে এই পণ্যটি অর্ডার করতে চাই:",
+    "আসসালামু আলাইকুম, আমি সুন্নাহ সোর্স থেকে এই পণ্যটি অর্ডার করতে চাই:",
     "",
     `📦 পণ্য: ${productTitle}`,
     variantName ? `⚖️ ভ্যারিয়েন্ট: ${variantName}` : null,
