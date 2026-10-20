@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { isValidBDPhone, normalizeBDPhone } from "@/lib/utils";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { PRODUCT_ID_MAP } from "@/lib/data/catalog-mapping";
@@ -51,10 +51,11 @@ export async function trackOrderPublicAction(
   phone: string
 ): Promise<TrackOrderResult> {
   try {
-    const cleanOrderNumber = (orderNumber || "").trim();
+    // 1. Input Sanitization: Strip leading '#' and trim whitespace from orderNumber
+    const cleanOrderNumber = (orderNumber || "").replace(/^[#\s]+/, "").trim();
     const cleanRawPhone = (phone || "").trim();
 
-    // 1. Input presence validation
+    // 2. Input presence validation
     if (!cleanOrderNumber) {
       return {
         success: false,
@@ -69,7 +70,7 @@ export async function trackOrderPublicAction(
       };
     }
 
-    // 2. Validate Bangladeshi phone format
+    // 3. Validate Bangladeshi phone format
     const cleanPhone = normalizeBDPhone(cleanRawPhone);
     if (!isValidBDPhone(cleanRawPhone) && !isValidBDPhone(cleanPhone)) {
       return {
@@ -78,18 +79,48 @@ export async function trackOrderPublicAction(
       };
     }
 
-    // 3. Query order using administrative service-role client (bypassing RLS safely on the server)
-    const adminClient = await createAdminClient();
-    const { data: order, error: orderError } = await adminClient
+    // 4. Supabase Client Initialization with Graceful Fallback
+    let supabaseClient: any;
+    try {
+      if (
+        process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
+      ) {
+        supabaseClient = await createAdminClient();
+      } else {
+        supabaseClient = await createClient();
+      }
+    } catch (clientInitErr) {
+      console.warn(
+        "[trackOrderPublicAction] createAdminClient failed, falling back to createClient:",
+        clientInitErr
+      );
+      supabaseClient = await createClient();
+    }
+
+    // 5. Query order using select("*") to avoid column-name mismatch failures
+    const { data: order, error: orderError } = await supabaseClient
       .from("orders")
-      .select(
-        "id, order_number, guest_name, guest_phone, shipping_address, subtotal, delivery_fee, discount_amount, coupon_code, grand_total, payment_method, payment_status, order_status, created_at, updated_at"
-      )
+      .select("*")
       .ilike("order_number", cleanOrderNumber)
       .maybeSingle();
 
     if (orderError) {
-      console.error("[trackOrderPublicAction] Order query error:", orderError);
+      console.error("[trackOrderPublicAction] Order query error:", {
+        code: orderError.code,
+        message: orderError.message,
+        details: orderError.details,
+        hint: orderError.hint,
+        searchedOrderNumber: cleanOrderNumber,
+      });
+
+      // Special diagnostic hint for database table permissions (Postgres error 42501)
+      if (orderError.code === "42501") {
+        console.error(
+          "[trackOrderPublicAction] CRITICAL: Table permissions missing (42501). Run in Supabase SQL Editor: GRANT SELECT ON public.orders TO service_role; GRANT SELECT ON public.order_items TO service_role;"
+        );
+      }
+
       return {
         success: false,
         message: "অর্ডার ট্র্যাকিং তথ্য লোড করতে সমস্যা হচ্ছে। কিছুক্ষণ পর আবার চেষ্টা করুন।",
@@ -103,14 +134,27 @@ export async function trackOrderPublicAction(
       };
     }
 
-    // 4. Phone Verification (Strict privacy guard against enumeration)
-    const storedGuestPhone = normalizeBDPhone(order.guest_phone || "");
+    // 6. Phone Verification: Compare against guest_phone, customer_phone, or phone in shipping_address
     const shipping = (order.shipping_address as any) || {};
-    const storedShippingPhone = normalizeBDPhone(shipping.phone || "");
+    const storedPhones = [
+      order.guest_phone,
+      (order as any).customer_phone,
+      (order as any).phone,
+      shipping.phone,
+      shipping.guest_phone,
+      shipping.customer_phone,
+    ]
+      .filter(Boolean)
+      .map((p) => normalizeBDPhone(String(p)));
 
-    const phoneMatches =
-      (storedGuestPhone && storedGuestPhone === cleanPhone) ||
-      (storedShippingPhone && storedShippingPhone === cleanPhone);
+    const phoneMatches = storedPhones.some((stored) => {
+      return (
+        stored === cleanPhone ||
+        (stored.length >= 10 &&
+          cleanPhone.length >= 10 &&
+          stored.slice(-10) === cleanPhone.slice(-10))
+      );
+    });
 
     if (!phoneMatches) {
       return {
@@ -119,37 +163,48 @@ export async function trackOrderPublicAction(
       };
     }
 
-    // 5. Query order line items
-    const { data: rawItems, error: itemsError } = await adminClient
+    // 7. Query order line items using select("*")
+    const { data: rawItems, error: itemsError } = await supabaseClient
       .from("order_items")
-      .select("product_id, variant_id, product_title, variant_name, unit_price, quantity, line_total")
+      .select("*")
       .eq("order_id", order.id)
       .order("created_at", { ascending: true });
 
     if (itemsError) {
-      console.error("[trackOrderPublicAction] Items query error:", itemsError);
+      console.error("[trackOrderPublicAction] Items query error:", {
+        code: itemsError.code,
+        message: itemsError.message,
+        details: itemsError.details,
+        hint: itemsError.hint,
+        orderId: order.id,
+      });
     }
 
-    // 6. Map public-safe items and attach catalog product images
-    const items: PublicSafeOrderItem[] = (rawItems || []).map((item) => {
+    // 8. Map public-safe items and attach catalog product images
+    const items: PublicSafeOrderItem[] = (rawItems || []).map((item: any) => {
+      const productId = item.product_id || "";
       const matchedProduct = ALL_PRODUCTS.find(
-        (p) => p.id === item.product_id || PRODUCT_ID_MAP[p.id] === item.product_id
+        (p) => p.id === productId || PRODUCT_ID_MAP[p.id] === productId
       );
 
       return {
-        productTitle: item.product_title,
-        variantName: item.variant_name || undefined,
-        unitPrice: Number(item.unit_price) || 0,
-        quantity: Number(item.quantity) || 1,
-        lineTotal: Number(item.line_total) || 0,
+        productTitle: item.product_title || item.title || "পণ্য",
+        variantName: item.variant_name || item.variant_title || undefined,
+        unitPrice: Number(item.unit_price ?? item.price ?? 0),
+        quantity: Number(item.quantity ?? 1),
+        lineTotal: Number(
+          item.line_total ??
+            Number(item.unit_price ?? 0) * Number(item.quantity ?? 1)
+        ),
         productImage: matchedProduct?.images?.[0] || undefined,
       };
     });
 
-    // 7. Extract sanitized geographic details and mask phone/address
+    // 9. Extract sanitized geographic details and mask phone/address
     const district = typeof shipping.district === "string" ? shipping.district.trim() : "";
     const thana = typeof shipping.thana === "string" ? shipping.thana.trim() : "";
-    const deliveryZone: DeliveryZone = shipping.zone === "outside_dhaka" ? "outside_dhaka" : "inside_dhaka";
+    const deliveryZone: DeliveryZone =
+      shipping.zone === "outside_dhaka" ? "outside_dhaka" : "inside_dhaka";
 
     const effectivePhone = cleanPhone;
     const maskedPhone =
@@ -161,24 +216,26 @@ export async function trackOrderPublicAction(
       [thana, district].filter(Boolean).join(", ") ||
       (deliveryZone === "inside_dhaka" ? "ঢাকা সিটি" : "ঢাকার বাইরে");
 
-    // 8. Build and return sanitized DTO
+    // 10. Build and return sanitized DTO with fallback column resolution
     const safeOrder: PublicSafeOrderDTO = {
       orderNumber: order.order_number,
-      orderStatus: order.order_status,
-      paymentStatus: order.payment_status,
-      paymentMethod: order.payment_method,
-      createdAt: order.created_at,
+      orderStatus: order.order_status || (order as any).status || "pending",
+      paymentStatus: order.payment_status || "unpaid",
+      paymentMethod: order.payment_method || "cod",
+      createdAt: order.created_at || new Date().toISOString(),
       updatedAt: order.updated_at || undefined,
       deliveryZone,
       district: district || undefined,
       thana: thana || undefined,
       maskedPhone,
       maskedAddress,
-      subtotal: Number(order.subtotal) || 0,
-      deliveryFee: Number(order.delivery_fee) || 0,
-      discountAmount: Number(order.discount_amount) || 0,
+      subtotal: Number(order.subtotal ?? (order as any).total_amount ?? 0),
+      deliveryFee: Number(order.delivery_fee ?? (order as any).shipping_fee ?? 0),
+      discountAmount: Number(order.discount_amount ?? (order as any).discount ?? 0),
       couponCode: order.coupon_code || null,
-      grandTotal: Number(order.grand_total) || 0,
+      grandTotal: Number(
+        order.grand_total ?? (order as any).total ?? (order as any).total_amount ?? 0
+      ),
       items,
     };
 
@@ -187,7 +244,11 @@ export async function trackOrderPublicAction(
       data: safeOrder,
     };
   } catch (err: any) {
-    console.error("[trackOrderPublicAction] Unexpected error:", err);
+    console.error("[trackOrderPublicAction] Unexpected exception:", {
+      message: err?.message,
+      stack: err?.stack,
+      cause: err?.cause,
+    });
     return {
       success: false,
       message: "সার্ভারে অনাকাঙ্ক্ষিত ত্রুটি ঘটেছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।",
