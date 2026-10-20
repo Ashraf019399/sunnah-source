@@ -118,7 +118,7 @@ export const Header: React.FC = () => {
           {/* Right: Actions */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <Link
-              href="/#track-order"
+              href="/track-order"
               className="hidden lg:flex items-center gap-1.5 text-xs text-charcoal-700 hover:text-brand-700 transition-colors"
               title="অর্ডার ট্র্যাক"
             >
@@ -178,7 +178,7 @@ export const Header: React.FC = () => {
               </button>
               <div className="hidden group-hover:block absolute right-0 top-full pt-1 w-44 z-50">
                 <div className="bg-white rounded-xl shadow-card border border-surface-border p-2 text-xs space-y-1">
-                  <Link href="/#track-order" className="block px-2.5 py-1.5 rounded hover:bg-brand-50 hover:text-brand-700">
+                  <Link href="/track-order" className="block px-2.5 py-1.5 rounded hover:bg-brand-50 hover:text-brand-700">
                     ট্র্যাক অর্ডার
                   </Link>
                   <Link href="/#categories" className="block px-2.5 py-1.5 rounded hover:bg-brand-50 hover:text-brand-700">
@@ -243,7 +243,7 @@ export const Header: React.FC = () => {
               </Link>
             ))}
             <div className="pt-3 mt-1 border-t border-surface-border flex gap-4 text-xs font-normal text-charcoal-500">
-              <Link href="/#track-order" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
+              <Link href="/track-order" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
                 Track Order
               </Link>
               <Link href="/#account" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">

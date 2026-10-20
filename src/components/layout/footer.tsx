@@ -61,6 +61,14 @@ export const Footer: React.FC = () => {
                     ক্যাটাগরি
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/track-order"
+                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                  >
+                    অর্ডার ট্র্যাক করুন
+                  </Link>
+                </li>
               </ul>
             </nav>
           </div>

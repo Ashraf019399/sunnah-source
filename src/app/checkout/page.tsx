@@ -538,8 +538,15 @@ export default function CheckoutPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
+              href={`/track-order?orderNumber=${encodeURIComponent(placedOrder.orderNumber)}&phone=${encodeURIComponent(placedOrder.customerPhone)}`}
+              className="flex-1 flex items-center justify-center gap-2 bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-card"
+            >
+              <Truck className="w-4 h-4" />
+              <span>অর্ডার ট্র্যাক করুন</span>
+            </Link>
+            <Link
               href="/"
-              className="flex-1 bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-card"
+              className="flex-1 flex items-center justify-center bg-surface-canvas hover:bg-stone-200 text-charcoal-800 font-bold py-3 px-4 rounded-xl text-xs sm:text-sm border border-surface-border transition-all"
             >
               আরও কেনাকাটা করুন
             </Link>
