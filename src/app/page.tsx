@@ -38,12 +38,14 @@ export default function HomePage() {
               <div className="pt-2 sm:pt-3 flex flex-wrap gap-3 justify-center lg:justify-start">
                 <Link
                   href="/shop"
+                  prefetch={true}
                   className="bg-accent-amber hover:bg-accent-dark text-charcoal-900 font-extrabold px-6 py-3 rounded-xl text-sm transition-all shadow-card"
                 >
                   পণ্যসমূহ দেখুন
                 </Link>
                 <Link
                   href="/combos"
+                  prefetch={true}
                   className="bg-brand-800 hover:bg-brand-700 text-white font-bold px-6 py-3 rounded-xl text-sm border border-brand-700 transition-all"
                 >
                   স্পেশাল কম্বো
@@ -59,6 +61,7 @@ export default function HomePage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 540px"
                   className="object-cover object-center"
                   priority
+                  fetchPriority="high"
                 />
               </div>
             </div>
@@ -123,6 +126,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/shop"
+              prefetch={true}
               className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-accent-dark transition-colors group self-start sm:self-auto"
             >
               <span>সব পণ্য দেখুন</span>
@@ -144,6 +148,7 @@ export default function HomePage() {
                 <Link
                   key={cat.id}
                   href={"/category/" + cat.slug}
+                  prefetch={true}
                   className="group p-3 sm:p-4 bg-white rounded-2xl border border-surface-border hover:border-brand-700/60 shadow-subtle hover:shadow-card transition-all duration-300 flex flex-col justify-between text-left"
                 >
                   <div>
@@ -186,6 +191,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/shop"
+              prefetch={true}
               className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
             >
               <span>সব দেখুন</span>

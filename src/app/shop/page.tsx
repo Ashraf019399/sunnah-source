@@ -6,7 +6,6 @@ import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ShopContent } from "./shop-content";
-import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "সব পণ্য | Sunnah Source",
@@ -26,10 +25,25 @@ export default function ShopPage() {
       <main className="flex-1 pb-16 lg:pb-12">
         <Suspense
           fallback={
-            <div className="min-h-[50vh] flex items-center justify-center font-bengali">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 text-brand-700 animate-spin" />
-                <p className="text-charcoal-700 text-sm font-medium">পণ্য লোড হচ্ছে...</p>
+            <div className="container mx-auto max-w-7xl px-4 py-8 space-y-6 animate-pulse">
+              <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                <div className="h-5 w-40 rounded bg-stone-200" />
+                <div className="h-4 w-24 rounded bg-stone-100" />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl border border-surface-border overflow-hidden shadow-subtle p-3 space-y-3"
+                  >
+                    <div className="w-full aspect-square rounded-xl bg-stone-100" />
+                    <div className="space-y-2 pt-1">
+                      <div className="h-4 w-3/4 rounded bg-stone-200" />
+                      <div className="h-3 w-1/2 rounded bg-stone-100" />
+                      <div className="h-5 w-20 rounded bg-stone-200" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           }

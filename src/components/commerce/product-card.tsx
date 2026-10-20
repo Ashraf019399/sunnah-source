@@ -113,6 +113,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       <div className="relative aspect-square w-full bg-surface-canvas overflow-hidden select-none">
         <Link
           href={`/product/${product.slug}`}
+          prefetch={true}
           className="block w-full h-full cursor-pointer"
           aria-label={`${product.titleBn} এর বিস্তারিত দেখুন`}
         >
@@ -178,6 +179,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           <h3 className="font-bold text-charcoal-900 text-sm line-clamp-2 leading-snug">
             <Link
               href={`/product/${product.slug}`}
+              prefetch={true}
               className="hover:text-brand-700 transition-colors"
             >
               {product.titleBn}
