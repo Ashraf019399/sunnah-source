@@ -34,6 +34,7 @@ export interface AdminOrder {
   idempotency_key?: string | null;
   created_at: string;
   updated_at?: string;
+  items_count?: number;
 }
 
 export interface AdminOrderWithItems extends AdminOrder {

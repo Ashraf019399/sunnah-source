@@ -129,6 +129,34 @@ export async function getAdminOrders(
     const totalCount = queryResult.count || 0;
     const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
+    // Attach items count for each returned order
+    if (orders.length > 0) {
+      try {
+        const orderIds = orders.map((o) => o.id);
+        const itemsRes = await executeAdminDbQuery<{ order_id: string; quantity: number }[]>(
+          async (client) => {
+            return (await client
+              .from("order_items")
+              .select("order_id, quantity")
+              .in("order_id", orderIds)) as any;
+          }
+        );
+
+        if (itemsRes.data && Array.isArray(itemsRes.data)) {
+          const countMap: Record<string, number> = {};
+          for (const it of itemsRes.data) {
+            countMap[it.order_id] =
+              (countMap[it.order_id] || 0) + (Number(it.quantity) || 1);
+          }
+          for (const ord of orders) {
+            ord.items_count = countMap[ord.id] ?? 0;
+          }
+        }
+      } catch (err) {
+        console.warn("[getAdminOrders] Failed to attach items_count:", err);
+      }
+    }
+
     return {
       success: true,
       data: {
