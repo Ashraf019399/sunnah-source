@@ -10,7 +10,7 @@
  * SAFETY INVARIANTS:
  *   1. Environment & Credential Safety:
  *      - Reads process.env.STAGING_DATABASE_URL and process.env.EXPECTED_PROJECT_REF.
- *      - Strictly requires EXPECTED_PROJECT_REF === 'petuvhmqdaryxklagivv'.
+ *      - Strictly requires EXPECTED_PROJECT_REF === 'petuvhmqdarykxlagivv'.
  *      - Aborts immediately before any socket connection if 'fgfucwholpkizwlvlfrp'
  *        (production ref) is detected in STAGING_DATABASE_URL or EXPECTED_PROJECT_REF.
  *      - Credentials/passwords are NEVER printed in logs or errors.
@@ -32,7 +32,7 @@ import pg from "pg";
 const { Client } = pg;
 
 // Safety & Target Project References
-export const EXPECTED_PROJECT_REF = "petuvhmqdaryxklagivv";
+export const EXPECTED_PROJECT_REF = "petuvhmqdarykxlagivv";
 export const PRODUCTION_PROJECT_REF = "fgfucwholpkizwlvlfrp";
 
 // Dedicated Concurrency Fixture Identifiers (prefix 6666)
