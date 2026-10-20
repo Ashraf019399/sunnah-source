@@ -27,8 +27,20 @@ import { submitOrderServerAction, getPublicDeliverySettingsAction } from "@/lib/
 import { validateCouponAction } from "@/lib/actions/coupon-actions";
 import { CouponDiscountType } from "@/types/coupons.types";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { ALL_PRODUCTS } from "@/lib/data/products";
 
 const IDEMPOTENCY_STORAGE_PREFIX = "sunnah_checkout_idempotency_";
+
+function generateUUID(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch {
+    // Fallback
+  }
+  return `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
 
 function getSavedIdempotencyKey(cartSig: string): string | null {
   if (typeof window === "undefined" || !cartSig) return null;
@@ -116,6 +128,14 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state) => state.clearCart);
   const closeDrawer = useCartStore((state) => state.closeDrawer);
 
+  // Cart Hydration & Error Resilience: filter out any malformed or corrupted cart items safely
+  const validItems = useMemo(() => {
+    return (items?.filter((item) => item && (item.id || item.variantId) && Number(item.quantity) > 0) || []).map((item) => ({
+      ...item,
+      id: item.id || item.variantId,
+    }));
+  }, [items]);
+
   // Customer Form State
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -136,11 +156,18 @@ export default function CheckoutPage() {
   // Reused across retries (network timeouts, transient errors, user retry clicks).
   // Refreshed only when cart contents change or an order completes.
   const cartSignature = useMemo(
-    () => items.map((it) => `${it.productId}:${it.variantId}:${it.quantity}`).join("|"),
-    [items]
+    () =>
+      validItems
+        .map((it) => `${it?.productId || it?.id || ""}:${it?.variantId || ""}:${it?.quantity || 1}`)
+        .join("|"),
+    [validItems]
   );
   const [idempotencyKey, setIdempotencyKey] = useState<string>(() => {
-    return getSavedIdempotencyKey(cartSignature) || crypto.randomUUID();
+    try {
+      return getSavedIdempotencyKey(cartSignature) || generateUUID();
+    } catch {
+      return generateUUID();
+    }
   });
   const prevCartSigRef = useRef(cartSignature);
 
@@ -152,7 +179,7 @@ export default function CheckoutPage() {
         if (existingKey) {
           setIdempotencyKey(existingKey);
         } else {
-          const newKey = crypto.randomUUID();
+          const newKey = generateUUID();
           saveIdempotencyKey(cartSignature, newKey);
           setIdempotencyKey(newKey);
         }
@@ -209,13 +236,24 @@ export default function CheckoutPage() {
     closeDrawer();
     getPublicDeliverySettingsAction()
       .then((settings) => {
-        if (
-          settings &&
-          typeof settings.insideDhakaFee === "number" &&
-          typeof settings.outsideDhakaFee === "number" &&
-          typeof settings.freeDeliveryThreshold === "number"
-        ) {
-          setDeliverySettings(settings);
+        if (settings) {
+          const inside =
+            typeof settings.insideDhakaFee === "number" && !isNaN(settings.insideDhakaFee)
+              ? settings.insideDhakaFee
+              : 70;
+          const outside =
+            typeof settings.outsideDhakaFee === "number" && !isNaN(settings.outsideDhakaFee)
+              ? settings.outsideDhakaFee
+              : 130;
+          const threshold =
+            typeof settings.freeDeliveryThreshold === "number" && !isNaN(settings.freeDeliveryThreshold)
+              ? settings.freeDeliveryThreshold
+              : 2000;
+          setDeliverySettings({
+            insideDhakaFee: inside,
+            outsideDhakaFee: outside,
+            freeDeliveryThreshold: threshold,
+          });
         }
       })
       .catch((err) => {
@@ -233,27 +271,48 @@ export default function CheckoutPage() {
     }
   };
 
-  // Subtotal calculation
+  // Subtotal calculation (guarded against NaN)
   const subtotal = useMemo(() => {
+    let calculated = 0;
     if (typeof getSubtotal === "function") {
       try {
-        return getSubtotal();
+        const storeSubtotal = getSubtotal();
+        if (typeof storeSubtotal === "number" && !isNaN(storeSubtotal) && storeSubtotal >= 0) {
+          calculated = storeSubtotal;
+        }
       } catch {
         // Fallback
       }
     }
-    return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  }, [getSubtotal, items]);
+    if (calculated <= 0 && validItems.length > 0) {
+      calculated = validItems.reduce((sum, item) => {
+        const price = Number(item?.unitPrice) || 0;
+        const qty = Number(item?.quantity) || 0;
+        const line = !isNaN(price) && !isNaN(qty) ? price * qty : 0;
+        return sum + (isNaN(line) ? 0 : line);
+      }, 0);
+    }
+    return isNaN(calculated) ? 0 : Math.max(0, calculated);
+  }, [getSubtotal, validItems]);
 
-  // Verified delivery fee logic
-  const isFreeDelivery = subtotal >= deliverySettings.freeDeliveryThreshold;
-  const deliveryFee = isFreeDelivery
+  // Verified delivery fee logic (guarded against NaN)
+  const freeThreshold =
+    typeof deliverySettings?.freeDeliveryThreshold === "number" && !isNaN(deliverySettings.freeDeliveryThreshold)
+      ? deliverySettings.freeDeliveryThreshold
+      : 2000;
+  const isFreeDelivery = subtotal >= freeThreshold;
+  const rawDeliveryFee = isFreeDelivery
     ? 0
     : zone === "inside_dhaka"
-    ? deliverySettings.insideDhakaFee
-    : deliverySettings.outsideDhakaFee;
+    ? typeof deliverySettings?.insideDhakaFee === "number" && !isNaN(deliverySettings.insideDhakaFee)
+      ? deliverySettings.insideDhakaFee
+      : 70
+    : typeof deliverySettings?.outsideDhakaFee === "number" && !isNaN(deliverySettings.outsideDhakaFee)
+    ? deliverySettings.outsideDhakaFee
+    : 130;
+  const deliveryFee = isNaN(rawDeliveryFee) ? 0 : Math.max(0, rawDeliveryFee);
 
-  // Coupon discount calculation based on current subtotal and delivery fee
+  // Coupon discount calculation based on current subtotal and delivery fee (guarded against NaN)
   const discountAmount = useMemo(() => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.minOrderAmount > 0 && subtotal < appliedCoupon.minOrderAmount) {
@@ -261,20 +320,23 @@ export default function CheckoutPage() {
     }
     let amount = 0;
     if (appliedCoupon.discountType === "percentage") {
-      amount = Math.round((subtotal * appliedCoupon.discountValue) / 100);
+      const discountVal = Number(appliedCoupon.discountValue) || 0;
+      amount = Math.round((subtotal * discountVal) / 100);
       if (appliedCoupon.maxDiscountAmount && appliedCoupon.maxDiscountAmount > 0) {
         amount = Math.min(amount, appliedCoupon.maxDiscountAmount);
       }
-      return Math.max(0, Math.min(amount, subtotal));
+      return isNaN(amount) ? 0 : Math.max(0, Math.min(amount, subtotal));
     } else if (appliedCoupon.discountType === "free_shipping") {
-      return Math.max(0, Math.round(deliveryFee));
+      return isNaN(deliveryFee) ? 0 : Math.max(0, Math.round(deliveryFee));
     } else {
-      amount = Math.round(appliedCoupon.discountValue);
-      return Math.max(0, Math.min(amount, subtotal));
+      const discountVal = Number(appliedCoupon.discountValue) || 0;
+      amount = Math.round(discountVal);
+      return isNaN(amount) ? 0 : Math.max(0, Math.min(amount, subtotal));
     }
   }, [appliedCoupon, subtotal, deliveryFee]);
 
-  const grandTotal = Math.max(0, subtotal + deliveryFee - discountAmount);
+  const rawGrandTotal = subtotal + deliveryFee - (isNaN(discountAmount) ? 0 : discountAmount);
+  const grandTotal = isNaN(rawGrandTotal) ? 0 : Math.max(0, rawGrandTotal);
 
   const handleApplyCoupon = async () => {
     const cleanCode = couponCodeInput.trim().toUpperCase();
@@ -371,7 +433,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (items.length === 0) {
+    if (validItems.length === 0) {
       setServerError("আপনার কার্ট খালি! অনুগ্রহ করে পণ্য যুক্ত করুন।");
       return;
     }
@@ -379,7 +441,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const effectiveKey = idempotencyKey || getSavedIdempotencyKey(cartSignature) || crypto.randomUUID();
+      const effectiveKey = idempotencyKey || getSavedIdempotencyKey(cartSignature) || generateUUID();
       if (cartSignature && effectiveKey) {
         saveIdempotencyKey(cartSignature, effectiveKey);
       }
@@ -394,12 +456,12 @@ export default function CheckoutPage() {
           fullAddress: fullAddress.trim(),
           notes: notes.trim() || undefined,
         },
-        items,
-        subtotal,
-        deliveryFee,
-        discountAmount,
+        items: validItems,
+        subtotal: isNaN(subtotal) ? 0 : subtotal,
+        deliveryFee: isNaN(deliveryFee) ? 0 : deliveryFee,
+        discountAmount: isNaN(discountAmount) ? 0 : discountAmount,
         couponCode: appliedCoupon?.code,
-        grandTotal,
+        grandTotal: isNaN(grandTotal) ? 0 : grandTotal,
         paymentMethod: "cod",
         idempotencyKey: effectiveKey,
       };
@@ -409,19 +471,19 @@ export default function CheckoutPage() {
       if (result.success && result.data?.orderNumber) {
         setPlacedOrder({
           orderNumber: result.data.orderNumber,
-          grandTotal,
+          grandTotal: isNaN(grandTotal) ? 0 : grandTotal,
           customerName: fullName.trim(),
           customerPhone: phone.trim(),
           address: `${fullAddress.trim()}, ${thana.trim()}, ${district.trim()}`,
           zoneText: zone === "inside_dhaka" ? "ঢাকা সিটি" : "ঢাকার বাইরে",
-          itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+          itemCount: validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0),
           couponCode: appliedCoupon?.code,
-          discountAmount,
+          discountAmount: isNaN(discountAmount) ? 0 : discountAmount,
         });
 
         // Clear saved key for this completed cart and regenerate key for future orders
         clearSavedIdempotencyKey(cartSignature);
-        setIdempotencyKey(crypto.randomUUID());
+        setIdempotencyKey(generateUUID());
 
         // Clear cart upon successful order
         if (typeof clearCart === "function") {
@@ -568,7 +630,7 @@ export default function CheckoutPage() {
   }
 
   // 3. Empty Cart Screen
-  if (items.length === 0) {
+  if (validItems.length === 0) {
     return (
       <div className="min-h-screen bg-surface-canvas font-bengali flex flex-col">
         {/* Simple Header */}
@@ -1011,10 +1073,10 @@ export default function CheckoutPage() {
               <div className="bg-white rounded-2xl border border-surface-border p-5 sm:p-6 shadow-subtle space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-surface-border">
                   <h3 className="font-extrabold text-charcoal-900 text-base sm:text-lg">
-                    অর্ডার সারসংক্ষেপ ({items.reduce((sum, item) => sum + item.quantity, 0)})
+                    অর্ডার সারসংক্ষেপ ({validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0)})
                   </h3>
                   <span className="text-xs text-brand-700 font-bold bg-brand-50 px-2.5 py-1 rounded-full">
-                    {items.length}টি পণ্য
+                    {validItems.length}টি পণ্য
                   </span>
                 </div>
 
@@ -1041,30 +1103,46 @@ export default function CheckoutPage() {
 
                 {/* Cart Items List */}
                 <div className="max-h-72 overflow-y-auto divide-y divide-surface-border/60 pr-1">
-                  {items.map((item) => (
-                    <div key={item.id || item.variantId} className="py-3 flex items-center gap-3 first:pt-0">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-surface-canvas border border-surface-border shrink-0">
-                        <Image
-                          src={item.image}
-                          alt={item.titleBn || item.title}
-                          fill
-                          sizes="56px"
-                          className="object-cover"
-                        />
+                  {validItems.map((item) => {
+                    const product =
+                      ALL_PRODUCTS.find((p) => p.id === item.productId || p.slug === item.productId) ?? null;
+                    const variant = product?.variants?.find((v) => v.id === item.variantId) ?? null;
+
+                    const title = item.titleBn || item.title || product?.titleBn || product?.titleEn || "পণ্য";
+                    const variantLabel = item.variantName || variant?.displayName || "";
+                    const itemImage = item.image || product?.images?.[0] || "/images/hero-honey.png";
+                    const unitPrice =
+                      !isNaN(Number(item.unitPrice)) && Number(item.unitPrice) > 0
+                        ? Number(item.unitPrice)
+                        : (variant?.salePrice ?? variant?.regularPrice ?? 0);
+                    const qty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+                    const lineTotal = isNaN(unitPrice * qty) ? 0 : unitPrice * qty;
+
+                    return (
+                      <div key={item.id || item.variantId || `${item.productId}-${item.variantName}`} className="py-3 flex items-center gap-3 first:pt-0">
+                        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-surface-canvas border border-surface-border shrink-0">
+                          <Image
+                            src={itemImage}
+                            alt={title}
+                            fill
+                            sizes="56px"
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-xs text-charcoal-900 truncate">
+                            {title}
+                          </h4>
+                          <p className="text-[11px] text-charcoal-500">
+                            {variantLabel ? `${variantLabel} • ` : ""}পরিমাণ: <strong className="font-mono">{qty}</strong>
+                          </p>
+                          <span className="font-mono font-bold text-xs text-brand-700 block mt-0.5">
+                            {formatBDT(lineTotal)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-xs text-charcoal-900 truncate">
-                          {item.titleBn || item.title}
-                        </h4>
-                        <p className="text-[11px] text-charcoal-500">
-                          {item.variantName} • পরিমাণ: <strong className="font-mono">{item.quantity}</strong>
-                        </p>
-                        <span className="font-mono font-bold text-xs text-brand-700 block mt-0.5">
-                          {formatBDT(item.unitPrice * item.quantity)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Coupon Code Input & Application */}
