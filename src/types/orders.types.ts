@@ -32,6 +32,11 @@ export interface AdminOrder {
   payment_status: PaymentStatus;
   order_status: OrderStatus;
   idempotency_key?: string | null;
+  courier_partner?: string | null;
+  courier_tracking_code?: string | null;
+  courier_name?: string | null;
+  tracking_code?: string | null;
+  courier_tracking_id?: string | number | null;
   created_at: string;
   updated_at?: string;
   items_count?: number;

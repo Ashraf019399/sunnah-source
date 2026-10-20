@@ -18,6 +18,7 @@ import {
   DELIVERY_ZONE_CONFIG,
 } from "@/types/orders.types";
 import { formatBDT, formatBanglaDateTime } from "@/lib/utils";
+import { SteadfastBookingModal } from "@/components/admin/orders/steadfast-booking-modal";
 
 interface OrdersTableProps {
   orders: AdminOrder[];
@@ -155,13 +156,16 @@ export function OrdersTable({ orders }: OrdersTableProps) {
 
                     {/* Actions */}
                     <td className="py-4 px-5 text-right whitespace-nowrap">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-canvas hover:bg-brand-700 hover:text-white border border-surface-border text-charcoal-700 text-xs font-bold transition-all shadow-2xs group-hover:border-brand-700/50"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>বিস্তারিত</span>
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        <SteadfastBookingModal order={order} variant="compact" />
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-canvas hover:bg-brand-700 hover:text-white border border-surface-border text-charcoal-700 text-xs font-bold transition-all shadow-2xs group-hover:border-brand-700/50"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>বিস্তারিত</span>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -252,13 +256,16 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                   </span>
                 </div>
 
-                <Link
-                  href={`/admin/orders/${order.id}`}
-                  className="inline-flex items-center gap-1 font-bold text-brand-800 hover:text-brand-900 text-xs"
-                >
-                  <span>বিস্তারিত</span>
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  <SteadfastBookingModal order={order} variant="compact" />
+                  <Link
+                    href={`/admin/orders/${order.id}`}
+                    className="inline-flex items-center gap-1 font-bold text-brand-800 hover:text-brand-900 text-xs"
+                  >
+                    <span>বিস্তারিত</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           );

@@ -7,6 +7,7 @@ import { getAdminOrderById } from "@/lib/actions/admin-order-actions";
 import { OrderStatusUpdater } from "@/components/admin/orders/order-status-updater";
 import { PaymentStatusUpdater } from "@/components/admin/orders/payment-status-updater";
 import { PrintInvoiceButton } from "@/components/admin/orders/print-invoice-button";
+import { SteadfastBookingModal } from "@/components/admin/orders/steadfast-booking-modal";
 import {
   ArrowLeft,
   User,
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
+  Truck,
 } from "lucide-react";
 import {
   ORDER_STATUS_CONFIG,
@@ -136,7 +138,8 @@ export default async function AdminOrderDetailsPage({
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <SteadfastBookingModal order={order} />
           <PrintInvoiceButton orderId={order.id} />
           <div className="text-right">
             <div className="text-xs text-charcoal-500 font-bold uppercase tracking-wider">
@@ -284,6 +287,56 @@ export default async function AdminOrderDetailsPage({
             currentPaymentStatus={order.payment_status}
             orderStatus={order.order_status}
           />
+
+          {/* 3. Courier Delivery & Dispatch Card */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-surface-border shadow-subtle space-y-4">
+            <div className="flex items-center justify-between border-b border-surface-border/70 pb-3">
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-bold text-charcoal-900 uppercase tracking-wider">
+                  কুরিয়ার ও ট্র্যাকিং (Courier Dispatch)
+                </h3>
+              </div>
+              <SteadfastBookingModal order={order} variant="compact" />
+            </div>
+
+            {order.courier_tracking_code ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-charcoal-600">কুরিয়ার পার্টনার:</span>
+                  <span className="font-bold text-emerald-950">
+                    {order.courier_partner || "Steadfast Courier"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-charcoal-600">ট্র্যাকিং কোড:</span>
+                  <span className="font-mono font-bold text-emerald-950">
+                    #{order.courier_tracking_code}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-emerald-200/70">
+                  <a
+                    href={`https://steadfast.com.bd/tracking/${order.courier_tracking_code}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 hover:underline"
+                  >
+                    <span>Steadfast পোর্টালে সরাসরি ট্র্যাক করুন</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-2xl bg-surface-canvas border border-surface-border text-xs text-charcoal-500 space-y-1">
+                <p className="font-semibold text-charcoal-700">
+                  অর্ডারটি এখনও কোনো কুরিয়ার সার্ভিসে বুকিং করা হয়নি।
+                </p>
+                <p className="text-[11px] text-charcoal-500">
+                  উপরে &quot;Steadfast&quot; বাটনে ক্লিক করে সরাসরি ১-ক্লিকে পার্সেল বুকিং করতে পারবেন।
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* 3. Customer Information Card */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-surface-border shadow-subtle space-y-4">

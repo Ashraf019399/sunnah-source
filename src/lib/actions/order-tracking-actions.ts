@@ -34,6 +34,9 @@ export interface PublicSafeOrderDTO {
   couponCode?: string | null;
   grandTotal: number;
   items: PublicSafeOrderItem[];
+  courierPartner?: string | null;
+  courierTrackingCode?: string | null;
+  courierTrackingUrl?: string | null;
 }
 
 export interface TrackOrderResult {
@@ -237,6 +240,11 @@ export async function trackOrderPublicAction(
         order.grand_total ?? (order as any).total ?? (order as any).total_amount ?? 0
       ),
       items,
+      courierPartner: order.courier_partner || (order as any).courier_name || null,
+      courierTrackingCode: order.courier_tracking_code || (order as any).tracking_code || null,
+      courierTrackingUrl: (order.courier_tracking_code || (order as any).tracking_code)
+        ? `https://steadfast.com.bd/tracking/${encodeURIComponent(order.courier_tracking_code || (order as any).tracking_code)}`
+        : null,
     };
 
     return {

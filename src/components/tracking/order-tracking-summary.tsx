@@ -113,6 +113,36 @@ export const OrderTrackingSummary: React.FC<OrderTrackingSummaryProps> = ({ orde
             </div>
           </div>
         </div>
+
+        {/* Courier Dispatch & Tracking Banner */}
+        {order.courierTrackingCode && (
+          <div className="mt-4 p-4 rounded-xl bg-cyan-50/90 border border-cyan-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-cyan-100 flex items-center justify-center text-cyan-800 shrink-0">
+                <Truck className="w-5 h-5 text-cyan-700" />
+              </div>
+              <div>
+                <span className="font-bold text-cyan-950 block text-sm">
+                  কুরিয়ার পার্টনার: {order.courierPartner || "Steadfast Courier"}
+                </span>
+                <span className="font-mono text-cyan-800 text-xs">
+                  ট্র্যাকিং কোড: #{order.courierTrackingCode}
+                </span>
+              </div>
+            </div>
+            {order.courierTrackingUrl && (
+              <a
+                href={order.courierTrackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs transition-colors self-start sm:self-auto shadow-2xs"
+              >
+                <span>কুরিয়ার ট্র্যাকিং দেখুন</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 2. Order Line Items Card */}
