@@ -475,6 +475,16 @@ interface CategoryRowProps {
 
 function CategoryRow({ category, index, total, onEdit, onDelete }: CategoryRowProps) {
   const [imgError, setImgError] = useState(false);
+  const [imgSrc, setImgSrc] = useState(
+    category.imageUrl || (category.slug === "honey" ? "/images/hero-honey.png" : "")
+  );
+
+  React.useEffect(() => {
+    setImgSrc(
+      category.imageUrl || (category.slug === "honey" ? "/images/hero-honey.png" : "")
+    );
+    setImgError(false);
+  }, [category.imageUrl, category.slug]);
 
   return (
     <tr className="border-b border-surface-border/60 hover:bg-surface-canvas/50 transition-colors group">
@@ -490,14 +500,20 @@ function CategoryRow({ category, index, total, onEdit, onDelete }: CategoryRowPr
       {/* Image */}
       <td className="px-3 py-3 w-16">
         <div className="w-12 h-10 rounded-xl overflow-hidden border border-surface-border bg-surface-canvas flex items-center justify-center">
-          {category.imageUrl && !imgError ? (
+          {imgSrc && !imgError ? (
             <Image
-              src={category.imageUrl}
+              src={imgSrc}
               alt={category.nameBn}
               width={48}
               height={40}
               className="w-full h-full object-cover"
-              onError={() => setImgError(true)}
+              onError={() => {
+                if (category.slug === "honey" && imgSrc !== "/images/hero-honey.png") {
+                  setImgSrc("/images/hero-honey.png");
+                } else {
+                  setImgError(true);
+                }
+              }}
               unoptimized
             />
           ) : (

@@ -126,19 +126,28 @@ export async function getAdminCategories(): Promise<AdminCategoryResult> {
               `[getAdminCategories] Database query error (code ${dbError.code}): ${dbError.message}`
             );
           } else if (Array.isArray(dbCategories) && dbCategories.length > 0) {
-            const mapped: Category[] = dbCategories.map((row: any) => ({
-              id: row.id ?? row.slug,
-              slug: row.slug,
-              nameEn: row.name_en ?? row.nameEn ?? "",
-              nameBn: row.name_bn ?? row.nameBn ?? "",
-              taglineBn: row.tagline_bn ?? row.taglineBn ?? "",
-              descriptionBn: row.description_bn ?? row.descriptionBn ?? "",
-              sourcingOriginBn: row.sourcing_origin_bn ?? row.sourcingOriginBn,
-              purityPromiseBn: row.purity_promise_bn ?? row.purityPromiseBn,
-              imageUrl: row.image_url ?? row.imageUrl ?? "",
-              displayOrder: row.display_order ?? row.displayOrder ?? 0,
-              isActive: row.is_active ?? row.isActive ?? true,
-            }));
+            const mapped: Category[] = dbCategories.map((row: any) => {
+              let img = row.image_url ?? row.imageUrl ?? "";
+              if (
+                row.slug === "honey" &&
+                (!img || img.includes("photo-1587049352847-4a222e784d38"))
+              ) {
+                img = "/images/hero-honey.png";
+              }
+              return {
+                id: row.id ?? row.slug,
+                slug: row.slug,
+                nameEn: row.name_en ?? row.nameEn ?? "",
+                nameBn: row.name_bn ?? row.nameBn ?? "",
+                taglineBn: row.tagline_bn ?? row.taglineBn ?? "",
+                descriptionBn: row.description_bn ?? row.descriptionBn ?? "",
+                sourcingOriginBn: row.sourcing_origin_bn ?? row.sourcingOriginBn,
+                purityPromiseBn: row.purity_promise_bn ?? row.purityPromiseBn,
+                imageUrl: img,
+                displayOrder: row.display_order ?? row.displayOrder ?? 0,
+                isActive: row.is_active ?? row.isActive ?? true,
+              };
+            });
             return { success: true, data: mapped, isFromLiveDb: true };
           }
         }
