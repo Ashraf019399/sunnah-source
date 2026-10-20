@@ -9,9 +9,36 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ProductCard } from "@/components/commerce/product-card";
+import { Product } from "@/types/commerce.types";
 import { ShieldCheck, Truck, Clock, Award, ArrowRight } from "lucide-react";
 
+// Top 8 Sunnah Source Best Selling products
+const BEST_SELLER_SLUGS = [
+  "sundarban-raw-wild-honey",
+  "traditional-bilona-cow-ghee",
+  "cold-pressed-mustard-oil",
+  "madinah-vip-ajwa-dates",
+  "sunnah-health-booster-combo",
+  "khalisha-flower-raw-honey",
+  "extra-virgin-black-seed-oil",
+  "madinah-amber-dates",
+];
+
 export default function HomePage() {
+  const bestSellingProducts: Product[] = [];
+  for (const slug of BEST_SELLER_SLUGS) {
+    const prod = ALL_PRODUCTS.find((p) => p.slug === slug);
+    if (prod) {
+      const isHotDeal =
+        slug === "madinah-vip-ajwa-dates" ||
+        slug === "sunnah-health-booster-combo" ||
+        slug === "madinah-amber-dates";
+      bestSellingProducts.push({
+        ...prod,
+        badge: isHotDeal ? "হট ডিল" : "বেস্টসেলার",
+      });
+    }
+  }
   return (
     <div className="min-h-screen flex flex-col bg-surface-canvas font-bengali">
       {/* ১. টপ অ্যানাউন্সমেন্ট বার */}
@@ -110,6 +137,39 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Naturo & Ghorer Bazar Inspired "Best Selling Products" Showcase */}
+        <section className="container mx-auto max-w-7xl px-4">
+          {/* Header Section */}
+          <div className="text-center max-w-xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-black text-brand-900 tracking-tight">
+              Best Selling Products
+            </h2>
+            <p className="text-xs sm:text-sm text-charcoal-600 mt-1">
+              গ্রাহকদের সবচেয়ে পছন্দের ও সর্বাধিক বিক্রিত খাঁটি পণ্যসমূহ
+            </p>
+            <div className="w-16 h-1 bg-amber-500 rounded-full mx-auto mt-2.5" />
+          </div>
+
+          {/* Responsive Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
+            {bestSellingProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Bottom Action */}
+          <div className="text-center mt-8 sm:mt-10">
+            <Link
+              href="/shop"
+              prefetch={true}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border-2 border-brand-700 text-brand-800 hover:bg-brand-700 hover:text-white font-bold text-xs sm:text-sm transition-all shadow-xs group"
+            >
+              <span>সব পণ্য দেখুন</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </section>
+
         {/* ক্যাটাগরি তালিকা */}
         <section className="container mx-auto max-w-7xl px-4 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-surface-border">
@@ -178,37 +238,31 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* সেরা বিক্রিত পণ্যসমূহ (প্রোডাক্ট গ্রিড) */}
+        {/* সম্পূর্ণ ক্যাটালগ ও সকল খাঁটি পণ্যসমূহ */}
         <section className="container mx-auto max-w-7xl px-4 space-y-6">
-          <div className="flex items-center justify-between pb-2 border-b border-surface-border">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-surface-border">
             <div>
-              <h2 className="text-xl md:text-2xl font-extrabold text-charcoal-900">
-                সেরা বিক্রিত পণ্যসমূহ (Best Sellers)
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full mb-1.5">
+                সম্পূর্ণ ক্যাটালগ
+              </span>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-charcoal-900 tracking-tight">
+                আমাদের সকল খাঁটি পণ্যসমূহ
               </h2>
-              <p className="text-xs text-charcoal-500 mt-0.5">
-                সবচেয়ে জনপ্রিয় এবং খাঁটি প্রাকৃতিক খাদ্যপণ্য।
+              <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">
+                সুন্নাহ সোর্সের শতভাগ বিশুদ্ধ ও অর্গানিক খাদ্যপণ্যের সম্পূর্ণ সমাহার।
               </p>
             </div>
             <Link
               href="/shop"
               prefetch={true}
-              className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-accent-dark transition-colors group self-start sm:self-auto"
             >
-              <span>সব দেখুন</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>দোকানের সব পণ্য দেখুন</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {ALL_PRODUCTS.map((prod) => {
-              const productImages: Record<string, string> = {
-                "prod-h-1": "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80",
-                "prod-g-1": "https://images.unsplash.com/photo-1624528733107-2571fc0a8434?auto=format&fit=crop&w=800&q=80",
-                "prod-o-1": "https://images.unsplash.com/photo-1552592074-ea7a91b851b3?auto=format&fit=crop&w=800&q=80",
-                "prod-d-1": "https://images.unsplash.com/photo-1648288725055-5ba4063355b9?auto=format&fit=crop&w=800&q=80",
-              };
-              const newImg = productImages[prod.id];
-              return newImg ? { ...prod, images: [newImg, ...prod.images.slice(1)] } : prod;
-            }).map((prod) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {ALL_PRODUCTS.map((prod) => (
               <ProductCard key={prod.id} product={prod} />
             ))}
           </div>
