@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
+import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sunnahsourcebd.com"),
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col font-sans">
         <AuthRecoveryRedirect />
         {children}
+        <FloatingWhatsApp />
       </body>
     </html>
   );
