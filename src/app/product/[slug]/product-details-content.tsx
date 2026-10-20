@@ -19,6 +19,7 @@ import {
   Share2,
   Check,
   Info,
+  MessageCircle,
 } from "lucide-react";
 import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
 import { Category } from "@/lib/data/categories";
@@ -26,6 +27,7 @@ import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
 import { formatBDT } from "@/lib/utils";
 import { ProductCard } from "@/components/commerce/product-card";
+import { WhatsappOrderButton } from "@/components/commerce/whatsapp-order-button";
 
 function toBengaliNumber(num: number): string {
   const bengaliDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -551,6 +553,16 @@ export function ProductDetailsContent({
                 </button>
               </div>
 
+              {/* 1-Click WhatsApp Order Button */}
+              <WhatsappOrderButton
+                productTitle={product.titleBn}
+                variantName={activeVariant?.displayName}
+                unitPrice={currentPrice}
+                quantity={quantity}
+                productSlug={product.slug}
+                disabled={isOutOfStock}
+              />
+
               {/* Wishlist Button Row (For Mobile & Desktop Accessibility) */}
               <button
                 type="button"
@@ -585,6 +597,21 @@ export function ProductDetailsContent({
                 <div>
                   <strong className="text-charcoal-900 block">ক্যাশ অন ডেলিভারি (COD):</strong>
                   পণ্য হাতে পেয়ে দেখে মূল্য পরিশোধের শতভাগ নিশ্চয়তা।
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-charcoal-900 block">হোয়াটসঅ্যাপ সাপোর্ট:</strong>
+                  পণ্য সম্পর্কে জানতে বা সরাসরি কথা বলতে মেসেজ দিন:{" "}
+                  <a
+                    href="https://wa.me/8801914612007"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 font-bold hover:underline"
+                  >
+                    ০১৯১৪-৬১২০০৭
+                  </a>
                 </div>
               </div>
             </div>

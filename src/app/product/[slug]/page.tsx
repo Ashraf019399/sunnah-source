@@ -37,13 +37,40 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     product.fullDescriptionBn ||
     `${product.titleBn} - ১০০% খাঁটি ও প্রাকৃতিক খাদ্যপণ্য। সান্নাহ সোর্স থেকে অর্ডার করুন।`;
 
+  const canonicalUrl = `https://sunnahsourcebd.com/product/${slug}`;
+  const imageUrl = product.images?.[0]
+    ? product.images[0].startsWith("http")
+      ? product.images[0]
+      : `https://sunnahsourcebd.com${product.images[0]}`
+    : "https://sunnahsourcebd.com/images/hero-honey.png";
+
   return {
     title,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title,
       description,
-      images: product.images?.[0] ? [{ url: product.images[0] }] : [],
+      url: canonicalUrl,
+      siteName: "Sunnah Source",
+      locale: "bn_BD",
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 800,
+          height: 800,
+          alt: product.titleBn,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
     },
   };
 }

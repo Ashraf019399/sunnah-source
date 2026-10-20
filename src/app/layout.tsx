@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://sunnahsourcebd.com"),
   title: "SUNNAH SOURCE | Pure & Natural Organic Foods",
   description: "১০০% খাঁটি ও প্রাকৃতিক খাদ্যপণ্য। সুন্দরবনের কাঁচা মধু, গাওয়া ঘি, সরিষার তেল ও আজওয়া খেজুর।"
 };
