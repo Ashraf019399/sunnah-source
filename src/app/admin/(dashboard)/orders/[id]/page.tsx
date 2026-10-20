@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { getAdminOrderById } from "@/lib/actions/admin-order-actions";
 import { OrderStatusUpdater } from "@/components/admin/orders/order-status-updater";
 import { PaymentStatusUpdater } from "@/components/admin/orders/payment-status-updater";
+import { PrintInvoiceButton } from "@/components/admin/orders/print-invoice-button";
 import {
   ArrowLeft,
   User,
@@ -135,7 +136,8 @@ export default async function AdminOrderDetailsPage({
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <PrintInvoiceButton orderId={order.id} />
           <div className="text-right">
             <div className="text-xs text-charcoal-500 font-bold uppercase tracking-wider">
               সর্বমোট মূল্য

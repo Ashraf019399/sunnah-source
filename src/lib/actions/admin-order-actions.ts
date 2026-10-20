@@ -20,7 +20,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Ensures the requesting user has valid admin authorization.
  * Returns the session Supabase client and verified admin user.
  */
-async function getAuthenticatedAdminClient() {
+export async function getAuthenticatedAdminClient() {
   const supabase = await createClient();
   const {
     data: { user },
