@@ -5,17 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  ShoppingBag,
-  Heart,
+  ShoppingCart,
+  Truck,
   Menu,
   X,
-  Truck,
   User,
-  MoreVertical,
+  Phone,
+  MessageCircle,
   ChevronDown,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
-import { useWishlistStore } from "@/store/use-wishlist-store";
 import Image from "next/image";
 
 const NAV_ITEMS = [
@@ -43,20 +42,11 @@ export const Header: React.FC = () => {
       ? state.getItemCount()
       : state.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
   );
-  const subtotal = useCartStore((state) =>
-    typeof state.getSubtotal === "function"
-      ? state.getSubtotal()
-      : state.items?.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) ?? 0
-  );
-  const wishlistCount = useWishlistStore((state) => state.items?.length ?? 0);
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const displayCartCount = mounted ? cartCount : 0;
-  const displaySubtotal = mounted ? subtotal : 0;
-  const displayWishlistCount = mounted ? wishlistCount : 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,80 +106,73 @@ export const Header: React.FC = () => {
             <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-charcoal-500 pointer-events-none" />
           </form>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          {/* Right: Actions (Vertical Stack Layout) */}
+          <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+            {/* Item 1: Order Track */}
             <Link
               href="/track-order"
               prefetch={true}
-              className="hidden lg:flex items-center gap-1.5 text-xs text-charcoal-700 hover:text-brand-700 transition-colors"
-              title="অর্ডার ট্র্যাক"
+              className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-brand-700 transition-colors"
+              title="Order Track"
             >
-              <Truck className="w-4 h-4" />
-              <span className="hidden xl:inline">Track Order</span>
+              <Truck className="w-5 h-5" />
+              <span className="text-[11px] font-semibold tracking-tight">Order Track</span>
             </Link>
 
-            <Link
-              href="/admin/login"
-              prefetch={true}
-              className="hidden lg:flex items-center gap-1.5 text-xs text-charcoal-700 hover:text-brand-700 transition-colors"
-              title="লগইন / অ্যাকাউন্ট"
-            >
-              <User className="w-4 h-4" />
-              <span className="hidden xl:inline">Sign In</span>
-            </Link>
-
-            <Link
-              href="/#products"
-              className="relative p-2 text-charcoal-700 hover:text-brand-700 transition-colors"
-              title="পছন্দের তালিকা"
-            >
-              <Heart className="w-5 h-5" />
-              {displayWishlistCount > 0 && (
-                <span className="absolute top-1 right-1 bg-accent-amber text-white font-mono text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                  {displayWishlistCount}
-                </span>
-              )}
-            </Link>
-
+            {/* Item 2: Shopping Cart */}
             <button
               type="button"
               onClick={openDrawer}
-              className="flex items-center gap-2.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100/80 border border-brand-200/80 rounded-xl text-brand-700 transition-all cursor-pointer"
-              aria-label="কার্ট খুলুন"
+              className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-brand-700 transition-colors cursor-pointer"
+              aria-label="Cart"
             >
               <div className="relative">
-                <ShoppingBag className="w-5 h-5" />
+                <ShoppingCart className="w-5 h-5" />
                 {displayCartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-brand-700 text-white font-mono text-[10px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-charcoal-900 font-mono text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
                     {displayCartCount}
                   </span>
                 )}
               </div>
-              <div className="hidden sm:block text-left text-xs leading-none">
-                <span className="text-[10px] text-charcoal-500 block">কার্ট</span>
-                <span className="font-bold text-brand-700 font-mono">৳{displaySubtotal}</span>
-              </div>
+              <span className="text-[11px] font-semibold tracking-tight">Cart</span>
             </button>
 
-            <div className="hidden lg:block relative group">
+            {/* Item 3: More (Dropdown) */}
+            <div className="relative group">
               <button
                 type="button"
-                className="p-2 text-charcoal-700 hover:text-brand-700 rounded-lg transition-colors"
-                aria-label="আরও মেনু"
+                className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-brand-700 transition-colors cursor-pointer"
+                aria-label="More"
               >
-                <MoreVertical className="w-5 h-5" />
+                <Menu className="w-5 h-5" />
+                <span className="text-[11px] font-semibold tracking-tight">More</span>
               </button>
-              <div className="hidden group-hover:block absolute right-0 top-full pt-1 w-44 z-50">
-                <div className="bg-white rounded-xl shadow-card border border-surface-border p-2 text-xs space-y-1">
-                  <Link href="/track-order" prefetch={true} className="block px-2.5 py-1.5 rounded hover:bg-brand-50 hover:text-brand-700">
-                    ট্র্যাক অর্ডার
+              <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50">
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-2 text-xs space-y-1">
+                  <Link
+                    href="/admin/login"
+                    prefetch={true}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  >
+                    <User className="w-4 h-4 text-charcoal-500" />
+                    <span>Sign In / Admin</span>
                   </Link>
-                  <Link href="/#categories" className="block px-2.5 py-1.5 rounded hover:bg-brand-50 hover:text-brand-700">
-                    ক্যাটাগরি
-                  </Link>
-                  <div className="px-2.5 py-1 text-charcoal-500 border-t border-surface-border text-[11px]">
-                    হেল্প: ০১৯১৪-৬১২০০৭
-                  </div>
+                  <a
+                    href="https://wa.me/8801914612007"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  >
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <span>WhatsApp Support</span>
+                  </a>
+                  <a
+                    href="tel:01914612007"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  >
+                    <Phone className="w-4 h-4 text-brand-700" />
+                    <span>Call Us</span>
+                  </a>
                 </div>
               </div>
             </div>
