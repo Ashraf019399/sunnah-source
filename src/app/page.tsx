@@ -199,62 +199,16 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              ...ALL_PRODUCTS.map((prod) => {
-                const productImages: Record<string, string> = {
-                  "prod-h-1": "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80",
-                  "prod-g-1": "https://images.unsplash.com/photo-1624528733107-2571fc0a8434?auto=format&fit=crop&w=800&q=80",
-                  "prod-o-1": "https://images.unsplash.com/photo-1552592074-ea7a91b851b3?auto=format&fit=crop&w=800&q=80",
-                  "prod-d-1": "https://images.unsplash.com/photo-1648288725055-5ba4063355b9?auto=format&fit=crop&w=800&q=80",
-                };
-                const newImg = productImages[prod.id];
-                return newImg ? { ...prod, images: [newImg, ...prod.images.slice(1)] } : prod;
-              }),
-              {
-                id: "prod-s-1",
-                categorySlug: "organic-seeds",
-                titleEn: "Organic Chia Seeds & Superfoods",
-                titleBn: "অর্গানিক চিয়া সিড ও সুপারফুড",
-                slug: "organic-chia-seeds",
-                badge: "১০০% অর্গানিক",
-                originSource: "মেক্সিকো ও নাটোর, বাংলাদেশ",
-                shortDescriptionBn: "উচ্চ পুষ্টিসমৃদ্ধ প্রিমিয়াম কোয়ালিটি অর্গানিক চিয়া সিড।",
-                fullDescriptionBn: "ওমেগা-৩, ক্যালসিয়াম ও ফাইবার সমৃদ্ধ আমদানিকৃত ১০০% খাঁটি অর্গানিক চিয়া সিড। আন্তর্জাতিক মানসম্পন্ন ও ল্যাব টেস্ট উত্তীর্ণ।",
-                ratingAverage: 4.9,
-                reviewCount: 38,
-                isFeatured: true,
-                isActive: true,
-                images: [
-                  "https://images.unsplash.com/photo-1740998579390-389916f12e11?auto=format&fit=crop&w=800&q=80",
-                ],
-                variants: [
-                  {
-                    id: "var-s1-250",
-                    sku: "SED-CHI-250G",
-                    displayName: "২৫০ গ্রাম জার",
-                    weightValue: 250,
-                    weightUnit: "g",
-                    regularPrice: 420,
-                    salePrice: 380,
-                    stockQuantity: 45,
-                    lowStockThreshold: 10,
-                    isDefault: true,
-                  },
-                  {
-                    id: "var-s1-500",
-                    sku: "SED-CHI-500G",
-                    displayName: "৫০০ গ্রাম জার",
-                    weightValue: 500,
-                    weightUnit: "g",
-                    regularPrice: 800,
-                    salePrice: 720,
-                    stockQuantity: 25,
-                    lowStockThreshold: 5,
-                    isDefault: false,
-                  },
-                ],
-              },
-            ].map((prod) => (
+            {ALL_PRODUCTS.map((prod) => {
+              const productImages: Record<string, string> = {
+                "prod-h-1": "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80",
+                "prod-g-1": "https://images.unsplash.com/photo-1624528733107-2571fc0a8434?auto=format&fit=crop&w=800&q=80",
+                "prod-o-1": "https://images.unsplash.com/photo-1552592074-ea7a91b851b3?auto=format&fit=crop&w=800&q=80",
+                "prod-d-1": "https://images.unsplash.com/photo-1648288725055-5ba4063355b9?auto=format&fit=crop&w=800&q=80",
+              };
+              const newImg = productImages[prod.id];
+              return newImg ? { ...prod, images: [newImg, ...prod.images.slice(1)] } : prod;
+            }).map((prod) => (
               <ProductCard key={prod.id} product={prod} />
             ))}
           </div>

@@ -13,27 +13,69 @@ import {
   Phone,
   MessageCircle,
   ChevronDown,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
+import { CATEGORIES_DATA } from "@/lib/data/categories";
+import { ALL_PRODUCTS } from "@/lib/data/products";
 import Image from "next/image";
 
-const NAV_ITEMS = [
-  { label: "Home", href: "/" },
-  { label: "Shop", href: "/#products", hasChevron: true },
-  { label: "Raw Honey", href: "/?q=honey#products", hasChevron: true },
-  { label: "Ghee", href: "/?q=ghee#products" },
-  { label: "Oil", href: "/?q=oil#products" },
-  { label: "Dates", href: "/?q=dates#products" },
-  { label: "Nuts & Seeds", href: "/?q=seeds#products" },
-  { label: "Spices", href: "/?q=spices#products" },
-  { label: "Combos", href: "/?q=combos#products", hasChevron: true },
-  { label: "Offers", href: "/#products" },
+interface NavItem {
+  label: string;
+  labelBn?: string;
+  href: string;
+  categorySlug?: string;
+  hasMegaMenu?: boolean;
+  alignRight?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "Home", labelBn: "হোম", href: "/" },
+  { label: "Shop", labelBn: "সকল পণ্য", href: "/shop" },
+  {
+    label: "Raw Honey",
+    labelBn: "খাঁটি মধু",
+    href: "/category/honey",
+    categorySlug: "honey",
+    hasMegaMenu: true,
+  },
+  {
+    label: "Ghee & Oils",
+    labelBn: "ঘি ও তেল",
+    href: "/category/ghee-oil",
+    categorySlug: "ghee-oil",
+    hasMegaMenu: true,
+  },
+  {
+    label: "Dates",
+    labelBn: "খেজুর",
+    href: "/category/dates",
+    categorySlug: "dates",
+    hasMegaMenu: true,
+  },
+  {
+    label: "Organic Seeds",
+    labelBn: "বীজ ও সুপারফুড",
+    href: "/category/organic-seeds",
+    categorySlug: "organic-seeds",
+    hasMegaMenu: true,
+  },
+  {
+    label: "Combos",
+    labelBn: "কম্বো অফার",
+    href: "/combos",
+    categorySlug: "combos",
+    hasMegaMenu: true,
+    alignRight: true,
+  },
 ];
 
 export const Header: React.FC = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const openDrawer = useCartStore((state) => state.openDrawer);
@@ -180,31 +222,140 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Secondary Navigation Bar */}
+      {/* 2. Secondary Navigation Bar with Category Mega Menu */}
       <nav
         aria-label="Secondary Navigation"
         className="hidden lg:block bg-brand-900 border-b border-brand-800 text-stone-200 text-xs font-semibold"
       >
         <div className="container mx-auto px-4 max-w-7xl flex items-center justify-between">
-          <ul className="flex items-center gap-1 xl:gap-2 py-2">
-            {NAV_ITEMS.map((item) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  prefetch={true}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-md text-stone-200 hover:text-accent-amber hover:bg-brand-800/80 transition-colors whitespace-nowrap"
-                >
-                  <span>{item.label}</span>
-                  {item.hasChevron && <ChevronDown className="w-3 h-3 text-stone-400" />}
-                </Link>
-              </li>
-            ))}
+          <ul className="flex items-center gap-1 xl:gap-2 py-1.5">
+            {NAV_ITEMS.map((item) => {
+              const category = item.categorySlug
+                ? CATEGORIES_DATA.find((c) => c.slug === item.categorySlug)
+                : null;
+              const categoryProducts = item.categorySlug
+                ? ALL_PRODUCTS.filter(
+                    (p) =>
+                      p.categorySlug === item.categorySlug ||
+                      (item.categorySlug === "combos" && p.isCombo)
+                  )
+                : [];
+
+              return (
+                <li key={item.label} className="relative group">
+                  <Link
+                    href={item.href}
+                    prefetch={true}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-stone-200 hover:text-accent-amber hover:bg-brand-800/80 transition-colors whitespace-nowrap"
+                  >
+                    <span>{item.label}</span>
+                    {item.hasMegaMenu && (
+                      <ChevronDown className="w-3 h-3 text-stone-400 group-hover:rotate-180 group-hover:text-accent-amber transition-transform duration-200" />
+                    )}
+                  </Link>
+
+                  {/* Desktop Hover Mega Menu Dropdown */}
+                  {item.hasMegaMenu && category && (
+                    <div
+                      className={`absolute top-full ${
+                        item.alignRight ? "right-0" : "left-0"
+                      } pt-1.5 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[460px] sm:w-[500px]`}
+                    >
+                      <div className="bg-white rounded-2xl shadow-2xl border border-surface-border p-4 text-charcoal-900 font-bengali">
+                        {/* Header Bar */}
+                        <div className="flex items-center justify-between pb-3 mb-3 border-b border-surface-border">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-brand-700" />
+                            <h4 className="text-sm font-bold text-charcoal-900">
+                              {category.nameBn}
+                            </h4>
+                            <span className="text-[11px] text-charcoal-400 font-sans">
+                              ({category.nameEn})
+                            </span>
+                          </div>
+                          <Link
+                            href={item.href}
+                            prefetch={true}
+                            className="text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline flex items-center gap-1 group/link"
+                          >
+                            <span>সব দেখুন</span>
+                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5" />
+                          </Link>
+                        </div>
+
+                        {/* Product Grid (2 Columns) */}
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {categoryProducts.slice(0, 4).map((product) => {
+                            const defaultVariant =
+                              product.variants.find((v) => v.isDefault) || product.variants[0];
+                            const displayPrice = defaultVariant
+                              ? defaultVariant.salePrice ?? defaultVariant.regularPrice
+                              : 0;
+                            const regularPrice = defaultVariant?.regularPrice;
+                            const hasDiscount =
+                              defaultVariant?.salePrice &&
+                              defaultVariant.regularPrice > defaultVariant.salePrice;
+                            const mainImage = product.images?.[0] || "/images/hero-honey.png";
+
+                            return (
+                              <Link
+                                key={product.id}
+                                href={`/product/${product.slug}`}
+                                prefetch={true}
+                                className="flex items-center gap-2.5 p-2 rounded-xl border border-surface-border/60 hover:border-brand-300 hover:bg-brand-50/50 transition-all group/item bg-white"
+                              >
+                                <div className="w-13 h-13 rounded-lg overflow-hidden border border-surface-border shrink-0 bg-surface-canvas relative">
+                                  <Image
+                                    src={mainImage}
+                                    alt={product.titleBn}
+                                    width={52}
+                                    height={52}
+                                    className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300"
+                                    unoptimized={mainImage.startsWith("/")}
+                                  />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h5 className="text-xs font-bold text-charcoal-800 line-clamp-1 group-hover/item:text-brand-700 transition-colors">
+                                    {product.titleBn}
+                                  </h5>
+                                  <p className="text-[10px] text-charcoal-400 font-sans mt-0.5 line-clamp-1">
+                                    {defaultVariant?.displayName || product.badge || "১০০% খাঁটি"}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-1">
+                                    <span className="text-xs font-bold text-brand-700 font-mono">
+                                      ৳{displayPrice}
+                                    </span>
+                                    {hasDiscount && (
+                                      <span className="text-[10px] text-charcoal-400 line-through font-mono">
+                                        ৳{regularPrice}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+
+                        {/* Category Purity Promise Strip */}
+                        {category.purityPromiseBn && (
+                          <div className="mt-3 pt-2.5 border-t border-surface-border/60 flex items-center gap-2 text-[11px] text-charcoal-600 bg-surface-canvas/60 px-3 py-1.5 rounded-lg">
+                            <Sparkles className="w-3.5 h-3.5 text-accent-amber shrink-0" />
+                            <span className="line-clamp-1 font-medium">{category.purityPromiseBn}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
           <span className="text-[11px] text-stone-300 font-sans">হটলাইন: ০১৯১৪-৬১২০০৭</span>
         </div>
       </nav>
 
-      {/* 3. Mobile Collapsible Navigation Menu */}
+      {/* 3. Mobile Collapsible Navigation Menu with Category Accordion */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-surface-border bg-white px-4 py-4 space-y-3 font-bengali">
           <form role="search" onSubmit={handleSearch} className="relative w-full">
@@ -219,17 +370,112 @@ export const Header: React.FC = () => {
             <Search className="absolute left-3 top-3 w-4 h-4 text-charcoal-500 pointer-events-none" />
           </form>
           <nav aria-label="Mobile Navigation" className="flex flex-col space-y-1 text-sm font-semibold text-charcoal-700 pt-2">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 px-2 rounded-lg hover:bg-brand-50 hover:text-brand-700 transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const category = item.categorySlug
+                ? CATEGORIES_DATA.find((c) => c.slug === item.categorySlug)
+                : null;
+              const categoryProducts = item.categorySlug
+                ? ALL_PRODUCTS.filter(
+                    (p) =>
+                      p.categorySlug === item.categorySlug ||
+                      (item.categorySlug === "combos" && p.isCombo)
+                  )
+                : [];
+              const isExpanded = expandedMobileCategory === item.categorySlug;
+
+              if (item.hasMegaMenu && category && categoryProducts.length > 0) {
+                return (
+                  <div key={item.label} className="border-b border-surface-border/60 pb-1">
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={item.href}
+                        prefetch={true}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="py-2 px-2 text-sm font-bold text-charcoal-800 hover:text-brand-700 flex items-center gap-2 flex-1"
+                      >
+                        <span>{category.nameBn}</span>
+                        <span className="text-[11px] text-charcoal-400 font-sans font-normal">
+                          ({item.label})
+                        </span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedMobileCategory(isExpanded ? null : item.categorySlug!)
+                        }
+                        className="p-2 text-charcoal-500 hover:text-brand-700 transition-colors"
+                        aria-label="ক্যাটাগরি পণ্য দেখুন"
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${
+                            isExpanded ? "rotate-180 text-brand-700" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="pl-2 pr-1 py-2 space-y-2 bg-surface-canvas/50 rounded-xl mb-2">
+                        {categoryProducts.slice(0, 3).map((prod) => {
+                          const v = prod.variants.find((x) => x.isDefault) || prod.variants[0];
+                          const price = v ? v.salePrice ?? v.regularPrice : 0;
+                          const img = prod.images?.[0] || "/images/hero-honey.png";
+                          return (
+                            <Link
+                              key={prod.id}
+                              href={`/product/${prod.slug}`}
+                              prefetch={true}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="flex items-center gap-2.5 p-1.5 rounded-lg bg-white border border-surface-border/70 hover:border-brand-300"
+                            >
+                              <div className="w-10 h-10 rounded-md overflow-hidden bg-surface-canvas shrink-0">
+                                <Image
+                                  src={img}
+                                  alt={prod.titleBn}
+                                  width={40}
+                                  height={40}
+                                  className="w-full h-full object-cover"
+                                  unoptimized={img.startsWith("/")}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-charcoal-800 line-clamp-1">
+                                  {prod.titleBn}
+                                </p>
+                                <span className="text-xs font-bold text-brand-700 font-mono">
+                                  ৳{price}
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                        <Link
+                          href={item.href}
+                          prefetch={true}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-brand-700 hover:underline pt-1"
+                        >
+                          <span>সব দেখুন ({category.nameBn})</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  prefetch={true}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="py-2 px-2 rounded-lg hover:bg-brand-50 hover:text-brand-700 transition-colors text-sm font-bold text-charcoal-800"
+                >
+                  {item.labelBn || item.label}
+                </Link>
+              );
+            })}
             <div className="pt-3 mt-1 border-t border-surface-border flex gap-4 text-xs font-normal text-charcoal-500">
               <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
                 Track Order
