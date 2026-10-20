@@ -11,8 +11,9 @@ export function FloatingWhatsApp() {
     return null;
   }
 
-  const defaultMessage = "আসসালামু আলাইকুম, আমি সুন্নাহ সোর্স থেকে তথ্য জানতে চাচ্ছি।";
-  const whatsappUrl = `https://wa.me/8801914612007?text=${encodeURIComponent(defaultMessage)}`;
+  const message =
+    "আসসালামু আলাইকুম, সুন্নাহ সোর্স।\nআমি আপনাদের খাঁটি পণ্যসমূহ এবং সারাদেশে হোম ডেলিভারি সম্পর্কে জানতে চাচ্ছি।";
+  const whatsappUrl = `https://wa.me/8801914612007?text=${encodeURIComponent(message)}`;
 
   return (
     <div
