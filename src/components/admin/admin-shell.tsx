@@ -91,13 +91,13 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
         <div
           role="presentation"
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-200 ease-out"
         />
       )}
 
       {/* Sidebar: Desktop & Mobile Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-brand-900 text-stone-200 flex flex-col justify-between border-r border-brand-800 transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-brand-900 text-stone-200 flex flex-col justify-between border-r border-brand-800 transition-transform duration-200 ease-out lg:translate-x-0 ${
           mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
@@ -106,6 +106,7 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
           <div className="p-5 flex items-center justify-between border-b border-brand-800">
             <Link
               href="/admin"
+              prefetch={true}
               className="flex items-center gap-2 group"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -156,6 +157,7 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
                 <Link
                   key={item.nameEn}
                   href={item.href}
+                  prefetch={true}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     isActive
