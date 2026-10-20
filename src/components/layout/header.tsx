@@ -129,7 +129,8 @@ export const Header: React.FC = () => {
             </Link>
 
             <Link
-              href="/#account"
+              href="/admin/login"
+              prefetch={true}
               className="hidden lg:flex items-center gap-1.5 text-xs text-charcoal-700 hover:text-brand-700 transition-colors"
               title="লগইন / অ্যাকাউন্ট"
             >
@@ -250,7 +251,7 @@ export const Header: React.FC = () => {
               <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
                 Track Order
               </Link>
-              <Link href="/#account" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
+              <Link href="/admin/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
                 Sign In
               </Link>
             </div>
