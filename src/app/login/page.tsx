@@ -50,15 +50,32 @@ export default function CustomerLoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState("");
 
-  // Read URL error params on mount
+  const [redirectTarget, setRedirectTarget] = useState("/account");
+
+  // Read URL error and redirect params on mount, and check existing session
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("error")) {
         setGoogleError("অথেনটিকেশনে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
       }
+      const target = params.get("redirect") || params.get("next") || "/account";
+      setRedirectTarget(target);
+
+      // Auto-redirect if customer is already signed in
+      const storedPhone = localStorage.getItem("sunnah_customer_phone");
+      if (storedPhone) {
+        router.replace(target);
+        return;
+      }
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
+          router.replace(target);
+        }
+      });
     }
-  }, []);
+  }, [router]);
 
   // 1-Click Google Sign-In
   const handleGoogleSignIn = async () => {
@@ -70,7 +87,7 @@ export default function CustomerLoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${redirectOrigin}/auth/callback?next=/account/orders`,
+          redirectTo: `${redirectOrigin}/auth/callback?next=${encodeURIComponent(redirectTarget)}`,
         },
       });
 
@@ -118,9 +135,9 @@ export default function CustomerLoginPage() {
         );
       }
 
-      setPhoneSuccess("মোবাইল নম্বর যাচাই সফল হয়েছে! আপনাকে অর্ডার ইতিহাসে নিয়ে যাওয়া হচ্ছে...");
+      setPhoneSuccess("মোবাইল নম্বর যাচাই সফল হয়েছে! আপনাকে অ্যাকাউন্টে নিয়ে যাওয়া হচ্ছে...");
       setTimeout(() => {
-        router.push("/account/orders");
+        router.push(redirectTarget);
       }, 700);
     } catch {
       setPhoneError("লগইনে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
@@ -178,7 +195,7 @@ export default function CustomerLoginPage() {
           }
           setCredSuccess("স্বাগতম! আপনাকে অ্যাকাউন্টে নিয়ে যাওয়া হচ্ছে...");
           setTimeout(() => {
-            router.push("/account/orders");
+            router.push(redirectTarget);
           }, 700);
           return;
         }
@@ -196,7 +213,7 @@ export default function CustomerLoginPage() {
         }
         setCredSuccess("লগইন সফল হয়েছে! আপনাকে নিয়ে যাওয়া হচ্ছে...");
         setTimeout(() => {
-          router.push("/account/orders");
+          router.push(redirectTarget);
         }, 700);
       }
     } catch {

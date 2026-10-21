@@ -20,6 +20,7 @@ import {
   HelpCircle,
   Info,
   LogOut,
+  LayoutDashboard,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
@@ -548,7 +549,7 @@ export const Header: React.FC = () => {
             {/* Item 4: Dynamic Sign In ↔ Account */}
             {!currentUser ? (
               <Link
-                href="/login"
+                href="/login?redirect=/account"
                 prefetch={true}
                 className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
                 title="সাইন ইন / অ্যাকাউন্ট"
@@ -578,7 +579,7 @@ export const Header: React.FC = () => {
 
                 {/* Account Dropdown Menu */}
                 {isAccountOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl shadow-xl border border-charcoal-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-charcoal-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     {/* Customer Identifier Header */}
                     <div className="px-4 py-2 border-b border-stone-100">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-charcoal-400">
@@ -596,6 +597,15 @@ export const Header: React.FC = () => {
 
                     {/* Navigation Links */}
                     <div className="py-1">
+                      <Link
+                        href="/account"
+                        prefetch={true}
+                        onClick={() => setIsAccountOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-brand-800 hover:text-brand-900 hover:bg-brand-50/70 transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-brand-700" />
+                        <span>ড্যাশবোর্ড ওভারভিউ</span>
+                      </Link>
                       <Link
                         href="/account/orders"
                         prefetch={true}
@@ -1021,6 +1031,15 @@ export const Header: React.FC = () => {
                 )}
               </Link>
               <Link
+                href="/account"
+                prefetch={true}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1 text-xs font-bold text-brand-800 hover:text-brand-900 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4 text-brand-700" />
+                <span>আমার ড্যাশবোর্ড</span>
+              </Link>
+              <Link
                 href="/account/orders"
                 prefetch={true}
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -1076,12 +1095,12 @@ export const Header: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between text-xs font-normal text-charcoal-500 px-1">
                     <Link
-                      href="/account/orders"
+                      href="/account"
                       prefetch={true}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="hover:text-brand-700 font-semibold text-brand-800"
                     >
-                      আমার অর্ডারসমূহ →
+                      আমার ড্যাশবোর্ড →
                     </Link>
                     <Link
                       href="/track-order"
