@@ -190,15 +190,7 @@ export function ProductDetailsContent({
   // Wishlist Action
   const handleToggleWishlist = () => {
     if (typeof toggleWishlist === "function") {
-      toggleWishlist({
-        id: product.id,
-        title: product.titleEn,
-        titleBn: product.titleBn,
-        slug: product.slug,
-        image: product.images?.[0] || "",
-        regularPrice: activeVariant ? activeVariant.regularPrice : 0,
-        salePrice: activeVariant?.salePrice,
-      });
+      toggleWishlist(product);
     }
   };
 
@@ -286,13 +278,17 @@ export function ProductDetailsContent({
               <button
                 type="button"
                 onClick={handleToggleWishlist}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-charcoal-700 hover:text-red-500 flex items-center justify-center shadow-card transition-all z-10 active:scale-95 cursor-pointer"
+                className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center shadow-card transition-all z-10 active:scale-95 cursor-pointer ${
+                  isWishlisted
+                    ? "bg-rose-50 text-rose-500 border border-rose-200"
+                    : "bg-white/95 hover:bg-white text-stone-400 hover:text-stone-700"
+                }`}
                 aria-label={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
                 title={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
               >
                 <Heart
                   className={`w-5 h-5 transition-colors ${
-                    isWishlisted ? "fill-red-500 text-red-500" : "text-charcoal-700"
+                    isWishlisted ? "fill-rose-500 text-rose-500" : "text-stone-400 hover:text-stone-700"
                   }`}
                 />
               </button>
@@ -367,25 +363,46 @@ export function ProductDetailsContent({
                 )}
               </div>
 
-              {/* Share Button */}
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-1.5 text-xs text-charcoal-500 hover:text-brand-700 transition-colors px-2 py-1 rounded-lg hover:bg-surface-canvas cursor-pointer"
-                title="লিংক কপি করুন"
-              >
-                {copiedLink ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700 font-bold">কপি হয়েছে!</span>
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>শেয়ার</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Wishlist Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleWishlist}
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                    isWishlisted
+                      ? "bg-rose-50 text-rose-500 border-rose-200"
+                      : "bg-surface-canvas text-charcoal-600 border-surface-border hover:bg-stone-100 hover:text-stone-900"
+                  }`}
+                  aria-label={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
+                >
+                  <Heart
+                    className={`w-3.5 h-3.5 transition-colors ${
+                      isWishlisted ? "fill-rose-500 text-rose-500" : "text-stone-400"
+                    }`}
+                  />
+                  <span>{isWishlisted ? "পছন্দে আছে" : "পছন্দ তালিকা"}</span>
+                </button>
+
+                {/* Share Button */}
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex items-center gap-1.5 text-xs text-charcoal-500 hover:text-brand-700 transition-colors px-2.5 py-1.5 rounded-full border border-surface-border bg-surface-canvas hover:bg-stone-100 cursor-pointer"
+                  title="লিংক কপি করুন"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700 font-bold">কপি হয়েছে!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>শেয়ার</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Product Title */}

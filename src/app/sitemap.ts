@@ -40,6 +40,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
+      url: `${BASE_URL}/wishlist`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.65,
+    },
+    {
       url: `${BASE_URL}/checkout`,
       lastModified: currentDate,
       changeFrequency: "weekly",

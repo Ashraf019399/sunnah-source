@@ -17,8 +17,10 @@ import {
   ArrowRight,
   Sparkles,
   Package,
+  Heart,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
+import { useWishlistStore } from "@/store/use-wishlist-store";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
@@ -92,6 +94,8 @@ export const Header: React.FC = () => {
       : state.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
   );
 
+  const wishlistCount = useWishlistStore((state) => state.items?.length ?? 0);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -142,6 +146,7 @@ export const Header: React.FC = () => {
   }, []);
 
   const displayCartCount = mounted ? cartCount : 0;
+  const displayWishlistCount = mounted ? wishlistCount : 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -362,7 +367,26 @@ export const Header: React.FC = () => {
               <span className="text-[11px] font-semibold tracking-tight">Order Track</span>
             </Link>
 
-            {/* Item 2: Shopping Cart */}
+            {/* Item 2: Wishlist */}
+            <Link
+              href="/wishlist"
+              prefetch={true}
+              className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-rose-600 transition-colors"
+              title="পছন্দের তালিকা"
+              aria-label="Wishlist"
+            >
+              <div className="relative">
+                <Heart className="w-5 h-5" />
+                {displayWishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-mono text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                    {displayWishlistCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] font-semibold tracking-tight">Wishlist</span>
+            </Link>
+
+            {/* Item 3: Shopping Cart */}
             <button
               type="button"
               onClick={openDrawer}
@@ -706,6 +730,22 @@ export const Header: React.FC = () => {
               );
             })}
             <div className="pt-3 mt-1 border-t border-surface-border flex flex-col gap-2">
+              <Link
+                href="/wishlist"
+                prefetch={true}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between py-1 text-xs font-bold text-charcoal-800 hover:text-rose-600 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Heart className="w-4 h-4 text-rose-500" />
+                  <span>আমার পছন্দের তালিকা</span>
+                </div>
+                {displayWishlistCount > 0 && (
+                  <span className="bg-rose-100 text-rose-700 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {displayWishlistCount}টি
+                  </span>
+                )}
+              </Link>
               <Link
                 href="/account/orders"
                 prefetch={true}

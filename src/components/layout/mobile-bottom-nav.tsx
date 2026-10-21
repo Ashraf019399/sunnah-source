@@ -92,14 +92,17 @@ export const MobileBottomNav: React.FC = () => {
 
         {/* 5. Wishlist Indicator */}
         <Link
-          href="/#products"
-          className="flex flex-col items-center justify-center flex-1 h-full py-1 relative text-charcoal-700 hover:text-brand-700 transition-colors"
+          href="/wishlist"
+          className={cn(
+            "flex flex-col items-center justify-center flex-1 h-full py-1 relative transition-colors",
+            pathname === "/wishlist" ? "text-rose-600 font-bold" : "text-charcoal-700 hover:text-rose-600"
+          )}
           aria-label="পছন্দের তালিকা"
         >
           <div className="relative">
-            <Heart className="w-5 h-5" />
+            <Heart className={cn("w-5 h-5", pathname === "/wishlist" ? "fill-rose-500 text-rose-500" : "")} />
             {displayWishlistCount > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-accent-amber text-white font-mono text-[10px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center shadow-xs">
+              <span className="absolute -top-1.5 -right-2.5 bg-rose-500 text-white font-mono text-[10px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center shadow-xs">
                 {displayWishlistCount}
               </span>
             )}

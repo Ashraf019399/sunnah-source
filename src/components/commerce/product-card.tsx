@@ -89,15 +89,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     e.stopPropagation();
 
     if (typeof toggleWishlist === "function") {
-      toggleWishlist({
-        id: product.id,
-        title: product.titleEn,
-        titleBn: product.titleBn,
-        slug: product.slug,
-        image: product.images?.[0] || "",
-        regularPrice: activeVariant ? activeVariant.regularPrice : 0,
-        salePrice: activeVariant?.salePrice,
-      });
+      toggleWishlist(product);
     }
   };
 
@@ -148,14 +140,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
         <button
           type="button"
           onClick={handleToggleWishlist}
-          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-charcoal-700 hover:text-red-500 flex items-center justify-center shadow-xs transition-colors z-10"
+          className={cn(
+            "absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-xs transition-colors z-10 cursor-pointer",
+            isWishlisted
+              ? "bg-rose-50 text-rose-500 border border-rose-200"
+              : "bg-white/90 hover:bg-white text-stone-400 hover:text-stone-700"
+          )}
           aria-label={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
           title={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
         >
           <Heart
             className={cn(
               "w-4 h-4 transition-colors",
-              isWishlisted ? "fill-red-500 text-red-500" : "text-charcoal-700"
+              isWishlisted ? "fill-rose-500 text-rose-500" : "text-stone-400 hover:text-stone-700"
             )}
           />
         </button>
