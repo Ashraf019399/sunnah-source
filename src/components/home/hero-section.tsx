@@ -15,8 +15,8 @@ interface BannerSlide {
 const MAIN_BANNERS: BannerSlide[] = [
   {
     id: "honey",
-    image: "/images/banners/banner-honey.jpg",
-    alt: "সুন্দরবনের প্রাকৃতিক চাকের কাঁচা মধু - Sunnah Source Pure Wild Raw Honey",
+    image: "/images/banners/banner-nature-honey.jpg",
+    alt: "প্রকৃতির খাঁটি উপহার — সুন্নাহ সোর্স কাঁচা মধু",
     link: "/category/honey",
   },
   {
