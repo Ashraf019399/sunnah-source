@@ -29,6 +29,7 @@ import { formatBDT } from "@/lib/utils";
 import { ProductCard } from "@/components/commerce/product-card";
 import { WhatsappOrderButton } from "@/components/commerce/whatsapp-order-button";
 import { ProductReviews } from "@/components/commerce/product-reviews";
+import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
 
 function toBengaliNumber(num: number): string {
   const bengaliDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -39,12 +40,14 @@ export interface ProductDetailsContentProps {
   product: Product;
   category?: Category;
   relatedProducts?: Product[];
+  frequentlyBoughtTogether?: React.ReactNode;
 }
 
 export function ProductDetailsContent({
   product,
   category,
   relatedProducts = [],
+  frequentlyBoughtTogether,
 }: ProductDetailsContentProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -621,6 +624,11 @@ export function ProductDetailsContent({
             </div>
           </div>
         </div>
+      </section>
+
+      {/* 2.5 Frequently Bought Together (প্রায়শই একসাথে কেনা হয়) Cross-Sell Bundle */}
+      <section className="container mx-auto max-w-7xl px-4">
+        {frequentlyBoughtTogether ?? <FrequentlyBoughtTogether mainProduct={product} />}
       </section>
 
       {/* 3. Detailed Product Information (Full Description, Origin, Storage, Ingredients) */}

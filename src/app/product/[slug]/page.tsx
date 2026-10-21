@@ -9,6 +9,7 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ProductDetailsContent } from "./product-details-content";
+import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -108,6 +109,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           product={product}
           category={category}
           relatedProducts={relatedProducts}
+          frequentlyBoughtTogether={<FrequentlyBoughtTogether mainProduct={product} />}
         />
       </main>
 
