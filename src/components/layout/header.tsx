@@ -357,7 +357,7 @@ export const Header: React.FC = () => {
           </form>
 
           {/* Right: Actions (Vertical Stack Layout) */}
-          <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+          <div className="flex items-center gap-4 sm:gap-5 shrink-0">
             {/* Item 1: Order Track */}
             <Link
               href="/track-order"
@@ -406,7 +406,20 @@ export const Header: React.FC = () => {
               <span className="text-[11px] font-semibold tracking-tight">Cart</span>
             </button>
 
-            {/* Item 3: More (Dropdown) */}
+            {/* Item 4: Sign In */}
+            <Link
+              href="/login"
+              prefetch={true}
+              className="flex flex-col items-center justify-center text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+              title="সাইন ইন / অ্যাকাউন্ট"
+            >
+              <div className="relative p-1">
+                <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+              </div>
+              <span className="text-[11px] font-medium mt-0.5 font-bengali">Sign In</span>
+            </Link>
+
+            {/* Item 5: More (Dropdown) */}
             <div className="relative group">
               <button
                 type="button"
@@ -441,14 +454,6 @@ export const Header: React.FC = () => {
                   >
                     <HelpCircle className="w-4 h-4 text-brand-700" />
                     <span>Faqs</span>
-                  </Link>
-                  <Link
-                    href="/login"
-                    prefetch={true}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
-                  >
-                    <User className="w-4 h-4 text-brand-700" />
-                    <span>Sign In</span>
                   </Link>
                   <a
                     href="https://wa.me/8801914612007"
