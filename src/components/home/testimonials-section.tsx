@@ -95,6 +95,11 @@ export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
+  // Drag & Swipe gesture state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+
   useEffect(() => {
     setMounted(true);
     const updateCardsPerView = () => {
@@ -122,21 +127,93 @@ export function TestimonialsSection() {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   }, [maxIndex]);
 
+  const finishDrag = useCallback(
+    (offset: number) => {
+      setIsDragging(false);
+      setDragOffset(0);
+
+      const threshold = 50; // 50px swipe threshold
+      if (offset < -threshold) {
+        // Dragged Left -> next slide
+        nextSlide();
+      } else if (offset > threshold) {
+        // Dragged Right -> prev slide
+        prevSlide();
+      }
+    },
+    [nextSlide, prevSlide]
+  );
+
+  // Clamp index if cardsPerView changed
   useEffect(() => {
     if (currentIndex > maxIndex) {
       setCurrentIndex(maxIndex);
     }
   }, [maxIndex, currentIndex]);
 
+  // Auto-play timer (advances every 4s, pauses while dragging or hovering)
   useEffect(() => {
-    if (!mounted || isPaused || maxIndex <= 0) return;
+    if (!mounted || isPaused || isDragging || maxIndex <= 0) return;
 
     const timer = setInterval(() => {
       nextSlide();
     }, 4000);
 
     return () => clearInterval(timer);
-  }, [mounted, isPaused, maxIndex, nextSlide]);
+  }, [mounted, isPaused, isDragging, maxIndex, nextSlide]);
+
+  // Global mouse handlers for fluid mouse dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const diff = e.clientX - dragStartX;
+      setDragOffset(diff);
+    };
+
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      const finalOffset = e.clientX - dragStartX;
+      finishDrag(finalOffset);
+      setIsPaused(false);
+    };
+
+    window.addEventListener("mousemove", handleGlobalMouseMove);
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleGlobalMouseMove);
+      window.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStartX, finishDrag]);
+
+  // Mouse Down Event Handler
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setIsPaused(true);
+    setDragStartX(e.clientX);
+    setDragOffset(0);
+  };
+
+  // Touch Event Handlers
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    setIsPaused(true);
+    setDragStartX(e.touches[0].clientX);
+    setDragOffset(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const diff = e.touches[0].clientX - dragStartX;
+    setDragOffset(diff);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    finishDrag(dragOffset);
+    setIsPaused(false);
+  };
 
   return (
     <section className="container mx-auto max-w-7xl px-4 py-8 lg:py-12 space-y-10 font-bengali">
@@ -215,28 +292,40 @@ export function TestimonialsSection() {
         </div>
       </div>
 
-      {/* 3. Auto-Playing Horizontal Review Slider (Ghorer Bazar Style) */}
+      {/* 3. Auto-Playing Horizontal Review Slider with Fluid Drag & Swipe */}
       <div className="space-y-6">
-        {/* Slider Viewport with Pause on Hover / Touch */}
+        {/* Slider Viewport with Mouse Drag & Touch Swipe */}
         <div
-          className="relative overflow-hidden py-2"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
+          className={`relative overflow-hidden py-2 select-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseEnter={() => {
+            if (!isDragging) setIsPaused(true);
+          }}
+          onMouseLeave={() => {
+            if (!isDragging) setIsPaused(false);
+          }}
         >
           <div
-            className="flex transition-transform duration-500 ease-out"
+            className={`flex ${
+              isDragging ? "transition-none" : "transition-transform duration-500 ease-out"
+            }`}
             style={{
-              transform: `translateX(-${currentIndex * (100 / (mounted ? cardsPerView : 1))}%)`,
+              transform: `translateX(calc(-${
+                currentIndex * (100 / (mounted ? cardsPerView : 1))
+              }% + ${dragOffset}px))`,
             }}
           >
             {TESTIMONIALS.map((review) => (
               <div
                 key={review.id}
-                className="w-full min-w-full sm:w-1/2 sm:min-w-[50%] lg:w-1/3 lg:min-w-[33.333333%] px-2.5 sm:px-3 shrink-0 flex"
+                className="w-full min-w-full sm:w-1/2 sm:min-w-[50%] lg:w-1/3 lg:min-w-[33.333333%] px-2.5 sm:px-3 shrink-0 flex select-none"
               >
-                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-bengali text-left flex flex-col justify-between w-full h-full space-y-4">
+                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-bengali text-left flex flex-col justify-between w-full h-full space-y-4 select-none">
                   {/* Top: Stars & Quote Icon */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
@@ -251,39 +340,39 @@ export function TestimonialsSection() {
                   </div>
 
                   {/* Review Quote Body */}
-                  <p className="text-xs sm:text-sm text-charcoal-800 leading-relaxed font-normal flex-1">
+                  <p className="text-xs sm:text-sm text-charcoal-800 leading-relaxed font-normal flex-1 select-none">
                     &ldquo;{review.comment}&rdquo;
                   </p>
 
                   {/* Product Tag */}
                   {review.product && (
                     <div className="pt-1">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200/70 truncate max-w-full">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200/70 truncate max-w-full select-none">
                         পণ্য: {review.product}
                       </span>
                     </div>
                   )}
 
                   {/* Bottom: Customer Avatar, Name, Verified Badge, Designation/Location */}
-                  <div className="pt-4 border-t border-stone-100 flex items-center justify-between gap-3">
+                  <div className="pt-4 border-t border-stone-100 flex items-center justify-between gap-3 select-none">
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-full ${review.avatarBg} font-extrabold flex items-center justify-center text-sm border shadow-2xs shrink-0`}
+                        className={`w-10 h-10 rounded-full ${review.avatarBg} font-extrabold flex items-center justify-center text-sm border shadow-2xs shrink-0 select-none`}
                       >
                         {review.avatarText}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="font-extrabold text-charcoal-900 text-xs sm:text-sm truncate">
+                        <h4 className="font-extrabold text-charcoal-900 text-xs sm:text-sm truncate select-none">
                           {review.name}
                         </h4>
-                        <p className="text-[11px] text-charcoal-500 truncate mt-0.5">
+                        <p className="text-[11px] text-charcoal-500 truncate mt-0.5 select-none">
                           {review.title}
                         </p>
                       </div>
                     </div>
 
                     {review.verifiedBuyer && (
-                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">
+                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 select-none">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         যাচাইকৃত ক্রেতা
                       </span>
