@@ -86,3 +86,17 @@ export interface Product {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface Review {
+  id: string;
+  productSlug: string;
+  productTitleBn?: string;
+  userName: string;
+  userLocation: string;
+  rating: number;
+  date: string;
+  comment: string;
+  verifiedBuyer: boolean;
+  avatarText?: string;
+  helpfulCount?: number;
+}

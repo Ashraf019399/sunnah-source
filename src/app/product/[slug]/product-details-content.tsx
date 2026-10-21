@@ -28,6 +28,7 @@ import { useWishlistStore } from "@/store/use-wishlist-store";
 import { formatBDT } from "@/lib/utils";
 import { ProductCard } from "@/components/commerce/product-card";
 import { WhatsappOrderButton } from "@/components/commerce/whatsapp-order-button";
+import { ProductReviews } from "@/components/commerce/product-reviews";
 
 function toBengaliNumber(num: number): string {
   const bengaliDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -378,15 +379,18 @@ export function ProductDetailsContent({
             {/* Ratings & Stock Status */}
             <div className="flex flex-wrap items-center gap-4 pt-1 pb-3 border-b border-surface-border/80">
               {product.reviewCount > 0 && (
-                <div className="flex items-center gap-1.5 text-accent-amber text-xs sm:text-sm">
-                  <Star className="w-4 h-4 fill-current" />
+                <a
+                  href="#product-reviews"
+                  className="flex items-center gap-1.5 text-accent-amber text-xs sm:text-sm hover:underline cursor-pointer group"
+                >
+                  <Star className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
                   <span className="font-mono font-bold text-charcoal-900">
                     {product.ratingAverage.toFixed(1)}
                   </span>
-                  <span className="text-charcoal-500">
+                  <span className="text-charcoal-500 group-hover:text-brand-700 transition-colors">
                     ({toBengaliNumber(product.reviewCount)}টি কাস্টমার রিভিউ)
                   </span>
-                </div>
+                </a>
               )}
 
               {/* Stock Status Badge */}
@@ -664,7 +668,10 @@ export function ProductDetailsContent({
         </section>
       )}
 
-      {/* 4. Related Products Section */}
+      {/* 4. Customer Reviews, Ratings & Social Proof Section */}
+      <ProductReviews product={product} />
+
+      {/* 5. Related Products Section */}
       {relatedProducts && relatedProducts.length > 0 && (
         <section className="container mx-auto max-w-7xl px-4 space-y-6 pt-4">
           <div className="flex items-center justify-between pb-2 border-b border-surface-border">

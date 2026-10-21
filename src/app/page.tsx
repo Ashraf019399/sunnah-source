@@ -11,6 +11,7 @@ import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ProductCard } from "@/components/commerce/product-card";
 import { Product } from "@/types/commerce.types";
 import { ShieldCheck, Truck, Clock, Award, ArrowRight } from "lucide-react";
+import { TestimonialsSection } from "@/components/home/testimonials-section";
 
 // Top 8 Sunnah Source Best Selling products
 const BEST_SELLER_SLUGS = [
@@ -267,6 +268,9 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* গ্রাহকদের সন্তুষ্টি ও মতামত (What Our Customers Say) */}
+        <TestimonialsSection />
       </main>
 
       {/* ৪. গ্লোবাল ফুটার */}
