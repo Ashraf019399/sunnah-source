@@ -427,26 +427,18 @@ export const Header: React.FC = () => {
             <Link
               href="/"
               prefetch={true}
-              className="flex items-center gap-2.5 sm:gap-3 shrink-0 py-1 group select-none"
+              className="flex items-center shrink-0 py-1 group select-none"
               aria-label="Sunnah Source"
             >
               <Image
                 src="/images/logo.svg"
                 alt="Sunnah Source"
-                width={48}
-                height={48}
+                width={220}
+                height={60}
                 priority
                 unoptimized
-                className="w-10 h-10 sm:w-11 sm:h-11 object-contain shrink-0 transition-transform group-hover:scale-105"
+                className="h-12 sm:h-14 lg:h-16 w-auto max-w-[190px] sm:max-w-[220px] object-contain transition-transform group-hover:scale-105"
               />
-              <div className="flex flex-col justify-center">
-                <span className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-brand-900 leading-none font-sans">
-                  SUNNAH SOURCE
-                </span>
-                <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-semibold tracking-[0.2em] text-brand-700 leading-none mt-1 uppercase font-sans">
-                  Pure & Natural
-                </span>
-              </div>
             </Link>
           </div>
 
