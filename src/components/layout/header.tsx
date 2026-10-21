@@ -413,7 +413,7 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 w-full font-bengali shadow-subtle">
       {/* 1. Main Header */}
       <div className="bg-white border-b border-surface-border">
-        <div className="container mx-auto px-4 max-w-7xl py-2 sm:py-2.5 min-h-[68px] sm:min-h-[70px] lg:h-[70px] flex items-center justify-between gap-3 sm:gap-4 lg:gap-6">
+        <div className="container mx-auto px-4 max-w-7xl py-3 sm:py-3.5 md:py-4 lg:py-5 min-h-[72px] sm:min-h-[78px] lg:min-h-[90px] flex items-center justify-between gap-3 sm:gap-4 lg:gap-6">
           {/* Left: Mobile Menu & Logo */}
           <div className="flex items-center gap-3 shrink-0">
             <button
@@ -463,9 +463,9 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-10 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -475,14 +475,14 @@ export const Header: React.FC = () => {
               }}
               onFocus={() => setIsSearchOpen(true)}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-10 pr-10 rounded-full"
+              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-sm text-charcoal-900 placeholder:text-stone-400 px-5 pl-11 pr-11 py-3 rounded-full"
               aria-label="পণ্য খুঁজুন"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
                 <X className="w-3.5 h-3.5" />
@@ -746,7 +746,7 @@ export const Header: React.FC = () => {
         aria-label="Secondary Navigation"
         className="hidden lg:block bg-brand-900 border-b border-brand-800 text-stone-200 text-sm font-medium"
       >
-        <div className="container mx-auto px-4 max-w-7xl h-10 flex items-center justify-between">
+        <div className="container mx-auto px-4 max-w-7xl py-3 lg:py-3.5 min-h-[48px] lg:min-h-[50px] flex items-center justify-between">
           <ul className="flex items-center gap-1 xl:gap-2">
             {NAV_ITEMS.map((item) => {
               const category = item.categorySlug
@@ -869,7 +869,9 @@ export const Header: React.FC = () => {
               );
             })}
           </ul>
-          <span className="text-[11px] text-stone-300 font-sans">হটলাইন: ০১৯১৪-৬১২০০৭</span>
+          <span className="text-xs text-stone-300 font-sans tracking-wide shrink-0 select-none">
+            হটলাইন: ০১৯১৪-৬১২০০৭
+          </span>
         </div>
       </nav>
 
