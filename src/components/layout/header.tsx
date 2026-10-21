@@ -18,6 +18,8 @@ import {
   Sparkles,
   Package,
   Heart,
+  HelpCircle,
+  Info,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
@@ -425,6 +427,22 @@ export const Header: React.FC = () => {
                     <span>আমার অর্ডারসমূহ</span>
                   </Link>
                   <Link
+                    href="/about"
+                    prefetch={true}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  >
+                    <Info className="w-4 h-4 text-brand-700" />
+                    <span>About Us</span>
+                  </Link>
+                  <Link
+                    href="/faq"
+                    prefetch={true}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  >
+                    <HelpCircle className="w-4 h-4 text-brand-700" />
+                    <span>Faqs</span>
+                  </Link>
+                  <Link
                     href="/admin/login"
                     prefetch={true}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
@@ -754,6 +772,24 @@ export const Header: React.FC = () => {
               >
                 <Package className="w-4 h-4 text-brand-700" />
                 <span>আমার অর্ডারসমূহ</span>
+              </Link>
+              <Link
+                href="/about"
+                prefetch={true}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
+              >
+                <Info className="w-4 h-4 text-brand-700" />
+                <span>About Us</span>
+              </Link>
+              <Link
+                href="/faq"
+                prefetch={true}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
+              >
+                <HelpCircle className="w-4 h-4 text-brand-700" />
+                <span>Faqs</span>
               </Link>
               <div className="flex gap-4 text-xs font-normal text-charcoal-500 pt-1 border-t border-surface-border/50">
                 <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
