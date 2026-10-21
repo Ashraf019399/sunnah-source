@@ -8,6 +8,7 @@ import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
+import { fbAddToCart } from "@/lib/services/facebook-pixel";
 
 interface FrequentlyBoughtTogetherProps {
   mainProduct: Product;
@@ -199,9 +200,15 @@ export function FrequentlyBoughtTogether({ mainProduct }: FrequentlyBoughtTogeth
       });
     }
 
-    // Add items into cart store
+    // Add items into cart store and track via Meta Pixel
     itemsToAdd.forEach((item) => {
       addItem(item);
+      fbAddToCart({
+        id: item.productId,
+        name: item.titleBn || item.title,
+        price: item.unitPrice,
+        quantity: item.quantity,
+      });
     });
 
     // Open Cart Drawer

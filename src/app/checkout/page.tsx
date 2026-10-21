@@ -34,6 +34,7 @@ import { PrintableInvoice } from "@/components/checkout/printable-invoice";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { WhatsAppIcon } from "@/components/commerce/whatsapp-order-button";
+import { fbInitiateCheckout, fbPurchase } from "@/lib/services/facebook-pixel";
 
 const IDEMPOTENCY_STORAGE_PREFIX = "sunnah_checkout_idempotency_";
 
@@ -303,6 +304,23 @@ export default function CheckoutPage() {
     return isNaN(calculated) ? 0 : Math.max(0, calculated);
   }, [getSubtotal, validItems]);
 
+  // Track Meta Pixel InitiateCheckout event once when checkout loads with items
+  const hasTrackedCheckoutRef = useRef(false);
+  useEffect(() => {
+    if (mounted && validItems.length > 0 && !hasTrackedCheckoutRef.current && !placedOrder) {
+      hasTrackedCheckoutRef.current = true;
+      fbInitiateCheckout(
+        validItems.map((item) => ({
+          id: item.productId || item.variantId || item.id,
+          name: item.titleBn || item.title,
+          price: item.unitPrice,
+          quantity: item.quantity,
+        })),
+        subtotal
+      );
+    }
+  }, [mounted, validItems, subtotal, placedOrder]);
+
   // Verified delivery fee logic (guarded against NaN)
   const freeThreshold =
     typeof deliverySettings?.freeDeliveryThreshold === "number" && !isNaN(deliverySettings.freeDeliveryThreshold)
@@ -534,6 +552,17 @@ export default function CheckoutPage() {
           items: [...validItems],
         };
         setPlacedOrder(placedOrderData);
+
+        // Track Meta Pixel Purchase event
+        fbPurchase({
+          orderId: result.data.orderNumber,
+          total: isNaN(grandTotal) ? 0 : grandTotal,
+          numItems: validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0),
+          items: validItems.map((item) => ({
+            id: item.productId || item.variantId || item.id,
+            name: item.titleBn || item.title,
+          })),
+        });
 
         // Save order to localStorage for customer invoice and order resilience
         try {

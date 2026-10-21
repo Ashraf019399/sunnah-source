@@ -30,6 +30,7 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { WhatsappOrderButton } from "@/components/commerce/whatsapp-order-button";
 import { ProductReviews } from "@/components/commerce/product-reviews";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
+import { fbViewContent, fbAddToCart } from "@/lib/services/facebook-pixel";
 
 function toBengaliNumber(num: number): string {
   const bengaliDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -69,10 +70,6 @@ export function ProductDetailsContent({
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
   const isInWishlist = useWishlistStore((state) => state.isInWishlist);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const activeVariant = selectedVariant ?? defaultVariant;
   const isOutOfStock = !activeVariant || activeVariant.stockQuantity <= 0;
   const isLowStock = Boolean(
@@ -90,6 +87,16 @@ export function ProductDetailsContent({
     hasDiscount && regularPrice > 0 && salePrice !== undefined
       ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
       : 0;
+
+  useEffect(() => {
+    setMounted(true);
+    fbViewContent({
+      id: product.id,
+      name: product.titleBn || product.titleEn,
+      category: category?.nameBn || category?.nameEn,
+      price: currentPrice,
+    });
+  }, [product.id, product.titleBn, product.titleEn, category?.nameBn, category?.nameEn, currentPrice]);
 
   const isWishlisted =
     mounted && typeof isInWishlist === "function" ? isInWishlist(product.id) : false;
@@ -138,6 +145,12 @@ export function ProductDetailsContent({
     if (typeof addItem === "function") {
       addItem(cartItem);
     }
+    fbAddToCart({
+      id: product.id,
+      name: product.titleBn || product.titleEn,
+      price: currentPrice,
+      quantity,
+    });
     if (typeof openDrawer === "function") {
       openDrawer();
     }
@@ -165,6 +178,12 @@ export function ProductDetailsContent({
     if (typeof addItem === "function") {
       addItem(cartItem);
     }
+    fbAddToCart({
+      id: product.id,
+      name: product.titleBn || product.titleEn,
+      price: currentPrice,
+      quantity,
+    });
     router.push("/checkout");
   };
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
+import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sunnahsourcebd.com"),
@@ -13,6 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="bn">
       <body className="min-h-screen flex flex-col font-sans">
+        <Suspense fallback={null}>
+          <FacebookPixel />
+        </Suspense>
         <AuthRecoveryRedirect />
         {children}
         <FloatingWhatsApp />
