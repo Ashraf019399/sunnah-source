@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
+import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sunnahsourcebd.com"),
@@ -82,6 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthRecoveryRedirect />
         {children}
         <FloatingWhatsApp />
+        <LiveSalesNotification />
       </body>
     </html>
   );
