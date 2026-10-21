@@ -150,6 +150,11 @@ export const Header: React.FC = () => {
     }
   };
 
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setIsSearchOpen(false);
+  };
+
   const renderSearchDropdown = () => {
     if (!isSearchOpen || !searchQuery.trim()) return null;
 
@@ -295,38 +300,29 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative items-center w-full bg-surface-canvas/50 hover:bg-white focus-within:bg-white rounded-full border border-surface-border focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/20 transition-all shadow-xs"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-11 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-500 pointer-events-none" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                if (e.target.value.trim().length > 0) {
-                  setIsSearchOpen(true);
-                }
+                setIsSearchOpen(true);
               }}
-              onFocus={() => {
-                if (searchQuery.trim().length > 0) {
-                  setIsSearchOpen(true);
-                }
-              }}
+              onFocus={() => setIsSearchOpen(true)}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-charcoal-400 py-2.5 pl-10 pr-10"
+              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-11 pr-11 rounded-full"
               aria-label="পণ্য খুঁজুন"
             />
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setIsSearchOpen(false);
-                }}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                onClick={handleClearSearch}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
             {renderSearchDropdown()}
@@ -546,38 +542,29 @@ export const Header: React.FC = () => {
             ref={mobileSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="relative flex items-center w-full bg-surface-canvas/50 hover:bg-white focus-within:bg-white rounded-full border border-surface-border focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/20 transition-all shadow-xs"
+            className="relative flex items-center w-full h-11 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-500 pointer-events-none" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                if (e.target.value.trim().length > 0) {
-                  setIsSearchOpen(true);
-                }
+                setIsSearchOpen(true);
               }}
-              onFocus={() => {
-                if (searchQuery.trim().length > 0) {
-                  setIsSearchOpen(true);
-                }
-              }}
-              placeholder="পণ্য খুঁজুন..."
-              className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-charcoal-400 py-2.5 pl-10 pr-10"
+              onFocus={() => setIsSearchOpen(true)}
+              placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
+              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-11 pr-11 rounded-full"
               aria-label="মোবাইল সার্চ"
             />
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setIsSearchOpen(false);
-                }}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                onClick={handleClearSearch}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
             {renderSearchDropdown()}
