@@ -19,15 +19,18 @@ import {
   ExternalLink,
   Tag,
   X,
+  Package,
+  Compass,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT, isValidBDPhone } from "@/lib/utils";
-import { DeliveryZone, OrderCreationPayload } from "@/types/commerce.types";
+import { DeliveryZone, OrderCreationPayload, CartItem } from "@/types/commerce.types";
 import { submitOrderServerAction, getPublicDeliverySettingsAction } from "@/lib/actions/checkout-actions";
 import { validateCouponAction } from "@/lib/actions/coupon-actions";
 import { CouponDiscountType } from "@/types/coupons.types";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { ALL_PRODUCTS } from "@/lib/data/products";
+import { WhatsAppIcon } from "@/components/commerce/whatsapp-order-button";
 
 const IDEMPOTENCY_STORAGE_PREFIX = "sunnah_checkout_idempotency_";
 
@@ -193,13 +196,19 @@ export default function CheckoutPage() {
   const [placedOrder, setPlacedOrder] = useState<{
     orderNumber: string;
     grandTotal: number;
+    fullName: string;
+    phone: string;
+    shippingAddress: string;
     customerName: string;
     customerPhone: string;
     address: string;
     zoneText: string;
     itemCount: number;
+    subtotal: number;
+    deliveryFee: number;
     couponCode?: string | null;
     discountAmount?: number;
+    items?: CartItem[];
   } | null>(null);
 
   // Coupon & Discount State
@@ -469,16 +478,23 @@ export default function CheckoutPage() {
       const result = await submitOrderServerAction(payload);
 
       if (result.success && result.data?.orderNumber) {
+        const fullShippingAddress = `${fullAddress.trim()}, ${thana.trim()}, ${district.trim()}`;
         setPlacedOrder({
           orderNumber: result.data.orderNumber,
           grandTotal: isNaN(grandTotal) ? 0 : grandTotal,
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          shippingAddress: fullShippingAddress,
           customerName: fullName.trim(),
           customerPhone: phone.trim(),
-          address: `${fullAddress.trim()}, ${thana.trim()}, ${district.trim()}`,
+          address: fullShippingAddress,
           zoneText: zone === "inside_dhaka" ? "ঢাকা সিটি" : "ঢাকার বাইরে",
           itemCount: validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0),
+          subtotal: isNaN(subtotal) ? 0 : subtotal,
+          deliveryFee: isNaN(deliveryFee) ? 0 : deliveryFee,
           couponCode: appliedCoupon?.code,
           discountAmount: isNaN(discountAmount) ? 0 : discountAmount,
+          items: [...validItems],
         });
 
         // Clear saved key for this completed cart and regenerate key for future orders
@@ -525,9 +541,24 @@ export default function CheckoutPage() {
 
   // 2. Order Success Screen
   if (placedOrder) {
+    const confirmMessage = [
+      "আসসালামু আলাইকুম, সুন্নাহ সোর্স।",
+      "আমি মাত্র ওয়েবসাইট থেকে অর্ডার সম্পন্ন করেছি।",
+      "",
+      `📦 অর্ডার নম্বর: #${placedOrder.orderNumber}`,
+      `👤 গ্রাহক: ${placedOrder.fullName}`,
+      `📱 মোবাইল: ${placedOrder.phone}`,
+      `📍 ঠিকানা: ${placedOrder.shippingAddress}`,
+      `💰 মোট প্রদেয় মূল্য: ৳${placedOrder.grandTotal} (ক্যাশ অন ডেলিভারি)`,
+      "",
+      "অনুগ্রহ করে আমার অর্ডারটি কনফার্ম করে দ্রুত ডেলিভারির ব্যবস্থা করুন।"
+    ].join("\n");
+    const whatsappConfirmUrl = `https://wa.me/8801914612007?text=${encodeURIComponent(confirmMessage)}`;
+
     return (
       <div className="min-h-screen bg-surface-canvas font-bengali py-10 px-4">
         <div className="max-w-xl mx-auto bg-white rounded-3xl border border-surface-border shadow-card p-6 sm:p-8 text-center space-y-6">
+          {/* Success Checkmark & Header */}
           <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-subtle">
             <CheckCircle2 className="w-10 h-10" />
           </div>
@@ -539,90 +570,187 @@ export default function CheckoutPage() {
             <h1 className="text-2xl sm:text-3xl font-black text-charcoal-900">
               ধন্যবাদ! আপনার অর্ডারটি নিশ্চিত হয়েছে
             </h1>
-            <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed">
-              আলহামদুলিল্লাহ, আমাদের প্রতিনিধি দ্রুত আপনার সাথে ফোনে যোগাযোগ করে অর্ডার কনফার্ম করবেন।
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-xs sm:text-sm font-bold mt-1">
+              <span className="text-charcoal-500 font-normal">অর্ডার নম্বর:</span>
+              <span className="font-mono text-brand-800 text-sm sm:text-base font-black">
+                #{placedOrder.orderNumber}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed pt-1">
+              আলহামদুলিল্লাহ, আপনার অর্ডারটি সফলভাবে ডাটাবেজে রেকর্ড করা হয়েছে।
             </p>
           </div>
 
-          {/* Order Summary Details */}
-          <div className="bg-surface-canvas rounded-2xl p-5 border border-surface-border text-left space-y-3 text-xs sm:text-sm">
-            <div className="flex justify-between items-center pb-2 border-b border-surface-border/60">
-              <span className="text-charcoal-500 font-medium">অর্ডার নম্বর:</span>
-              <span className="font-mono font-bold text-brand-800 text-base">
-                {placedOrder.orderNumber}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-charcoal-500 font-medium">গ্রাহকের নাম:</span>
-              <span className="font-bold text-charcoal-900">{placedOrder.customerName}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-charcoal-500 font-medium">মোবাইল নম্বর:</span>
-              <span className="font-mono font-bold text-charcoal-900">
-                {placedOrder.customerPhone}
-              </span>
-            </div>
-            <div className="flex justify-between items-start gap-4">
-              <span className="text-charcoal-500 font-medium shrink-0">ডেলিভারি ঠিকানা:</span>
-              <span className="text-right text-charcoal-900 leading-relaxed font-medium">
-                {placedOrder.address}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-charcoal-500 font-medium">পেমেন্ট মেথড:</span>
-              <span className="font-bold text-emerald-700">ক্যাশ অন ডেলিভারি (COD)</span>
-            </div>
-            {placedOrder.discountAmount && placedOrder.discountAmount > 0 ? (
-              <div className="flex justify-between items-center text-emerald-700 bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
-                <span className="font-medium">
-                  কুপন ছাড় {placedOrder.couponCode ? `(${placedOrder.couponCode})` : ""}:
-                </span>
-                <span className="font-mono font-bold">
-                  -{formatBDT(placedOrder.discountAmount)}
-                </span>
-              </div>
-            ) : null}
-            <div className="flex justify-between items-center pt-2 border-t border-surface-border/60 text-sm sm:text-base font-bold">
-              <span className="text-charcoal-900">মোট প্রদেয় মূল্য:</span>
-              <span className="font-mono text-brand-700 font-extrabold">
-                {formatBDT(placedOrder.grandTotal)}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-4 bg-brand-50 rounded-2xl border border-brand-200/80 text-left flex items-start gap-3">
-            <Clock className="w-5 h-5 text-brand-700 shrink-0 mt-0.5" />
-            <div className="text-xs text-charcoal-700 leading-relaxed">
-              <strong className="block text-brand-900 mb-0.5">ডেলিভারি সময়সীমা:</strong>
-              ঢাকা সিটির ভিতরে ২৪-৪৮ ঘণ্টার মধ্যে এবং ঢাকা সিটির বাইরে ২-৩ কার্যদিবসের মধ্যে পণ্য পৌঁছে দেওয়া হবে।
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link
-              href={`/track-order?orderNumber=${encodeURIComponent(placedOrder.orderNumber)}&phone=${encodeURIComponent(placedOrder.customerPhone)}`}
-              className="flex-1 flex items-center justify-center gap-2 bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm transition-all shadow-card"
+          {/* 1. High-Converting WhatsApp Instant Confirmation Card */}
+          <div className="bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 rounded-2xl border-2 border-emerald-500/40 p-5 sm:p-6 shadow-md text-center space-y-3">
+            <h2 className="text-base sm:text-lg font-black text-emerald-900">
+              অর্ডারটি দ্রুততম সময়ে পেতে এক ক্লিকে WhatsApp-এ নিশ্চিত করুন
+            </h2>
+            <p className="text-xs text-charcoal-600">
+              আমাদের প্রতিনিধি সরাসরি মেসেজ পেয়ে আপনার পার্সেল দ্রুততম সময়ে প্যাকেজিং ও ডেলিভারির ব্যবস্থা করবে।
+            </p>
+            <a
+              href={whatsappConfirmUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 px-6 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#20ba5a] active:scale-[0.99] text-white shadow-card transition-all cursor-pointer"
             >
-              <Truck className="w-4 h-4" />
-              <span>অর্ডার ট্র্যাক করুন</span>
+              <WhatsAppIcon className="w-5 h-5 fill-white" />
+              <span>WhatsApp-এ অর্ডার নিশ্চিত করুন</span>
+            </a>
+          </div>
+
+          {/* 2. Live Order Tracking & Continue Shopping Actions */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href={`/track-order?orderNumber=${encodeURIComponent(placedOrder.orderNumber)}&phone=${encodeURIComponent(placedOrder.phone)}`}
+              className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 bg-brand-700 hover:bg-brand-800 text-white transition-all shadow-subtle hover:shadow-card cursor-pointer"
+            >
+              <Package className="w-4 h-4" />
+              <span>আপনার অর্ডার ট্র্যাক করুন →</span>
             </Link>
             <Link
               href="/"
-              className="flex-1 flex items-center justify-center bg-surface-canvas hover:bg-stone-200 text-charcoal-800 font-bold py-3 px-4 rounded-xl text-xs sm:text-sm border border-surface-border transition-all"
+              prefetch={true}
+              className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 bg-surface-canvas hover:bg-stone-100 text-charcoal-800 border border-surface-border transition-all cursor-pointer"
             >
-              আরও কেনাকাটা করুন
+              <Compass className="w-4 h-4 text-charcoal-500" />
+              <span>আরো কেনাকাটা করুন</span>
             </Link>
-            <a
-              href={`https://wa.me/8801914612007?text=${encodeURIComponent(
-                `আসসালামু আলাইকুম, আমি অর্ডার নম্বর ${placedOrder.orderNumber} সম্পর্কে জানতে চাচ্ছি।`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm transition-all"
-            >
-              <span>হোয়াটসঅ্যাপ সাপোর্ট</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+          </div>
+
+          {/* 3. Complete Order Receipt Summary */}
+          <div className="bg-surface-canvas rounded-2xl p-5 sm:p-6 border border-surface-border text-left space-y-4 text-xs sm:text-sm">
+            {/* Header with Order Number Pill */}
+            <div className="flex justify-between items-center pb-3 border-b border-surface-border/70">
+              <span className="font-extrabold text-charcoal-900 text-sm sm:text-base">
+                অর্ডার রসিদ ও বিবরণ (Order Receipt)
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-surface-border font-mono font-bold text-brand-800 text-xs">
+                #{placedOrder.orderNumber}
+              </span>
+            </div>
+
+            {/* Purchased Products List */}
+            {placedOrder.items && placedOrder.items.length > 0 && (
+              <div className="space-y-3 pb-3 border-b border-surface-border/70">
+                <span className="text-[11px] font-bold text-charcoal-500 uppercase tracking-wider block">
+                  ক্রয়কৃত পণ্যসমূহ ({placedOrder.items.length}টি আইটেম):
+                </span>
+                <div className="space-y-2.5">
+                  {placedOrder.items.map((item, idx) => (
+                    <div
+                      key={`${item.id}-${idx}`}
+                      className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-surface-border/60"
+                    >
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-100 shrink-0 border border-surface-border/40">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.titleBn || item.title}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-charcoal-400">
+                            <ShoppingBag className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-charcoal-900 text-xs truncate">
+                          {item.titleBn || item.title}
+                        </h4>
+                        <div className="text-[11px] text-charcoal-500 flex items-center gap-1.5 mt-0.5">
+                          <span>{item.variantName || item.weightLabel}</span>
+                          <span>•</span>
+                          <span className="font-mono font-semibold text-charcoal-700">
+                            {item.quantity} × {formatBDT(item.unitPrice)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="font-mono font-bold text-charcoal-900 text-xs shrink-0">
+                        {formatBDT(item.quantity * item.unitPrice)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Customer Details */}
+            <div className="space-y-2 pb-3 border-b border-surface-border/70 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-charcoal-500 font-medium">গ্রাহকের নাম:</span>
+                <span className="font-bold text-charcoal-900">{placedOrder.fullName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-charcoal-500 font-medium">মোবাইল নম্বর:</span>
+                <span className="font-mono font-bold text-charcoal-900">{placedOrder.phone}</span>
+              </div>
+              <div className="flex justify-between items-start gap-4">
+                <span className="text-charcoal-500 font-medium shrink-0">ডেলিভারি ঠিকানা:</span>
+                <span className="text-right text-charcoal-900 font-medium leading-relaxed">
+                  {placedOrder.shippingAddress}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-charcoal-500 font-medium">পেমেন্ট মেথড:</span>
+                <span className="font-bold text-emerald-700">ক্যাশ অন ডেলিভারি (COD)</span>
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between items-center text-charcoal-600">
+                <span>সাবটোটাল:</span>
+                <span className="font-mono font-semibold">
+                  {formatBDT(placedOrder.subtotal || placedOrder.grandTotal)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-charcoal-600">
+                <span>ডেলিভারি চার্জ ({placedOrder.zoneText}):</span>
+                <span className="font-mono font-semibold">
+                  {placedOrder.deliveryFee === 0 ? "ফ্রি" : formatBDT(placedOrder.deliveryFee || 0)}
+                </span>
+              </div>
+              {placedOrder.discountAmount && placedOrder.discountAmount > 0 ? (
+                <div className="flex justify-between items-center text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
+                  <span>
+                    কুপন ছাড় {placedOrder.couponCode ? `(${placedOrder.couponCode})` : ""}:
+                  </span>
+                  <span className="font-mono font-bold">
+                    -{formatBDT(placedOrder.discountAmount)}
+                  </span>
+                </div>
+              ) : null}
+              <div className="flex justify-between items-center pt-2 border-t border-surface-border text-sm sm:text-base font-bold">
+                <span className="text-charcoal-900">মোট প্রদেয় মূল্য:</span>
+                <span className="font-mono text-brand-700 font-extrabold text-base sm:text-lg">
+                  {formatBDT(placedOrder.grandTotal)}
+                </span>
+              </div>
+            </div>
+
+            {/* Delivery Zone Note */}
+            <div className="p-3 bg-brand-50/70 rounded-xl border border-brand-200/60 flex items-start gap-2.5 text-xs text-charcoal-700">
+              <Clock className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-brand-900 block font-bold mb-0.5">
+                  ডেলিভারি তথ্য ({placedOrder.zoneText}):
+                </strong>
+                ঢাকা সিটির মধ্যে ২৪-৪৮ ঘণ্টার মধ্যে এবং ঢাকা সিটির বাইরে ২-৩ কার্যদিবসের মধ্যে পার্সেল ডেলিভারি করা হবে।
+              </div>
+            </div>
+
+            {/* COD Reminder with ShieldCheck icon */}
+            <div className="p-3.5 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center gap-2.5 text-xs text-emerald-900">
+              <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
+              <span className="font-semibold leading-relaxed">
+                পণ্য হাতে পেয়ে দেখে মূল্য পরিশোধের শতভাগ নিশ্চয়তা।
+              </span>
+            </div>
           </div>
         </div>
       </div>
