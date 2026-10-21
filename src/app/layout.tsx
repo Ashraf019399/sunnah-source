@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
+
+const hindSiliguri = Hind_Siliguri({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["bengali", "latin"],
+  display: "swap",
+  variable: "--font-bengali",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sunnahsourcebd.com"),
@@ -76,7 +84,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="bn">
-      <body className="min-h-screen flex flex-col font-sans">
+      <body className={`${hindSiliguri.variable} ${hindSiliguri.className} font-bengali antialiased min-h-screen flex flex-col`}>
         <Suspense fallback={null}>
           <FacebookPixel />
         </Suspense>

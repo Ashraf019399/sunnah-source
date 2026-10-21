@@ -11,7 +11,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
-        bengali: ["var(--font-hind)", "SolaimanLipi", "sans-serif"]
+        bengali: ["var(--font-bengali)", "Hind Siliguri", "sans-serif"]
       }
     }
   },
