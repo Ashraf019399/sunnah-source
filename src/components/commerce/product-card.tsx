@@ -30,13 +30,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
   const addItem = useCartStore((state) => state.addItem);
   const openDrawer = useCartStore((state) => state.openDrawer);
 
-  const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
-  const isInWishlist = useWishlistStore((state) => state.isInWishlist);
-
   // Avoid hydration mismatch from client-side persisted localStorage
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const isWishlisted = useWishlistStore((state) =>
+    state.items.some(
+      (item) => String(item.id) === String(product.id) || item.slug === product.slug
+    )
+  );
+  const active = mounted && isWishlisted;
 
   const activeVariant = selectedVariant ?? defaultVariant;
   const isOutOfStock = !activeVariant || activeVariant.stockQuantity <= 0;
@@ -50,10 +54,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     hasDiscount && regularPrice > 0 && salePrice !== undefined
       ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
       : 0;
-
-  // Wishlist check guarded for SSR hydration
-  const isWishlisted =
-    mounted && typeof isInWishlist === "function" ? isInWishlist(product.id) : false;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -81,15 +81,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     }
     if (typeof openDrawer === "function") {
       openDrawer();
-    }
-  };
-
-  const handleToggleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (typeof toggleWishlist === "function") {
-      toggleWishlist(product);
     }
   };
 
@@ -139,21 +130,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
 
         <button
           type="button"
-          onClick={handleToggleWishlist}
-          className={cn(
-            "absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-xs transition-colors z-10 cursor-pointer",
-            isWishlisted
-              ? "bg-rose-50 text-rose-500 border border-rose-200"
-              : "bg-white/90 hover:bg-white text-stone-400 hover:text-stone-700"
-          )}
-          aria-label={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
-          title={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            useWishlistStore.getState().toggleWishlist(product);
+          }}
+          className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 z-20 ${
+            active
+              ? 'bg-rose-50 text-rose-500 border border-rose-200 shadow-xs'
+              : 'bg-white/90 hover:bg-white text-stone-400 hover:text-rose-500 shadow-xs'
+          }`}
+          aria-label={active ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় যুক্ত করুন"}
         >
           <Heart
-            className={cn(
-              "w-4 h-4 transition-colors",
-              isWishlisted ? "fill-rose-500 text-rose-500" : "text-stone-400 hover:text-stone-700"
-            )}
+            className={`w-4 h-4 transition-all duration-200 ${
+              active ? 'fill-rose-500 text-rose-500 scale-110' : 'text-stone-400'
+            }`}
           />
         </button>
       </div>
@@ -267,3 +259,5 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     </article>
   );
 };
+
+export default ProductCard;

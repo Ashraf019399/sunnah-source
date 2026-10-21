@@ -67,8 +67,6 @@ export function ProductDetailsContent({
   // Store accessors
   const addItem = useCartStore((state) => state.addItem);
   const openDrawer = useCartStore((state) => state.openDrawer);
-  const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
-  const isInWishlist = useWishlistStore((state) => state.isInWishlist);
 
   const activeVariant = selectedVariant ?? defaultVariant;
   const isOutOfStock = !activeVariant || activeVariant.stockQuantity <= 0;
@@ -98,8 +96,12 @@ export function ProductDetailsContent({
     });
   }, [product.id, product.titleBn, product.titleEn, category?.nameBn, category?.nameEn, currentPrice]);
 
-  const isWishlisted =
-    mounted && typeof isInWishlist === "function" ? isInWishlist(product.id) : false;
+  const isWishlisted = useWishlistStore((state) =>
+    state.items.some(
+      (item) => String(item.id) === String(product.id) || item.slug === product.slug
+    )
+  );
+  const active = mounted && isWishlisted;
 
   // Handle variant selection
   const handleVariantChange = (variant: ProductVariant) => {
@@ -188,10 +190,12 @@ export function ProductDetailsContent({
   };
 
   // Wishlist Action
-  const handleToggleWishlist = () => {
-    if (typeof toggleWishlist === "function") {
-      toggleWishlist(product);
+  const handleToggleWishlist = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+    useWishlistStore.getState().toggleWishlist(product);
   };
 
   // Share Link Action
@@ -279,16 +283,16 @@ export function ProductDetailsContent({
                 type="button"
                 onClick={handleToggleWishlist}
                 className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center shadow-card transition-all z-10 active:scale-95 cursor-pointer ${
-                  isWishlisted
+                  active
                     ? "bg-rose-50 text-rose-500 border border-rose-200"
                     : "bg-white/95 hover:bg-white text-stone-400 hover:text-stone-700"
                 }`}
-                aria-label={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
-                title={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
+                aria-label={active ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
+                title={active ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
               >
                 <Heart
-                  className={`w-5 h-5 transition-colors ${
-                    isWishlisted ? "fill-rose-500 text-rose-500" : "text-stone-400 hover:text-stone-700"
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    active ? "fill-rose-500 text-rose-500 scale-110" : "text-stone-400 hover:text-stone-700"
                   }`}
                 />
               </button>
@@ -369,18 +373,18 @@ export function ProductDetailsContent({
                   type="button"
                   onClick={handleToggleWishlist}
                   className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                    isWishlisted
-                      ? "bg-rose-50 text-rose-500 border-rose-200"
+                    active
+                      ? "bg-rose-50 text-rose-500 border border-rose-200 shadow-xs"
                       : "bg-surface-canvas text-charcoal-600 border-surface-border hover:bg-stone-100 hover:text-stone-900"
                   }`}
-                  aria-label={isWishlisted ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
+                  aria-label={active ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
                 >
                   <Heart
-                    className={`w-3.5 h-3.5 transition-colors ${
-                      isWishlisted ? "fill-rose-500 text-rose-500" : "text-stone-400"
+                    className={`w-3.5 h-3.5 transition-all duration-200 ${
+                      active ? "fill-rose-500 text-rose-500 scale-110" : "text-stone-400"
                     }`}
                   />
-                  <span>{isWishlisted ? "পছন্দে আছে" : "পছন্দ তালিকা"}</span>
+                  <span>{active ? "পছন্দের তালিকায় আছে" : "পছন্দ করুন"}</span>
                 </button>
 
                 {/* Share Button */}
