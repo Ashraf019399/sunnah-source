@@ -83,11 +83,13 @@ export const Header: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const desktopSearchRef = useRef<HTMLFormElement>(null);
   const mobileSearchRef = useRef<HTMLFormElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const openDrawer = useCartStore((state) => state.openDrawer);
   const cartCount = useCartStore((state) =>
@@ -96,7 +98,7 @@ export const Header: React.FC = () => {
       : state.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
   );
 
-  const wishlistCount = useWishlistStore((state) => state.items?.length ?? 0);
+  const rawWishlistCount = useWishlistStore((state) => state.items?.length ?? 0);
 
   useEffect(() => {
     setMounted(true);
@@ -122,7 +124,7 @@ export const Header: React.FC = () => {
     }).slice(0, 6);
   }, [searchQuery]);
 
-  // Close dropdown on outside click or Escape key
+  // Close dropdowns on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -131,11 +133,15 @@ export const Header: React.FC = () => {
       if (!inDesktop && !inMobile) {
         setIsSearchOpen(false);
       }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
+        setIsMoreOpen(false);
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsSearchOpen(false);
+        setIsMoreOpen(false);
       }
     };
 
@@ -148,7 +154,9 @@ export const Header: React.FC = () => {
   }, []);
 
   const displayCartCount = mounted ? cartCount : 0;
-  const displayWishlistCount = mounted ? wishlistCount : 0;
+  const displayWishlistCount = mounted ? rawWishlistCount : 0;
+  const totalItems = displayCartCount;
+  const wishlistCount = displayWishlistCount;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -356,124 +364,148 @@ export const Header: React.FC = () => {
             {renderSearchDropdown()}
           </form>
 
-          {/* Right: Actions (Vertical Stack Layout) */}
-          <div className="flex items-center gap-4 sm:gap-5 shrink-0">
+          {/* Desktop Actions - 100% Uniform Font, Weight & Pixel-Perfect Baseline */}
+          <div className="hidden md:flex items-center gap-3 sm:gap-4 lg:gap-5 shrink-0">
             {/* Item 1: Order Track */}
             <Link
               href="/track-order"
               prefetch={true}
-              className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-brand-700 transition-colors"
-              title="Order Track"
+              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+              title="অর্ডার ট্র্যাক করুন"
             >
-              <Truck className="w-5 h-5" />
-              <span className="text-[11px] font-semibold tracking-tight">Order Track</span>
+              <Truck className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                Order Track
+              </span>
             </Link>
 
             {/* Item 2: Wishlist */}
             <Link
               href="/wishlist"
               prefetch={true}
-              className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-rose-600 transition-colors"
+              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer relative"
               title="পছন্দের তালিকা"
-              aria-label="Wishlist"
             >
               <div className="relative">
-                <Heart className="w-5 h-5" />
-                {displayWishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-mono text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                    {displayWishlistCount}
+                <Heart className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center leading-none shadow-sm">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-semibold tracking-tight">Wishlist</span>
+              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                Wishlist
+              </span>
             </Link>
 
-            {/* Item 3: Shopping Cart */}
+            {/* Item 3: Cart */}
             <button
-              type="button"
               onClick={openDrawer}
-              className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-brand-700 transition-colors cursor-pointer"
-              aria-label="Cart"
+              type="button"
+              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer relative"
+              title="শপিং কার্ট"
             >
               <div className="relative">
-                <ShoppingCart className="w-5 h-5" />
-                {displayCartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-amber-500 text-charcoal-900 font-mono text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                    {displayCartCount}
+                <ShoppingCart className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-brand-600 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center leading-none shadow-sm">
+                    {totalItems > 99 ? '99+' : totalItems}
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-semibold tracking-tight">Cart</span>
+              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                Cart
+              </span>
             </button>
 
             {/* Item 4: Sign In */}
             <Link
               href="/login"
               prefetch={true}
-              className="flex flex-col items-center justify-center text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
               title="সাইন ইন / অ্যাকাউন্ট"
             >
-              <div className="relative p-1">
-                <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-              </div>
-              <span className="text-[11px] font-medium mt-0.5 font-bengali">Sign In</span>
+              <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                Sign In
+              </span>
             </Link>
 
-            {/* Item 5: More (Dropdown) */}
-            <div className="relative group">
+            {/* Item 5: More Dropdown */}
+            <div className="relative" ref={moreMenuRef}>
               <button
+                onClick={() => setIsMoreOpen((prev) => !prev)}
                 type="button"
-                className="flex flex-col items-center justify-center gap-0.5 text-charcoal-700 hover:text-brand-700 transition-colors cursor-pointer"
-                aria-label="More"
+                className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+                title="আরও লিঙ্ক"
+                aria-expanded={isMoreOpen}
               >
-                <Menu className="w-5 h-5" />
-                <span className="text-[11px] font-semibold tracking-tight">More</span>
+                <Menu className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                  More
+                </span>
               </button>
-              <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50">
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-2 text-xs space-y-1">
-                  <Link
-                    href="/account/orders"
-                    prefetch={true}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
-                  >
-                    <Package className="w-4 h-4 text-brand-700" />
-                    <span>আমার অর্ডারসমূহ</span>
-                  </Link>
+
+              {/* Dropdown Menu */}
+              {isMoreOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-charcoal-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   <Link
                     href="/about"
                     prefetch={true}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                    onClick={() => setIsMoreOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
                   >
-                    <Info className="w-4 h-4 text-brand-700" />
-                    <span>About Us</span>
+                    <Info className="w-4 h-4 text-brand-600" />
+                    <span>আমাদের সম্পর্কে</span>
                   </Link>
                   <Link
                     href="/faq"
                     prefetch={true}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                    onClick={() => setIsMoreOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
                   >
-                    <HelpCircle className="w-4 h-4 text-brand-700" />
-                    <span>Faqs</span>
+                    <HelpCircle className="w-4 h-4 text-brand-600" />
+                    <span>সাধারণ প্রশ্ন (FAQs)</span>
                   </Link>
-                  <a
-                    href="https://wa.me/8801914612007"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  <Link
+                    href="/contact"
+                    prefetch={true}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
                   >
-                    <MessageCircle className="w-4 h-4 text-emerald-600" />
-                    <span>WhatsApp Support</span>
-                  </a>
-                  <a
-                    href="tel:01914612007"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                    <Phone className="w-4 h-4 text-brand-600" />
+                    <span>যোগাযোগ</span>
+                  </Link>
+                  <Link
+                    href="/track-order"
+                    prefetch={true}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors border-t border-charcoal-100 mt-1 pt-2"
                   >
-                    <Phone className="w-4 h-4 text-brand-700" />
-                    <span>Call Us</span>
-                  </a>
+                    <Truck className="w-4 h-4 text-brand-600" />
+                    <span>অর্ডার ট্র্যাক</span>
+                  </Link>
                 </div>
-              </div>
+              )}
             </div>
+          </div>
+
+          {/* Mobile Right: Quick Cart */}
+          <div className="flex md:hidden items-center shrink-0">
+            <button
+              onClick={openDrawer}
+              type="button"
+              className="flex items-center justify-center p-2 text-charcoal-700 hover:text-brand-700 transition-colors relative"
+              aria-label="শপিং কার্ট"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              {totalItems > 0 && (
+                <span className="absolute top-1 right-1 bg-brand-600 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center leading-none shadow-sm">
+                  {totalItems > 99 ? '99+' : totalItems}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -795,6 +827,15 @@ export const Header: React.FC = () => {
               >
                 <HelpCircle className="w-4 h-4 text-brand-700" />
                 <span>Faqs</span>
+              </Link>
+              <Link
+                href="/contact"
+                prefetch={true}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
+              >
+                <Phone className="w-4 h-4 text-brand-700" />
+                <span>যোগাযোগ</span>
               </Link>
               <div className="flex gap-4 text-xs font-normal text-charcoal-500 pt-1 border-t border-surface-border/50">
                 <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">

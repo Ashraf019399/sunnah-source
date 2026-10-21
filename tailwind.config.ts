@@ -4,9 +4,9 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: { 50: "#F0F6F2", 100: "#E3EDE5", 200: "#C4DBC8", 700: "#1B4D2E", 800: "#143C23", 900: "#0D2A18" },
+        brand: { 50: "#F0F6F2", 100: "#E3EDE5", 200: "#C4DBC8", 600: "#22633B", 700: "#1B4D2E", 800: "#143C23", 900: "#0D2A18" },
         surface: { canvas: "#FBF9F5", muted: "#F4EFE6", border: "#E5DEC9" },
-        charcoal: { 500: "#767D76", 700: "#4E544E", 900: "#181A18" },
+        charcoal: { 100: "#F1F3F1", 200: "#E2E5E2", 300: "#C6CCC6", 400: "#9BA39B", 500: "#767D76", 700: "#4E544E", 900: "#181A18" },
         accent: { amber: "#D48B28", dark: "#B2711C" }
       },
       fontFamily: {
