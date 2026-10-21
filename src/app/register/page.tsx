@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { Header } from "@/components/layout/header";
@@ -135,84 +136,97 @@ export default function CustomerRegisterPage() {
           JSON.stringify({
             phone: cleanPhone,
             name: fullName.trim(),
-            method: "registration",
+            method: "registered",
             loggedInAt: new Date().toISOString(),
           })
         );
       }
 
-      setSuccessMessage("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! আপনাকে ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে...");
+      setSuccessMessage("আলহামদুলিল্লাহ! আপনার অ্যাকাউন্ট তৈরি সফল হয়েছে। আপনাকে প্রবেশ করানো হচ্ছে...");
       setTimeout(() => {
         router.push("/account/orders");
       }, 800);
     } catch {
-      // Graceful local registration fallback
-      if (typeof window !== "undefined") {
-        localStorage.setItem("sunnah_customer_phone", cleanPhone);
-        localStorage.setItem(
-          "sunnah_customer_profile",
-          JSON.stringify({
-            name: fullName.trim(),
-            phone: cleanPhone,
-            address: address.trim(),
-            registeredAt: new Date().toISOString(),
-          })
-        );
-      }
-      setSuccessMessage("অ্যাকাউন্ট তৈরি হয়েছে! আপনাকে নিয়ে যাওয়া হচ্ছে...");
-      setTimeout(() => {
-        router.push("/account/orders");
-      }, 800);
+      setErrorMessage("অ্যাকাউন্ট তৈরিতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface-canvas font-bengali text-charcoal-900">
-      {/* 1. Global Announcement Bar */}
+    <div className="min-h-screen bg-surface-canvas text-charcoal-900 flex flex-col font-bengali">
+      {/* 1. Global Announcement */}
       <AnnouncementBar />
 
       {/* 2. Global Header */}
       <Header />
 
-      {/* 3. Main Register Form */}
-      <main className="flex-1 py-10 sm:py-16 px-4">
-        <div className="max-w-md mx-auto space-y-8">
-          {/* Header Icon & Title */}
-          <div className="text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center mx-auto shadow-2xs">
-              <UserPlus className="w-7 h-7 text-brand-700" />
+      {/* 3. Main Luxury Single Card */}
+      <main className="flex-1 py-10 sm:py-16 px-4 flex items-center justify-center">
+        <div className="w-full max-w-lg space-y-6">
+          {/* Luxury Glass-Morphism Card */}
+          <div className="bg-white rounded-2xl shadow-xl border border-brand-100/80 p-6 sm:p-10 relative overflow-hidden">
+            {/* Top Brand Accent Line */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-brand-600 via-amber-500 to-brand-700" />
+
+            {/* Header: Icon Mark & Title */}
+            <div className="text-center space-y-3 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-200/80 text-brand-700 flex items-center justify-center mx-auto shadow-2xs">
+                <UserPlus className="w-7 h-7 text-brand-700" />
+              </div>
+              <div className="space-y-1.5">
+                <h1 className="text-2xl sm:text-3xl font-black text-brand-900 tracking-tight">
+                  অ্যাকাউন্ট তৈরি করুন / Register
+                </h1>
+                <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed max-w-sm mx-auto">
+                  সান্নাহ সোর্স পরিবারে আপনাকে স্বাগতম। খাঁটি প্রাকৃতিক পণ্য নিরাপদে অর্ডার করুন।
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-charcoal-900 tracking-tight">
-              অ্যাকাউন্ট তৈরি করুন
-            </h1>
-            <p className="text-xs sm:text-sm text-charcoal-600 max-w-sm mx-auto leading-relaxed">
-              সান্নাহ সোর্সে একটি অ্যাকাউন্ট খুলে দ্রুততম চেকআউট ও অর্ডার ট্র্যাকিং উপভোগ করুন।
-            </p>
-          </div>
 
-          {/* Registration Card */}
-          <div className="bg-white rounded-3xl border border-stone-200/80 shadow-card p-6 sm:p-8 space-y-5">
-            {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                <span>{errorMessage}</span>
+            {/* Premium 1-Click Google Sign-In Bar (Top Feature) */}
+            <div className="space-y-4 mb-6">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-charcoal-50 border border-charcoal-200 rounded-xl font-medium text-sm text-charcoal-800 shadow-sm hover:shadow transition-all cursor-pointer active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed group"
+                title="গুগল দিয়ে সরাসরি অ্যাকাউন্ট তৈরি করুন"
+              >
+                {isGoogleLoading ? (
+                  <Loader2 className="w-5 h-5 text-brand-700 animate-spin" />
+                ) : (
+                  <GoogleIcon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                )}
+                <span className="font-semibold text-charcoal-800 group-hover:text-charcoal-900 font-sans sm:font-bengali">
+                  গুগল দিয়ে সরাসরি সাইন ইন / রেজিস্টার করুন
+                </span>
+              </button>
+
+              {googleError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-center gap-2 text-xs text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{googleError}</span>
+                </div>
+              )}
+
+              {/* Centered Divider */}
+              <div className="relative flex items-center justify-center pt-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-stone-200" />
+                </div>
+                <span className="relative bg-white px-4 text-xs font-medium text-charcoal-500 font-sans tracking-wide">
+                  or register with form
+                </span>
               </div>
-            )}
+            </div>
 
-            {successMessage && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 font-bold">
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
-                <span>{successMessage}</span>
-              </div>
-            )}
-
+            {/* Registration Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Full Name */}
               <div className="space-y-1">
                 <label
-                  htmlFor="full-name"
+                  htmlFor="register-name"
                   className="block text-xs font-bold text-charcoal-800"
                 >
                   পূর্ণ নাম (Full Name) *
@@ -220,7 +234,7 @@ export default function CustomerRegisterPage() {
                 <div className="relative">
                   <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    id="full-name"
+                    id="register-name"
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -230,35 +244,35 @@ export default function CustomerRegisterPage() {
                 </div>
               </div>
 
-              {/* Mobile Phone */}
+              {/* Phone Number */}
               <div className="space-y-1">
                 <label
                   htmlFor="register-phone"
                   className="block text-xs font-bold text-charcoal-800"
                 >
-                  মোবাইল নম্বর (১১ ডিজিট) *
+                  মোবাইল নম্বর (Phone Number) *
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-stone-500 font-sans text-xs font-semibold border-r border-stone-200 pr-2 pointer-events-none">
+                    <span>🇧🇩</span>
+                    <span>+৮৮</span>
+                  </div>
                   <input
                     id="register-phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="01XXXXXXXXX"
-                    className="w-full h-11 pl-10 pr-3.5 bg-surface-canvas rounded-xl border border-stone-300 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 text-sm font-mono text-charcoal-900 outline-none transition-all placeholder:text-stone-400"
-                    maxLength={15}
+                    maxLength={11}
+                    className="w-full h-11 pl-20 pr-3.5 bg-surface-canvas rounded-xl border border-stone-300 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 text-sm font-sans tracking-wide text-charcoal-900 outline-none transition-all placeholder:text-stone-400"
                   />
                 </div>
-                <p className="text-[11px] text-charcoal-400">
-                  যেমন: 01712345678
-                </p>
               </div>
 
               {/* Delivery Address */}
               <div className="space-y-1">
                 <label
-                  htmlFor="delivery-address"
+                  htmlFor="register-address"
                   className="block text-xs font-bold text-charcoal-800"
                 >
                   ডেলিভারি ঠিকানা (Delivery Address) *
@@ -266,12 +280,12 @@ export default function CustomerRegisterPage() {
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-stone-400 absolute left-3.5 top-3 pointer-events-none" />
                   <textarea
-                    id="delivery-address"
+                    id="register-address"
+                    rows={2}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="বাসা নং, রোড নং, এলাকা, থানা, জেলা"
-                    rows={2}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-surface-canvas rounded-xl border border-stone-300 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 text-xs sm:text-sm text-charcoal-900 outline-none transition-all placeholder:text-stone-400 resize-none"
+                    placeholder="বাড়ি নং, রোড নং, থানা, জেলা"
+                    className="w-full py-2.5 pl-10 pr-3.5 bg-surface-canvas rounded-xl border border-stone-300 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 text-sm text-charcoal-900 outline-none transition-all placeholder:text-stone-400 resize-none"
                   />
                 </div>
               </div>
@@ -309,11 +323,27 @@ export default function CustomerRegisterPage() {
                 </div>
               </div>
 
+              {/* Error Alert */}
+              {errorMessage && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Success Alert */}
+              {successMessage && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 font-bold">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                  <span>{successMessage}</span>
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                className="w-full h-11 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
               >
                 {isLoading ? (
                   <>
@@ -329,45 +359,10 @@ export default function CustomerRegisterPage() {
               </button>
             </form>
 
-            {/* 1-Click Google Sign-In (Ghorer Bazar Style) */}
-            <div className="pt-6 border-t border-stone-200/80">
-              <div className="relative flex items-center justify-center mb-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-stone-200" />
-                </div>
-                <span className="relative bg-white px-4 text-xs font-medium text-charcoal-500 lowercase tracking-wide font-sans">
-                  or signin with
-                </span>
-              </div>
-
-              {googleError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-center gap-2 text-xs text-red-700">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-                  <span>{googleError}</span>
-                </div>
-              )}
-
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={isGoogleLoading}
-                  className="h-12 w-12 rounded-full border border-charcoal-200 bg-white shadow-sm hover:shadow-md hover:border-brand-500 transition-all flex items-center justify-center active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group cursor-pointer"
-                  title="Google দিয়ে সাইন ইন / অ্যাকাউন্ট তৈরি করুন"
-                  aria-label="Google Sign In"
-                >
-                  {isGoogleLoading ? (
-                    <Loader2 className="w-5 h-5 text-brand-700 animate-spin" />
-                  ) : (
-                    <GoogleIcon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-stone-100 flex items-center justify-center gap-2 text-xs text-charcoal-500">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>আপনার ব্যক্তিগত তথ্য ১০০% সুরক্ষিত থাকবে।</span>
+            {/* Islamic Trust & Amanah Microcopy */}
+            <div className="pt-5 mt-6 border-t border-stone-100 flex items-center justify-center gap-2 text-xs text-charcoal-500">
+              <span className="text-sm">🔒</span>
+              <span>আপনার তথ্য ও গোপনীয়তা আমাদের কাছে আমানত।</span>
             </div>
           </div>
 
@@ -377,9 +372,9 @@ export default function CustomerRegisterPage() {
               ইতিমধ্যে অ্যাকাউন্ট আছে?{" "}
               <Link
                 href="/login"
-                className="font-black text-brand-800 underline hover:text-brand-900"
+                className="font-black text-brand-800 hover:text-brand-900 underline underline-offset-4"
               >
-                সাইন ইন করুন
+                সাইন ইন করুন →
               </Link>
             </p>
           </div>
