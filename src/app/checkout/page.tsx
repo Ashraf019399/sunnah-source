@@ -13,15 +13,17 @@ import {
   Phone,
   MapPin,
   User,
+  Home,
   Banknote,
   Clock,
   Loader2,
   ExternalLink,
   Tag,
-  X,
   Package,
   Compass,
   Printer,
+  StickyNote,
+  ChevronDown,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT, isValidBDPhone } from "@/lib/utils";
@@ -88,44 +90,6 @@ function clearSavedIdempotencyKey(cartSig?: string) {
   }
 }
 
-const DHAKA_THANAS = [
-  "মিরপুর",
-  "উত্তরা",
-  "ধানমন্ডি",
-  "গুলশান",
-  "বনানী",
-  "মোহাম্মদপুর",
-  "বাড্ডা",
-  "মতিঝিল",
-  "যাত্রাবাড়ী",
-  "খিলগাঁও",
-  "রামপুরা",
-  "মগবাজার",
-  "তেজগাঁও",
-  "পল্টন",
-  "লালবাগ",
-  "বসুন্ধরা আবাসিক এলাকা",
-];
-
-const POPULAR_DISTRICTS = [
-  "ঢাকা",
-  "চট্টগ্রাম",
-  "রাজশাহী",
-  "খুলনা",
-  "বরিশাল",
-  "সিলেট",
-  "রংপুর",
-  "ময়মনসিংহ",
-  "কুমিল্লা",
-  "বগুড়া",
-  "গাজীপুর",
-  "নারায়ণগঞ্জ",
-  "নোয়াখালী",
-  "ফরিদপুর",
-  "যশোর",
-  "কক্সবাজার",
-];
-
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
 
@@ -137,7 +101,9 @@ export default function CheckoutPage() {
 
   // Cart Hydration & Error Resilience: filter out any malformed or corrupted cart items safely
   const validItems = useMemo(() => {
-    return (items?.filter((item) => item && (item.id || item.variantId) && Number(item.quantity) > 0) || []).map((item) => ({
+    return (
+      items?.filter((item) => item && (item.id || item.variantId) && Number(item.quantity) > 0) || []
+    ).map((item) => ({
       ...item,
       id: item.id || item.variantId,
     }));
@@ -147,10 +113,9 @@ export default function CheckoutPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [zone, setZone] = useState<DeliveryZone>("inside_dhaka");
-  const [district, setDistrict] = useState("ঢাকা");
-  const [thana, setThana] = useState("");
   const [fullAddress, setFullAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
 
   // Validation & Submission State
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -159,9 +124,6 @@ export default function CheckoutPage() {
   const [serverError, setServerError] = useState<string | null>(null);
 
   // Stable Idempotency Key per checkout attempt
-  // Persisted in sessionStorage bound to cartSignature to survive page reloads and navigation.
-  // Reused across retries (network timeouts, transient errors, user retry clicks).
-  // Refreshed only when cart contents change or an order completes.
   const cartSignature = useMemo(
     () =>
       validItems
@@ -169,6 +131,7 @@ export default function CheckoutPage() {
         .join("|"),
     [validItems]
   );
+
   const [idempotencyKey, setIdempotencyKey] = useState<string>(() => {
     try {
       return getSavedIdempotencyKey(cartSignature) || generateUUID();
@@ -239,10 +202,22 @@ export default function CheckoutPage() {
     freeDeliveryThreshold: 2000,
   });
 
-  // Avoid hydration mismatch from localStorage-backed Zustand store and close drawer
+  // Mount, prefill stored phone if present, and fetch live delivery settings
   useEffect(() => {
     setMounted(true);
     closeDrawer();
+
+    try {
+      if (typeof window !== "undefined") {
+        const storedPhone = window.localStorage?.getItem("sunnah_customer_phone");
+        if (storedPhone) {
+          setPhone((prev) => (prev ? prev : storedPhone));
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
     getPublicDeliverySettingsAction()
       .then((settings) => {
         if (settings) {
@@ -270,14 +245,9 @@ export default function CheckoutPage() {
       });
   }, [closeDrawer]);
 
-  // Sync district when zone changes
+  // Zone Change Handler
   const handleZoneChange = (newZone: DeliveryZone) => {
     setZone(newZone);
-    if (newZone === "inside_dhaka") {
-      setDistrict("ঢাকা");
-    } else if (district === "ঢাকা") {
-      setDistrict("");
-    }
   };
 
   // Subtotal calculation (guarded against NaN)
@@ -338,7 +308,7 @@ export default function CheckoutPage() {
     : 130;
   const deliveryFee = isNaN(rawDeliveryFee) ? 0 : Math.max(0, rawDeliveryFee);
 
-  // Coupon discount calculation based on current subtotal and delivery fee (guarded against NaN)
+  // Coupon discount calculation based on current subtotal and delivery fee
   const discountAmount = useMemo(() => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.minOrderAmount > 0 && subtotal < appliedCoupon.minOrderAmount) {
@@ -392,7 +362,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // If it was a promotional coupon but min order requirement wasn't met
     if (promoResult.coupon && !promoResult.isValid) {
       setAppliedCoupon(null);
       setCouponFeedback({
@@ -452,7 +421,7 @@ export default function CheckoutPage() {
     setCouponFeedback(null);
   };
 
-  // Phone validation status
+  // Live Phone validation status
   const isPhoneValid = useMemo(() => {
     if (!phone) return false;
     return isValidBDPhone(phone);
@@ -471,16 +440,8 @@ export default function CheckoutPage() {
       errors.phone = "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।";
     }
 
-    if (!district.trim()) {
-      errors.district = "জেলা নির্বাচন বা উল্লেখ করুন।";
-    }
-
-    if (!thana.trim()) {
-      errors.thana = "থানা / উপজেলা লিখুন।";
-    }
-
     if (!fullAddress.trim()) {
-      errors.fullAddress = "সম্পূর্ণ ডেলিভারি ঠিকানা লিখুন।";
+      errors.fullAddress = "সম্পূর্ণ ডেলিভারি ঠিকানা লিখুন (রোড নম্বর, বাড়ি নম্বর, এলাকা, থানা ও জেলা)।";
     }
 
     setFormErrors(errors);
@@ -513,8 +474,8 @@ export default function CheckoutPage() {
           fullName: fullName.trim(),
           phone: phone.trim(),
           zone,
-          district: district.trim(),
-          thana: thana.trim(),
+          district: zone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে",
+          thana: "",
           fullAddress: fullAddress.trim(),
           notes: notes.trim() || undefined,
         },
@@ -532,7 +493,7 @@ export default function CheckoutPage() {
       const result = await submitOrderServerAction(payload);
 
       if (result.success && result.data?.orderNumber) {
-        const fullShippingAddress = `${fullAddress.trim()}, ${thana.trim()}, ${district.trim()}`;
+        const fullShippingAddress = fullAddress.trim();
         const placedOrderData = {
           orderNumber: result.data.orderNumber,
           createdAt: new Date().toISOString(),
@@ -624,7 +585,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // Pre-filled WhatsApp message for support or offline orders
+  // Pre-filled WhatsApp message for support
   const whatsappHelpUrl = useMemo(() => {
     const text = encodeURIComponent(
       `আসসালামু আলাইকুম, আমি সুন্নাহ সোর্স থেকে অর্ডার করতে সহায়তা চাচ্ছি।\nনাম: ${fullName || "গ্রাহক"}\nফোন: ${phone || ""}\nসাবটোটাল: ৳${subtotal}`
@@ -736,7 +697,6 @@ export default function CheckoutPage() {
 
           {/* 3. Complete Order Receipt Summary */}
           <div className="bg-surface-canvas rounded-2xl p-5 sm:p-6 border border-surface-border text-left space-y-4 text-xs sm:text-sm">
-            {/* Header with Order Number Pill */}
             <div className="flex justify-between items-center pb-3 border-b border-surface-border/70">
               <span className="font-extrabold text-charcoal-900 text-sm sm:text-base">
                 অর্ডার রসিদ ও বিবরণ (Order Receipt)
@@ -832,9 +792,7 @@ export default function CheckoutPage() {
               </div>
               {typeof placedOrder.discountAmount === "number" && placedOrder.discountAmount > 0 ? (
                 <div className="flex justify-between items-center text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200/60 font-semibold">
-                  <span>
-                    কুপন ছাড় ({placedOrder.couponCode || 'প্রমোশন'}):
-                  </span>
+                  <span>কুপন ছাড় ({placedOrder.couponCode || "প্রমোশন"}):</span>
                   <span className="font-mono font-bold text-emerald-800">
                     - ৳{placedOrder.discountAmount}
                   </span>
@@ -859,7 +817,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* COD Reminder with ShieldCheck icon */}
+            {/* COD Reminder */}
             <div className="p-3.5 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center gap-2.5 text-xs text-emerald-900">
               <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
               <span className="font-semibold leading-relaxed">
@@ -887,13 +845,12 @@ export default function CheckoutPage() {
   if (validItems.length === 0) {
     return (
       <div className="min-h-screen bg-surface-canvas font-bengali flex flex-col">
-        {/* Simple Header */}
         <header className="bg-white border-b border-surface-border py-4 px-4 shadow-subtle">
-          <div className="container mx-auto max-w-7xl flex items-center justify-between">
+          <div className="container mx-auto max-w-6xl flex items-center justify-between">
             <BrandLogo />
             <Link
               href="/"
-              className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-accent-dark transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>হোমে ফিরুন</span>
@@ -912,9 +869,10 @@ export default function CheckoutPage() {
             </p>
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 bg-accent-amber hover:bg-accent-dark text-charcoal-900 font-extrabold px-6 py-3 rounded-xl text-sm transition-all shadow-card"
+              className="inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-6 py-3 rounded-xl text-sm transition-all shadow-card cursor-pointer"
             >
-              <span>পণ্যসমূহ দেখুন</span>
+              <ShoppingBag className="w-4 h-4" />
+              <span>পণ্যসমূহ দেখুন ও কেনাকাটা করুন</span>
             </Link>
           </div>
         </main>
@@ -924,30 +882,31 @@ export default function CheckoutPage() {
 
   // 4. Main Checkout Form & Summary
   return (
-    <div className="min-h-screen bg-surface-canvas font-bengali flex flex-col">
+    <div className="min-h-screen bg-[#FBF9F5] font-bengali flex flex-col">
       {/* Checkout Dedicated Header */}
-      <header className="bg-white border-b border-surface-border py-3.5 px-4 sticky top-0 z-30 shadow-subtle">
+      <header className="bg-white border-b border-charcoal-100/80 py-3.5 px-4 sticky top-0 z-30 shadow-xs">
         <div className="container mx-auto max-w-6xl flex items-center justify-between">
           <div className="flex items-center gap-4">
             <BrandLogo />
-            <span className="hidden sm:inline-block h-5 w-px bg-surface-border" />
-            <span className="hidden sm:inline-block text-xs font-bold text-charcoal-700">
-              নিরাপদ ও সহজ চেকআউট
+            <span className="hidden sm:inline-block h-5 w-px bg-charcoal-200" />
+            <span className="hidden sm:inline-block text-xs font-bold text-charcoal-600">
+              ১০০% খাঁটি ও নির্ভেজাল পণ্যের নিরাপদ চেকআউট
             </span>
           </div>
-          <div className="flex items-center gap-2 text-emerald-700 text-xs font-semibold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-            <ShieldCheck className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-emerald-800 text-xs font-bold bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 shadow-2xs">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>১০০% নিরাপদ ক্যাশ অন ডেলিভারি</span>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 py-8 px-4">
+      <main className="flex-1 py-6 sm:py-8 px-4">
         <div className="container mx-auto max-w-6xl">
+          {/* Breadcrumb / Top Bar */}
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-charcoal-900">
+              <h1 className="text-2xl sm:text-3xl font-black text-charcoal-900 tracking-tight">
                 অর্ডার ও ডেলিভারি তথ্য
               </h1>
               <p className="text-xs sm:text-sm text-charcoal-500 mt-1">
@@ -956,24 +915,25 @@ export default function CheckoutPage() {
             </div>
             <Link
               href="/"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-accent-dark transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-900 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>কেনাকাটা চালিয়ে যান</span>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>আরো কেনাকাটা করুন</span>
             </Link>
           </div>
 
+          {/* Server Error Alert */}
           {serverError && (
-            <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-subtle">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
-                <span>{serverError}</span>
+            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
+                <span className="font-semibold">{serverError}</span>
               </div>
               <a
                 href={whatsappHelpUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors shrink-0"
+                className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors shrink-0 shadow-xs"
               >
                 <span>হোয়াটসঅ্যাপে দ্রুত অর্ডার করুন</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -982,56 +942,96 @@ export default function CheckoutPage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Column: Customer Form (7 cols) */}
+            {/* Left Column: Ultra-Clean Shipping Form & Payment Guarantee (7 cols) */}
             <div className="lg:col-span-7 space-y-6">
               <form id="checkout-form" onSubmit={handleOrderSubmit} className="space-y-6">
-                {/* 1. Customer Information Card */}
-                <section className="bg-white rounded-2xl border border-surface-border p-5 sm:p-6 shadow-subtle space-y-4">
-                  <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
-                    <User className="w-5 h-5 text-brand-700" />
-                    <h2 className="font-extrabold text-charcoal-900 text-base sm:text-lg">
-                      ১. আপনার ব্যক্তিগত তথ্য
-                    </h2>
+                {/* 1. Ultra-Clean Shipping Information Container (Single Luxury Card) */}
+                <section className="bg-white rounded-2xl shadow-sm border border-charcoal-100 p-6 sm:p-8 space-y-5">
+                  {/* Card Header */}
+                  <div className="flex items-center gap-3 pb-4 border-b border-charcoal-100">
+                    <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/80 flex items-center justify-center text-brand-700 shrink-0 shadow-2xs">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-extrabold text-charcoal-900 text-base sm:text-lg">
+                        ডেলিভারি ও যোগাযোগের ঠিকানা
+                      </h2>
+                      <p className="text-xs text-charcoal-500 mt-0.5">
+                        পণ্য দ্রুততম সময়ে ডেলিভারির জন্য আপনার সঠিক তথ্য প্রদান করুন
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="space-y-4 text-xs sm:text-sm">
+                  <div className="space-y-4">
+                    {/* Field 1: আপনার নাম (Full Name) */}
                     <div>
-                      <label className="block font-bold text-charcoal-900 mb-1.5">
-                        আপনার পূর্ণ নাম <span className="text-red-500">*</span>
+                      <label className="block font-bold text-charcoal-900 text-xs sm:text-sm mb-1.5">
+                        আপনার নাম <span className="text-rose-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => {
-                          setFullName(e.target.value);
-                          if (formErrors.fullName) {
-                            setFormErrors((prev) => ({ ...prev, fullName: "" }));
-                          }
-                        }}
-                        placeholder="যেমন: মোঃ আশরাফুল ইসলাম"
-                        className={`w-full h-11 px-4 rounded-xl border bg-surface-canvas text-charcoal-900 focus:bg-white focus:outline-none transition-colors ${
-                          formErrors.fullName
-                            ? "border-red-500 focus:border-red-600"
-                            : "border-surface-border focus:border-brand-700"
-                        }`}
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-400">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (formErrors.fullName) {
+                              setFormErrors((prev) => ({ ...prev, fullName: "" }));
+                            }
+                          }}
+                          placeholder="যেমন: মোহাম্মদ আব্দুল্লাহ"
+                          className={`w-full h-12 pl-10 pr-4 rounded-xl border bg-stone-50/60 text-charcoal-900 text-xs sm:text-sm focus:bg-white focus:outline-none transition-all ${
+                            formErrors.fullName
+                              ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10"
+                              : "border-charcoal-200 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/10"
+                          }`}
+                        />
+                      </div>
                       {formErrors.fullName && (
-                        <p className="text-red-600 text-[11px] mt-1 font-semibold">
+                        <p className="text-rose-600 text-xs mt-1.5 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           {formErrors.fullName}
                         </p>
                       )}
                     </div>
 
+                    {/* Field 2: মোবাইল নম্বর (Phone Number) with 🇧🇩 +৮৮ prefix */}
                     <div>
-                      <label className="block font-bold text-charcoal-900 mb-1.5">
-                        ১১ ডিজিটের মোবাইল নম্বর <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block font-bold text-charcoal-900 text-xs sm:text-sm">
+                          মোবাইল নম্বর <span className="text-rose-500">*</span>
+                        </label>
+                        {isPhoneValid && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            সঠিক নম্বর
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className={`relative flex rounded-xl border overflow-hidden transition-all bg-stone-50/60 focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-500/10 focus-within:border-brand-600 ${
+                          formErrors.phone || (phoneTouched && phone && !isPhoneValid)
+                            ? "border-rose-400"
+                            : isPhoneValid
+                            ? "border-emerald-500"
+                            : "border-charcoal-200"
+                        }`}
+                      >
+                        {/* 🇧🇩 +৮৮ Prefix Badge */}
+                        <div className="flex items-center gap-1.5 px-3.5 bg-stone-100/90 border-r border-charcoal-200/80 text-charcoal-700 font-mono text-xs sm:text-sm font-bold shrink-0 select-none">
+                          <span className="text-base" role="img" aria-label="Bangladesh Flag">
+                            🇧🇩
+                          </span>
+                          <span>+৮৮</span>
+                        </div>
                         <input
                           type="tel"
                           value={phone}
                           onChange={(e) => {
-                            setPhone(e.target.value);
+                            const val = e.target.value.replace(/\D/g, "").slice(0, 11);
+                            setPhone(val);
                             setPhoneTouched(true);
                             if (formErrors.phone) {
                               setFormErrors((prev) => ({ ...prev, phone: "" }));
@@ -1039,324 +1039,319 @@ export default function CheckoutPage() {
                           }}
                           onBlur={() => setPhoneTouched(true)}
                           placeholder="01XXXXXXXXX"
-                          className={`w-full h-11 pl-11 pr-4 rounded-xl border font-mono bg-surface-canvas text-charcoal-900 focus:bg-white focus:outline-none transition-colors ${
-                            formErrors.phone || (phoneTouched && phone && !isPhoneValid)
-                              ? "border-red-500 focus:border-red-600"
-                              : isPhoneValid
-                              ? "border-emerald-600 focus:border-emerald-700"
-                              : "border-surface-border focus:border-brand-700"
-                          }`}
+                          className="flex-1 h-12 px-3.5 font-mono text-xs sm:text-sm text-charcoal-900 bg-transparent focus:outline-none"
                         />
-                        <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-charcoal-400 pointer-events-none" />
                       </div>
                       {formErrors.phone ? (
-                        <p className="text-red-600 text-[11px] mt-1 font-semibold">
+                        <p className="text-rose-600 text-xs mt-1.5 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           {formErrors.phone}
                         </p>
                       ) : phoneTouched && phone && !isPhoneValid ? (
-                        <p className="text-amber-700 text-[11px] mt-1 font-semibold">
-                          সঠিক ১১ ডিজিটের বাংলাদেশি নম্বর লিখুন (যেমন: 01712345678)
+                        <p className="text-amber-700 text-xs mt-1.5 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          সঠিক ১১ ডিজিটের বাংলাদেশি নম্বর লিখুন (যেমন: 017XXXXXXXX)
                         </p>
                       ) : (
-                        <p className="text-charcoal-500 text-[11px] mt-1">
-                          অর্ডারের অগ্রগতি ও ডেলিভারি সংক্রান্ত আপডেটের জন্য সক্রিয় নম্বর দিন।
+                        <p className="text-charcoal-400 text-xs mt-1.5">
+                          অর্ডারের অগ্রগতি ও ডেলিভারি সংক্রান্ত তথ্যের জন্য সক্রিয় নম্বর দিন।
                         </p>
                       )}
                     </div>
-                  </div>
-                </section>
 
-                {/* 2. Delivery Address & Zone Card */}
-                <section className="bg-white rounded-2xl border border-surface-border p-5 sm:p-6 shadow-subtle space-y-4">
-                  <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
-                    <MapPin className="w-5 h-5 text-brand-700" />
-                    <h2 className="font-extrabold text-charcoal-900 text-base sm:text-lg">
-                      ২. ডেলিভারি এলাকা ও সম্পূর্ণ ঠিকানা
-                    </h2>
-                  </div>
-
-                  {/* Delivery Zone Radio Cards */}
-                  <div className="space-y-2">
-                    <label className="block font-bold text-charcoal-900 text-xs sm:text-sm">
-                      ডেলিভারি এরিয়া বেছে নিন <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div
-                        onClick={() => handleZoneChange("inside_dhaka")}
-                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                          zone === "inside_dhaka"
-                            ? "border-brand-700 bg-brand-50/70 shadow-xs"
-                            : "border-surface-border hover:border-brand-200 bg-surface-canvas"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="delivery_zone"
-                            checked={zone === "inside_dhaka"}
-                            onChange={() => handleZoneChange("inside_dhaka")}
-                            className="w-4 h-4 text-brand-700 focus:ring-brand-700"
-                          />
-                          <div>
-                            <strong className="block text-xs sm:text-sm text-charcoal-900">
-                              ঢাকা সিটির ভিতরে
-                            </strong>
-                            <span className="text-[11px] text-charcoal-500">হোম ডেলিভারি (২৪-৪৮ ঘণ্টা)</span>
-                          </div>
-                        </div>
-                        <span className="font-mono font-bold text-xs sm:text-sm text-brand-700">
-                          {isFreeDelivery ? (
-                            <span className="text-emerald-700 font-extrabold">ফ্রি!</span>
-                          ) : (
-                            formatBDT(deliverySettings.insideDhakaFee)
-                          )}
-                        </span>
-                      </div>
-
-                      <div
-                        onClick={() => handleZoneChange("outside_dhaka")}
-                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                          zone === "outside_dhaka"
-                            ? "border-brand-700 bg-brand-50/70 shadow-xs"
-                            : "border-surface-border hover:border-brand-200 bg-surface-canvas"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="delivery_zone"
-                            checked={zone === "outside_dhaka"}
-                            onChange={() => handleZoneChange("outside_dhaka")}
-                            className="w-4 h-4 text-brand-700 focus:ring-brand-700"
-                          />
-                          <div>
-                            <strong className="block text-xs sm:text-sm text-charcoal-900">
-                              ঢাকা সিটির বাইরে
-                            </strong>
-                            <span className="text-[11px] text-charcoal-500">সারাদেশে ডেলিভারি (২-৩ দিন)</span>
-                          </div>
-                        </div>
-                        <span className="font-mono font-bold text-xs sm:text-sm text-brand-700">
-                          {isFreeDelivery ? (
-                            <span className="text-emerald-700 font-extrabold">ফ্রি!</span>
-                          ) : (
-                            formatBDT(deliverySettings.outsideDhakaFee)
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* District and Thana Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm pt-2">
+                    {/* Field 3: সম্পূর্ণ ঠিকানা (Full Delivery Address) with Home icon */}
                     <div>
-                      <label className="block font-bold text-charcoal-900 mb-1.5">
-                        জেলা <span className="text-red-500">*</span>
+                      <label className="block font-bold text-charcoal-900 text-xs sm:text-sm mb-1.5">
+                        সম্পূর্ণ ঠিকানা <span className="text-rose-500">*</span>
                       </label>
-                      {zone === "inside_dhaka" ? (
-                        <input
-                          type="text"
-                          value="ঢাকা"
-                          readOnly
-                          className="w-full h-11 px-4 rounded-xl border border-surface-border bg-stone-100 text-charcoal-700 font-medium cursor-not-allowed"
-                        />
-                      ) : (
-                        <>
-                          <input
-                            type="text"
-                            list="district-list"
-                            value={district}
-                            onChange={(e) => {
-                              setDistrict(e.target.value);
-                              if (formErrors.district) {
-                                setFormErrors((prev) => ({ ...prev, district: "" }));
-                              }
-                            }}
-                            placeholder="যেমন: চট্টগ্রাম বা রাজশাহী"
-                            className={`w-full h-11 px-4 rounded-xl border bg-surface-canvas text-charcoal-900 focus:bg-white focus:outline-none transition-colors ${
-                              formErrors.district
-                                ? "border-red-500 focus:border-red-600"
-                                : "border-surface-border focus:border-brand-700"
-                            }`}
-                          />
-                          <datalist id="district-list">
-                            {POPULAR_DISTRICTS.map((d) => (
-                              <option key={d} value={d} />
-                            ))}
-                          </datalist>
-                        </>
-                      )}
-                      {formErrors.district && (
-                        <p className="text-red-600 text-[11px] mt-1 font-semibold">
-                          {formErrors.district}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-charcoal-900 mb-1.5">
-                        থানা / উপজেলা <span className="text-red-500">*</span>
-                      </label>
-                      {zone === "inside_dhaka" ? (
-                        <>
-                          <input
-                            type="text"
-                            list="dhaka-thana-list"
-                            value={thana}
-                            onChange={(e) => {
-                              setThana(e.target.value);
-                              if (formErrors.thana) {
-                                setFormErrors((prev) => ({ ...prev, thana: "" }));
-                              }
-                            }}
-                            placeholder="যেমন: মিরপুর, উত্তরা বা ধানমন্ডি"
-                            className={`w-full h-11 px-4 rounded-xl border bg-surface-canvas text-charcoal-900 focus:bg-white focus:outline-none transition-colors ${
-                              formErrors.thana
-                                ? "border-red-500 focus:border-red-600"
-                                : "border-surface-border focus:border-brand-700"
-                            }`}
-                          />
-                          <datalist id="dhaka-thana-list">
-                            {DHAKA_THANAS.map((t) => (
-                              <option key={t} value={t} />
-                            ))}
-                          </datalist>
-                        </>
-                      ) : (
-                        <input
-                          type="text"
-                          value={thana}
+                      <div className="relative">
+                        <div className="absolute top-3.5 left-3.5 text-charcoal-400 pointer-events-none">
+                          <Home className="w-4 h-4" />
+                        </div>
+                        <textarea
+                          rows={3}
+                          value={fullAddress}
                           onChange={(e) => {
-                            setThana(e.target.value);
-                            if (formErrors.thana) {
-                              setFormErrors((prev) => ({ ...prev, thana: "" }));
+                            setFullAddress(e.target.value);
+                            if (formErrors.fullAddress) {
+                              setFormErrors((prev) => ({ ...prev, fullAddress: "" }));
                             }
                           }}
-                          placeholder="আপনার থানা বা উপজেলা লিখুন"
-                          className={`w-full h-11 px-4 rounded-xl border bg-surface-canvas text-charcoal-900 focus:bg-white focus:outline-none transition-colors ${
-                            formErrors.thana
-                              ? "border-red-500 focus:border-red-600"
-                              : "border-surface-border focus:border-brand-700"
+                          placeholder="রোড নম্বর, বাড়ি নম্বর, এলাকা, থানা ও জেলা"
+                          className={`w-full pl-10 pr-4 py-3 rounded-xl border bg-stone-50/60 text-charcoal-900 text-xs sm:text-sm focus:bg-white focus:outline-none transition-all resize-none ${
+                            formErrors.fullAddress
+                              ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10"
+                              : "border-charcoal-200 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/10"
                           }`}
                         />
-                      )}
-                      {formErrors.thana && (
-                        <p className="text-red-600 text-[11px] mt-1 font-semibold">
-                          {formErrors.thana}
+                      </div>
+                      {formErrors.fullAddress && (
+                        <p className="text-rose-600 text-xs mt-1.5 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          {formErrors.fullAddress}
                         </p>
                       )}
                     </div>
-                  </div>
 
-                  {/* Full Delivery Address */}
-                  <div className="text-xs sm:text-sm pt-2">
-                    <label className="block font-bold text-charcoal-900 mb-1.5">
-                      সম্পূর্ণ ঠিকানা (বাসা/রোড/এলাকা) <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={fullAddress}
-                      onChange={(e) => {
-                        setFullAddress(e.target.value);
-                        if (formErrors.fullAddress) {
-                          setFormErrors((prev) => ({ ...prev, fullAddress: "" }));
-                        }
-                      }}
-                      placeholder="বাসা নম্বর, ফ্ল্যাট নম্বর, রোড নম্বর বা নাম, সুনির্দিষ্ট এলাকা বা ল্যান্ডমার্ক বিস্তারিত লিখুন..."
-                      className={`w-full p-3.5 rounded-xl border bg-surface-canvas text-charcoal-900 focus:bg-white focus:outline-none transition-colors resize-none ${
-                        formErrors.fullAddress
-                          ? "border-red-500 focus:border-red-600"
-                          : "border-surface-border focus:border-brand-700"
-                      }`}
-                    />
-                    {formErrors.fullAddress && (
-                      <p className="text-red-600 text-[11px] mt-1 font-semibold">
-                        {formErrors.fullAddress}
-                      </p>
-                    )}
-                  </div>
+                    {/* Field 4: Interactive Delivery Area Selector */}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block font-bold text-charcoal-900 text-xs sm:text-sm">
+                          ডেলিভারি এরিয়া বেছে নিন <span className="text-rose-500">*</span>
+                        </label>
+                        {isFreeDelivery && (
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 animate-pulse">
+                            🎉 সারাদেশে ফ্রি ডেলিভারি
+                          </span>
+                        )}
+                      </div>
 
-                  {/* Optional Notes */}
-                  <div className="text-xs sm:text-sm pt-1">
-                    <label className="block font-medium text-charcoal-700 mb-1.5">
-                      ডেলিভারি নির্দেশনা (ঐচ্ছিক)
-                    </label>
-                    <input
-                      type="text"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="যেমন: অফিসের ঠিকানায় ২টার পর ডেলিভারি দিন..."
-                      className="w-full h-10 px-4 rounded-xl border border-surface-border bg-surface-canvas text-charcoal-900 focus:bg-white focus:border-brand-700 focus:outline-none transition-colors text-xs"
-                    />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {/* Option A: ঢাকার ভেতরে */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleZoneChange("inside_dhaka")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") handleZoneChange("inside_dhaka");
+                          }}
+                          className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                            zone === "inside_dhaka"
+                              ? "border-emerald-600 bg-emerald-50/60 shadow-xs"
+                              : "border-charcoal-200 hover:border-emerald-300 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                zone === "inside_dhaka"
+                                  ? "border-emerald-600 bg-emerald-600"
+                                  : "border-charcoal-300"
+                              }`}
+                            >
+                              {zone === "inside_dhaka" && (
+                                <span className="w-2 h-2 rounded-full bg-white" />
+                              )}
+                            </div>
+                            <div>
+                              <strong className="block text-xs sm:text-sm font-bold text-charcoal-900">
+                                ঢাকার ভেতরে
+                              </strong>
+                              <span className="text-[11px] text-charcoal-500">
+                                হোম ডেলিভারি (২৪-৪৮ ঘণ্টা)
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            {isFreeDelivery ? (
+                              <span className="text-emerald-700 font-extrabold text-xs sm:text-sm font-mono">
+                                ফ্রি (৳০)
+                              </span>
+                            ) : (
+                              <span className="font-mono font-bold text-xs sm:text-sm text-emerald-800">
+                                {formatBDT(deliverySettings.insideDhakaFee)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Option B: ঢাকার বাইরে */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleZoneChange("outside_dhaka")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") handleZoneChange("outside_dhaka");
+                          }}
+                          className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                            zone === "outside_dhaka"
+                              ? "border-emerald-600 bg-emerald-50/60 shadow-xs"
+                              : "border-charcoal-200 hover:border-emerald-300 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                zone === "outside_dhaka"
+                                  ? "border-emerald-600 bg-emerald-600"
+                                  : "border-charcoal-300"
+                              }`}
+                            >
+                              {zone === "outside_dhaka" && (
+                                <span className="w-2 h-2 rounded-full bg-white" />
+                              )}
+                            </div>
+                            <div>
+                              <strong className="block text-xs sm:text-sm font-bold text-charcoal-900">
+                                ঢাকার বাইরে
+                              </strong>
+                              <span className="text-[11px] text-charcoal-500">
+                                সারাদেশে ডেলিভারি (২-৩ দিন)
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            {isFreeDelivery ? (
+                              <span className="text-emerald-700 font-extrabold text-xs sm:text-sm font-mono">
+                                ফ্রি (৳০)
+                              </span>
+                            ) : (
+                              <span className="font-mono font-bold text-xs sm:text-sm text-emerald-800">
+                                {formatBDT(deliverySettings.outsideDhakaFee)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Field 5: Optional Delivery Notes (Collapsible Compact Input) */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowNotes(!showNotes)}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-charcoal-600 hover:text-emerald-700 transition-colors cursor-pointer"
+                      >
+                        <StickyNote className="w-3.5 h-3.5 text-charcoal-400" />
+                        <span>ডেলিভারি নোট বা কোনো বিশেষ নির্দেশনা আছে? (ঐচ্ছিক)</span>
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                            showNotes ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      {showNotes && (
+                        <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <input
+                            type="text"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="যেমন: বিকাল ৩টার পর ডেলিভারি দিন অথবা দারোয়ানের কাছে রাখুন..."
+                            className="w-full h-11 px-4 rounded-xl border border-charcoal-200 bg-stone-50/60 text-charcoal-900 text-xs sm:text-sm focus:bg-white focus:border-emerald-600 focus:outline-none transition-all"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </section>
 
-                {/* 3. Payment Method Card (COD Only) */}
-                <section className="bg-white rounded-2xl border border-surface-border p-5 sm:p-6 shadow-subtle space-y-4">
-                  <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
-                    <Banknote className="w-5 h-5 text-brand-700" />
-                    <h2 className="font-extrabold text-charcoal-900 text-base sm:text-lg">
-                      ৩. পেমেন্ট পদ্ধতি
-                    </h2>
+                {/* 2. Cash on Delivery (COD) Peace-of-Mind Trust Guarantee Box */}
+                <section className="bg-white rounded-2xl shadow-sm border border-charcoal-100 p-6 sm:p-8 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-charcoal-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
+                        <Banknote className="w-4 h-4" />
+                      </div>
+                      <h3 className="font-extrabold text-charcoal-900 text-base">
+                        পেমেন্ট পদ্ধতি
+                      </h3>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      ক্যাশ অন ডেলিভারি
+                    </span>
                   </div>
 
-                  <div className="p-4 rounded-2xl border-2 border-brand-700 bg-brand-50/60 flex items-start gap-3.5">
-                    <div className="p-2 bg-brand-700 text-white rounded-xl shrink-0 mt-0.5">
-                      <Truck className="w-5 h-5" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <strong className="text-sm sm:text-base text-brand-900">
+                  {/* Pre-selected Cash on Delivery payment card with Banknote icon */}
+                  <div className="p-4 rounded-2xl border-2 border-emerald-600 bg-gradient-to-r from-emerald-50/70 via-white to-emerald-50/40 flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 border-emerald-600 bg-emerald-600 flex items-center justify-center shrink-0">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                      </div>
+                      <div>
+                        <strong className="block text-xs sm:text-sm font-bold text-charcoal-900">
                           ক্যাশ অন ডেলিভারি (Cash on Delivery)
                         </strong>
-                        <span className="bg-brand-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          সক্রিয়
-                        </span>
+                        <p className="text-[11px] text-charcoal-600 mt-0.5">
+                          পণ্য হাতে পেয়ে চেক করে সম্পূর্ণ মূল্য পরিশোধ করুন
+                        </p>
                       </div>
-                      <p className="text-xs text-charcoal-600 leading-relaxed">
-                        কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই। ডেলিভারিম্যান থেকে পণ্যটি বুঝে নিয়ে ও চেক করে সম্পূর্ণ মূল্য পরিশোধ করুন।
-                      </p>
                     </div>
+                    <span className="font-mono font-bold text-xs text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs shrink-0">
+                      COD
+                    </span>
+                  </div>
+
+                  {/* Reassuring Islamic Trust Guarantee Box */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0c2e1f] via-[#103d2a] to-[#0c2e1f] text-white shadow-sm space-y-3">
+                    <div className="flex items-center gap-2.5 text-emerald-300">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <h4 className="font-bold text-sm sm:text-base text-white">
+                        ১০০% ঝুঁকিমুক্ত কেনাকাটার নিশ্চয়তা
+                      </h4>
+                    </div>
+                    <ul className="space-y-2 text-xs sm:text-sm text-stone-200">
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                        <span>পার্সেলটি হাতে পেয়ে খুলে দেখে মূল্য পরিশোধ করুন।</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                        <span>কোনো অগ্রিম টাকা দেওয়ার প্রয়োজন নেই।</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                        <span>যেকোনো সমস্যায় ৭ দিনের সহজ রিপ্লেসমেন্ট ও ইনস্ট্যান্ট সাপোর্ট।</span>
+                      </li>
+                    </ul>
                   </div>
                 </section>
               </form>
             </div>
 
-            {/* Right Column: Order Summary & Cart Items (5 cols) */}
-            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-              <div className="bg-white rounded-2xl border border-surface-border p-5 sm:p-6 shadow-subtle space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+            {/* Right Column: Order Summary, Coupon & Action Button (5 cols) */}
+            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20">
+              <div className="bg-white rounded-2xl shadow-sm border border-charcoal-100 p-6 sm:p-7 space-y-5">
+                {/* Summary Header */}
+                <div className="flex items-center justify-between pb-3.5 border-b border-charcoal-100">
                   <h3 className="font-extrabold text-charcoal-900 text-base sm:text-lg">
-                    অর্ডার সারসংক্ষেপ ({validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0)})
+                    অর্ডার সারসংক্ষেপ
                   </h3>
-                  <span className="text-xs text-brand-700 font-bold bg-brand-50 px-2.5 py-1 rounded-full">
-                    {validItems.length}টি পণ্য
+                  <span className="text-xs text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    {validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0)}টি পণ্য
                   </span>
                 </div>
 
-                {/* Free Delivery Meter in Summary */}
-                <div className="p-3 bg-brand-50 rounded-xl border border-brand-200/80 text-xs">
+                {/* Dynamic Free Shipping Meter */}
+                <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-white to-emerald-50 rounded-xl border border-emerald-200 text-xs">
                   {isFreeDelivery ? (
-                    <div className="flex items-center gap-2 text-emerald-800 font-bold">
+                    <div className="flex items-center gap-2 text-emerald-900 font-bold">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>অভিনন্দন! আপনার জন্য ডেলিভারি সম্পূর্ণ ফ্রি!</span>
+                      <span>🎉 অভিনন্দন! আপনার জন্য সারাদেশে ডেলিভারি সম্পূর্ণ ফ্রি!</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-charcoal-700">
-                      <Truck className="w-4 h-4 text-brand-700 shrink-0" />
-                      <span>
-                        {formatBDT(deliverySettings.freeDeliveryThreshold)} বা তার বেশি অর্ডারে সারাদেশে ফ্রি ডেলিভারি! আর{" "}
-                        <strong className="font-mono text-brand-700 font-bold">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-charcoal-700">
+                        <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+                        <span>
+                          {formatBDT(deliverySettings.freeDeliveryThreshold)} বা তার বেশি অর্ডারে সারাদেশে ফ্রি ডেলিভারি!
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-charcoal-600">
+                        আর{" "}
+                        <strong className="font-mono text-emerald-800 font-bold">
                           {formatBDT(Math.max(0, deliverySettings.freeDeliveryThreshold - subtotal))}
                         </strong>{" "}
                         টাকার পণ্য যোগ করলেই পাচ্ছেন ফ্রি ডেলিভারি।
-                      </span>
+                      </div>
+                      {/* Mini visual progress bar */}
+                      <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round((subtotal / deliverySettings.freeDeliveryThreshold) * 100)
+                            )}%`,
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Cart Items List */}
-                <div className="max-h-72 overflow-y-auto divide-y divide-surface-border/60 pr-1">
+                {/* Ordered Items List with Mini Thumbnail & Badges */}
+                <div className="max-h-64 overflow-y-auto divide-y divide-charcoal-100/70 pr-1 space-y-1">
                   {validItems.map((item) => {
                     const product =
                       ALL_PRODUCTS.find((p) => p.id === item.productId || p.slug === item.productId) ?? null;
@@ -1373,63 +1368,71 @@ export default function CheckoutPage() {
                     const lineTotal = isNaN(unitPrice * qty) ? 0 : unitPrice * qty;
 
                     return (
-                      <div key={item.id || item.variantId || `${item.productId}-${item.variantName}`} className="py-3 flex items-center gap-3 first:pt-0">
-                        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-surface-canvas border border-surface-border shrink-0">
+                      <div
+                        key={item.id || item.variantId || `${item.productId}-${item.variantName}`}
+                        className="py-3 flex items-center gap-3.5 first:pt-1"
+                      >
+                        {/* Mini Thumbnail with Quantity Badge */}
+                        <div className="relative w-13 h-13 rounded-xl overflow-hidden bg-stone-100 border border-charcoal-200/60 shrink-0">
                           <Image
                             src={itemImage}
                             alt={title}
                             fill
-                            sizes="56px"
+                            sizes="52px"
                             className="object-cover"
                           />
+                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand-800 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow-xs">
+                            {qty}
+                          </span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-xs text-charcoal-900 truncate">
                             {title}
                           </h4>
-                          <p className="text-[11px] text-charcoal-500">
-                            {variantLabel ? `${variantLabel} • ` : ""}পরিমাণ: <strong className="font-mono">{qty}</strong>
-                          </p>
-                          <span className="font-mono font-bold text-xs text-brand-700 block mt-0.5">
-                            {formatBDT(lineTotal)}
-                          </span>
+                          <div className="text-[11px] text-charcoal-500 mt-0.5">
+                            {variantLabel && <span>{variantLabel} • </span>}
+                            <span className="font-mono text-charcoal-600">
+                              {qty} × {formatBDT(unitPrice)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="font-mono font-bold text-xs sm:text-sm text-charcoal-900 shrink-0">
+                          {formatBDT(lineTotal)}
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Clean, Luxury Coupon Card */}
-                <div className="pt-3 border-t border-surface-border">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-stone-50 border border-emerald-600/20 shadow-xs space-y-3">
+                {/* Dynamic Coupon Code Box */}
+                <div className="pt-3 border-t border-charcoal-100">
+                  <div className="p-3.5 rounded-2xl bg-stone-50/80 border border-charcoal-200/70 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <label
-                        htmlFor="coupon-code"
+                        htmlFor="coupon-code-input"
                         className="text-xs font-bold text-charcoal-800 flex items-center gap-1.5"
                       >
                         <Tag className="w-3.5 h-3.5 text-emerald-700" />
                         <span>কুপন কোড (প্রমোশনাল ছাড়)</span>
                       </label>
                       {appliedCoupon && (
-                        <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
-                          সফলভাবে যুক্ত
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                          যুক্ত হয়েছে
                         </span>
                       )}
                     </div>
 
-                    {/* Green success alert when valid coupon applied */}
                     {appliedCoupon && couponFeedback?.type === "success" && (
-                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span>{couponFeedback.message}</span>
                       </div>
                     )}
 
-                    {/* Applied coupon tag with code and remove ('✕') button */}
                     {appliedCoupon ? (
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/80 border border-emerald-200">
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-emerald-300 shadow-2xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-black text-xs text-emerald-900 tracking-wide px-2.5 py-1 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                          <span className="font-mono font-black text-xs text-emerald-900 px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200">
                             {appliedCoupon.code}
                           </span>
                           <span className="text-xs font-semibold text-emerald-800">
@@ -1444,19 +1447,17 @@ export default function CheckoutPage() {
                         <button
                           type="button"
                           onClick={handleRemoveCoupon}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-charcoal-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                           title="কুপন বাতিল করুন"
-                          aria-label="কুপন বাতিল করুন"
                         >
                           <span className="text-sm font-bold leading-none">✕</span>
                         </button>
                       </div>
                     ) : (
-                      /* Luxury coupon input field & "প্রয়োগ করুন" button */
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <div className="flex gap-2">
                           <input
-                            id="coupon-code"
+                            id="coupon-code-input"
                             type="text"
                             value={couponCodeInput}
                             onChange={(e) => {
@@ -1471,16 +1472,16 @@ export default function CheckoutPage() {
                             }}
                             placeholder="কুপন কোড (যেমন: SUNNAH10)"
                             disabled={isApplyingCoupon}
-                            className="flex-1 uppercase font-mono tracking-wider px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white text-xs sm:text-sm text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all placeholder:text-charcoal-400 placeholder:normal-case placeholder:font-normal font-bold"
+                            className="flex-1 uppercase font-mono tracking-wider px-3.5 py-2 rounded-xl border border-charcoal-200 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all placeholder:text-charcoal-400 placeholder:normal-case placeholder:font-normal font-bold"
                           />
                           <button
                             type="button"
                             onClick={handleApplyCoupon}
                             disabled={isApplyingCoupon || !couponCodeInput.trim()}
-                            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shrink-0 transition-all flex items-center justify-center gap-1.5 ${
+                            className={`px-4 py-2 rounded-xl font-bold text-xs shrink-0 transition-all flex items-center justify-center gap-1.5 ${
                               isApplyingCoupon || !couponCodeInput.trim()
                                 ? "bg-stone-200 text-charcoal-400 cursor-not-allowed"
-                                : "bg-emerald-700 hover:bg-emerald-800 text-white active:scale-95 shadow-subtle border border-emerald-600/30 cursor-pointer"
+                                : "bg-emerald-700 hover:bg-emerald-800 text-white active:scale-95 shadow-xs cursor-pointer"
                             }`}
                           >
                             {isApplyingCoupon ? (
@@ -1490,11 +1491,9 @@ export default function CheckoutPage() {
                             )}
                           </button>
                         </div>
-
-                        {/* Friendly amber/red error message */}
                         {couponFeedback && couponFeedback.type === "error" && (
-                          <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 animate-in fade-in">
-                            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                             <span>{couponFeedback.message}</span>
                           </div>
                         )}
@@ -1503,15 +1502,16 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Financial Breakdown */}
-                <div className="pt-3 border-t border-surface-border space-y-2.5 text-xs sm:text-sm">
+                {/* Transparent Financial Breakdown */}
+                <div className="pt-3 border-t border-charcoal-100 space-y-2.5 text-xs sm:text-sm">
                   <div className="flex justify-between items-center text-charcoal-600">
                     <span>পণ্যের উপমোট (Subtotal):</span>
                     <span className="font-mono font-bold text-charcoal-900">{formatBDT(subtotal)}</span>
                   </div>
+
                   <div className="flex justify-between items-center text-charcoal-600">
                     <span>
-                      ডেলিভারি চার্জ ({zone === "inside_dhaka" ? "ঢাকা সিটি" : "ঢাকার বাইরে"}):
+                      ডেলিভারি চার্জ ({zone === "inside_dhaka" ? "ঢাকার ভেতরে" : "ঢাকার বাইরে"}):
                     </span>
                     <span className="font-mono font-bold">
                       {isFreeDelivery ? (
@@ -1521,8 +1521,9 @@ export default function CheckoutPage() {
                       )}
                     </span>
                   </div>
+
                   {appliedCoupon && discountAmount > 0 && (
-                    <div className="flex justify-between items-center text-emerald-800 bg-emerald-50/90 px-3 py-2 rounded-xl border border-emerald-200 font-semibold">
+                    <div className="flex justify-between items-center text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200 font-semibold">
                       <div className="flex items-center gap-1.5 font-bold">
                         <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span>কুপন ছাড় ({appliedCoupon.code}):</span>
@@ -1532,51 +1533,53 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center pt-3 border-t border-surface-border/80 text-base sm:text-lg font-black text-charcoal-900">
+
+                  <div className="flex justify-between items-center pt-3 border-t border-charcoal-200 text-base sm:text-lg font-black text-charcoal-900">
                     <span>সর্বমোট প্রদেয়:</span>
-                    <span className="font-mono text-brand-700 text-xl font-black">
+                    <span className="font-mono text-emerald-800 text-xl font-black">
                       {formatBDT(grandTotal)}
                     </span>
                   </div>
                 </div>
 
-                {/* Submit Action Button */}
+                {/* Crystal-Clear Main Action Button */}
                 <div className="pt-2">
                   <button
                     type="submit"
                     form="checkout-form"
                     disabled={isSubmitting}
-                    className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-card transition-all ${
+                    className={`w-full py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer ${
                       isSubmitting
-                        ? "bg-brand-800/80 text-stone-200 cursor-not-allowed"
-                        : "bg-brand-700 hover:bg-brand-800 active:scale-[0.99] text-white"
+                        ? "bg-emerald-800/80 text-stone-200 cursor-not-allowed"
+                        : "bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white"
                     }`}
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>অর্ডার প্রসেস হচ্ছে...</span>
+                        <span>অর্ডার নিশ্চিত হচ্ছে...</span>
                       </>
                     ) : (
                       <>
+                        <ShoppingBag className="w-5 h-5" />
                         <span>অর্ডার নিশ্চিত করুন</span>
-                        <span className="font-mono">• {formatBDT(grandTotal)}</span>
+                        <span className="font-mono font-black">• {formatBDT(grandTotal)}</span>
                       </>
                     )}
                   </button>
-                  <p className="text-[11px] text-center text-charcoal-500 mt-2">
-                    ক্যাশ অন ডেলিভারি — পণ্য গ্রহণের সময় মূল্য পরিশোধ করুন।
+                  <p className="text-[11px] text-center text-charcoal-500 mt-2.5">
+                    🔒 ক্যাশ অন ডেলিভারি — পার্সেলটি হাতে পেয়ে মূল্য পরিশোধ করুন।
                   </p>
                 </div>
 
-                {/* Trust Badges */}
-                <div className="pt-3 border-t border-surface-border/60 space-y-2 text-[11px] text-charcoal-600">
+                {/* Islamic & Quality Trust Seals */}
+                <div className="pt-3 border-t border-charcoal-100 space-y-2 text-[11px] text-charcoal-600">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-brand-700 shrink-0" />
-                    <span>১০০% খাঁটি ও নির্ভেজাল প্রাকৃতিক পণ্যের নিশ্চয়তা</span>
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>১০০% খাঁটি ও নির্ভেজাল প্রাকৃতিক খাদ্যের নিশ্চয়তা</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-brand-700 shrink-0" />
+                    <Clock className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>অর্ডারের পর প্রতিনিধি ফোন করে ডেলিভারি কনফার্ম করবেন</span>
                   </div>
                 </div>
