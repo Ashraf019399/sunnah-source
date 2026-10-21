@@ -13,6 +13,7 @@ import {
   Phone,
   MessageCircle,
   ChevronDown,
+  ChevronRight,
   ArrowRight,
   Sparkles,
 } from "lucide-react";
@@ -159,15 +160,18 @@ export const Header: React.FC = () => {
     if (!isSearchOpen || !searchQuery.trim()) return null;
 
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-surface-border overflow-hidden z-50 p-2 animate-in fade-in slide-in-from-top-2 duration-150 text-left">
+      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-surface-border/80 ring-1 ring-black/5 overflow-hidden z-50 p-2 animate-in fade-in slide-in-from-top-2 duration-150 text-left">
         {matchingProducts.length > 0 ? (
           <div>
-            <div className="text-xs font-bold text-charcoal-500 px-3 py-1.5 flex items-center justify-between">
+            <div className="text-xs font-bold text-charcoal-500 px-3 py-1.5 flex items-center justify-between border-b border-stone-100/90 pb-2">
               <span>পণ্যসমূহ ({toBanglaDigits(matchingProducts.length)}টি ফলাফল)</span>
-              <span className="text-[10px] text-charcoal-400 font-normal">তাত্ক্ষণিক অনুসন্ধান</span>
+              <div className="flex items-center gap-1.5 text-[10px] text-charcoal-400 font-normal">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>তাৎক্ষণিক অনুসন্ধান</span>
+              </div>
             </div>
 
-            <div className="space-y-1 mt-1">
+            <div className="divide-y divide-stone-100/90 py-1">
               {matchingProducts.map((product) => {
                 const defaultVariant =
                   product.variants?.find((v) => v.isDefault) || product.variants?.[0];
@@ -175,6 +179,8 @@ export const Header: React.FC = () => {
                   ? defaultVariant.salePrice ?? defaultVariant.regularPrice
                   : 0;
                 const mainImage = product.images?.[0] || "/images/hero-honey.png";
+                const category = CATEGORIES_DATA.find((c) => c.slug === product.categorySlug);
+                const subtitle = category?.nameBn || product.titleEn;
 
                 return (
                   <Link
@@ -185,30 +191,41 @@ export const Header: React.FC = () => {
                       setIsSearchOpen(false);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-3 p-2 hover:bg-brand-50/80 rounded-xl transition-colors group cursor-pointer"
+                    className="group flex items-center justify-between p-2.5 hover:bg-brand-50/80 rounded-xl transition-all cursor-pointer"
                   >
-                    <div className="w-11 h-11 rounded-xl object-cover border border-surface-border bg-surface-canvas shrink-0 relative overflow-hidden">
-                      <Image
-                        src={mainImage}
-                        alt={product.titleBn}
-                        fill
-                        sizes="44px"
-                        className="object-cover group-hover:scale-105 transition-transform"
-                        unoptimized={mainImage.startsWith("/")}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-charcoal-900 group-hover:text-brand-700 truncate">
-                        {product.titleBn}
-                      </h4>
-                      {product.titleEn && (
-                        <p className="text-[10px] text-charcoal-500 truncate font-sans">
-                          {product.titleEn}
+                    {/* Left Section: Thumbnail + Titles */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
+                      <div className="w-11 h-11 rounded-xl object-cover border border-surface-border/60 bg-surface-canvas shrink-0 relative overflow-hidden">
+                        <Image
+                          src={mainImage}
+                          alt={product.titleBn}
+                          fill
+                          sizes="44px"
+                          className="object-cover group-hover:scale-105 transition-transform"
+                          unoptimized={mainImage.startsWith("/")}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-charcoal-900 group-hover:text-brand-800 transition-colors truncate">
+                          {product.titleBn}
+                        </h4>
+                        <p className="text-[10px] text-charcoal-400 font-medium truncate font-sans mt-0.5">
+                          {subtitle}
                         </p>
-                      )}
+                      </div>
                     </div>
-                    <div className="font-mono text-xs font-black text-brand-700 shrink-0">
-                      {formatBDT(displayPrice)}
+
+                    {/* Right Section: Price + Badges + Arrow Indicator */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {product.badge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100/80 text-amber-900 border border-amber-200/50 shrink-0">
+                          {product.badge}
+                        </span>
+                      )}
+                      <span className="font-mono text-xs font-black text-brand-700 shrink-0">
+                        {formatBDT(displayPrice)}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-brand-700 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 shrink-0" />
                     </div>
                   </Link>
                 );
@@ -222,9 +239,12 @@ export const Header: React.FC = () => {
                 setIsSearchOpen(false);
                 setIsMobileMenuOpen(false);
               }}
-              className="block text-center py-2 px-3 mt-1 text-xs font-bold text-brand-700 hover:text-brand-800 hover:bg-brand-50/60 rounded-xl border-t border-surface-border/60 transition-colors"
+              className="group flex items-center justify-center gap-1 text-center py-2.5 px-3 mt-1 text-xs font-bold text-brand-800 hover:bg-stone-50 rounded-xl border-t border-surface-border/60 transition-colors"
             >
-              সব ফলাফল দেখুন (&apos;{searchQuery.trim()}&apos;) →
+              <span>সব ফলাফল দেখুন (&apos;{searchQuery.trim()}&apos;)</span>
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
+                →
+              </span>
             </Link>
           </div>
         ) : (
