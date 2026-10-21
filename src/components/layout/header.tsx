@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -19,6 +19,7 @@ import {
 import { useCartStore } from "@/store/use-cart-store";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ALL_PRODUCTS } from "@/lib/data/products";
+import { formatBDT, toBanglaDigits } from "@/lib/utils";
 import Image from "next/image";
 
 interface NavItem {
@@ -74,9 +75,13 @@ const NAV_ITEMS: NavItem[] = [
 export const Header: React.FC = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  const desktopSearchRef = useRef<HTMLFormElement>(null);
+  const mobileSearchRef = useRef<HTMLFormElement>(null);
 
   const openDrawer = useCartStore((state) => state.openDrawer);
   const cartCount = useCartStore((state) =>
@@ -84,8 +89,54 @@ export const Header: React.FC = () => {
       ? state.getItemCount()
       : state.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
   );
+
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Filter ALL_PRODUCTS in real-time
+  const matchingProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    return ALL_PRODUCTS.filter((product) => {
+      const titleBn = (product.titleBn || "").toLowerCase();
+      const titleEn = (product.titleEn || "").toLowerCase();
+      const shortDesc = (product.shortDescriptionBn || "").toLowerCase();
+      const catSlug = (product.categorySlug || "").toLowerCase();
+
+      return (
+        titleBn.includes(query) ||
+        titleEn.includes(query) ||
+        shortDesc.includes(query) ||
+        catSlug.includes(query)
+      );
+    }).slice(0, 6);
+  }, [searchQuery]);
+
+  // Close dropdown on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const inDesktop = desktopSearchRef.current?.contains(target);
+      const inMobile = mobileSearchRef.current?.contains(target);
+      if (!inDesktop && !inMobile) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const displayCartCount = mounted ? cartCount : 0;
@@ -93,9 +144,117 @@ export const Header: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/?q=${encodeURIComponent(searchQuery.trim())}#products`);
+      router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
       setIsMobileMenuOpen(false);
     }
+  };
+
+  const renderSearchDropdown = () => {
+    if (!isSearchOpen || !searchQuery.trim()) return null;
+
+    return (
+      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-surface-border overflow-hidden z-50 p-2 animate-in fade-in slide-in-from-top-2 duration-150 text-left">
+        {matchingProducts.length > 0 ? (
+          <div>
+            <div className="text-xs font-bold text-charcoal-500 px-3 py-1.5 flex items-center justify-between">
+              <span>পণ্যসমূহ ({toBanglaDigits(matchingProducts.length)}টি ফলাফল)</span>
+              <span className="text-[10px] text-charcoal-400 font-normal">তাত্ক্ষণিক অনুসন্ধান</span>
+            </div>
+
+            <div className="space-y-1 mt-1">
+              {matchingProducts.map((product) => {
+                const defaultVariant =
+                  product.variants?.find((v) => v.isDefault) || product.variants?.[0];
+                const displayPrice = defaultVariant
+                  ? defaultVariant.salePrice ?? defaultVariant.regularPrice
+                  : 0;
+                const mainImage = product.images?.[0] || "/images/hero-honey.png";
+
+                return (
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.slug}`}
+                    prefetch={true}
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-2 hover:bg-brand-50/80 rounded-xl transition-colors group cursor-pointer"
+                  >
+                    <div className="w-11 h-11 rounded-xl object-cover border border-surface-border bg-surface-canvas shrink-0 relative overflow-hidden">
+                      <Image
+                        src={mainImage}
+                        alt={product.titleBn}
+                        fill
+                        sizes="44px"
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        unoptimized={mainImage.startsWith("/")}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-charcoal-900 group-hover:text-brand-700 truncate">
+                        {product.titleBn}
+                      </h4>
+                      {product.titleEn && (
+                        <p className="text-[10px] text-charcoal-500 truncate font-sans">
+                          {product.titleEn}
+                        </p>
+                      )}
+                    </div>
+                    <div className="font-mono text-xs font-black text-brand-700 shrink-0">
+                      {formatBDT(displayPrice)}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <Link
+              href={`/shop?q=${encodeURIComponent(searchQuery.trim())}`}
+              prefetch={true}
+              onClick={() => {
+                setIsSearchOpen(false);
+                setIsMobileMenuOpen(false);
+              }}
+              className="block text-center py-2 px-3 mt-1 text-xs font-bold text-brand-700 hover:text-brand-800 hover:bg-brand-50/60 rounded-xl border-t border-surface-border/60 transition-colors"
+            >
+              সব ফলাফল দেখুন (&apos;{searchQuery.trim()}&apos;) →
+            </Link>
+          </div>
+        ) : (
+          <div className="p-4 text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-stone-100 text-charcoal-400 flex items-center justify-center mx-auto">
+              <Search className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-charcoal-800">
+                দুঃখিত, &ldquo;{searchQuery.trim()}&rdquo; সম্পর্কিত কোনো পণ্য পাওয়া যায়নি
+              </p>
+              <p className="text-[11px] text-charcoal-500">
+                নিচের জনপ্রিয় পণ্যগুলো দেখতে পারেন:
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+              {["মধু", "গাওয়া ঘি", "আজওয়া খেজুর", "সরিষার তেল", "কালোজিরা"].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(tag);
+                    setIsSearchOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-50 text-brand-800 border border-brand-200 text-xs font-semibold hover:bg-brand-100 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  <span>{tag}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -133,6 +292,7 @@ export const Header: React.FC = () => {
 
           {/* Center: Large Modern Search Bar */}
           <form
+            ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
             className="hidden md:flex flex-1 max-w-xl relative"
@@ -140,12 +300,36 @@ export const Header: React.FC = () => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value.trim().length > 0) {
+                  setIsSearchOpen(true);
+                }
+              }}
+              onFocus={() => {
+                if (searchQuery.trim().length > 0) {
+                  setIsSearchOpen(true);
+                }
+              }}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-11 pl-10 pr-4 text-xs xl:text-sm bg-surface-canvas rounded-full border border-surface-border focus:bg-white focus:border-brand-700 focus:outline-none transition-colors"
+              className="w-full h-11 pl-10 pr-9 text-xs xl:text-sm bg-surface-canvas rounded-full border border-surface-border focus:bg-white focus:border-brand-700 focus:outline-none transition-colors"
               aria-label="পণ্য খুঁজুন"
             />
             <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-charcoal-500 pointer-events-none" />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setIsSearchOpen(false);
+                }}
+                className="absolute right-3.5 top-3.5 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                aria-label="মুছে ফেলুন"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            {renderSearchDropdown()}
           </form>
 
           {/* Right: Actions (Vertical Stack Layout) */}
@@ -358,16 +542,45 @@ export const Header: React.FC = () => {
       {/* 3. Mobile Collapsible Navigation Menu with Category Accordion */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-surface-border bg-white px-4 py-4 space-y-3 font-bengali">
-          <form role="search" onSubmit={handleSearch} className="relative w-full">
+          <form
+            ref={mobileSearchRef}
+            role="search"
+            onSubmit={handleSearch}
+            className="relative w-full"
+          >
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value.trim().length > 0) {
+                  setIsSearchOpen(true);
+                }
+              }}
+              onFocus={() => {
+                if (searchQuery.trim().length > 0) {
+                  setIsSearchOpen(true);
+                }
+              }}
               placeholder="পণ্য খুঁজুন..."
-              className="w-full h-10 pl-9 pr-3 text-xs bg-surface-canvas rounded-xl border border-surface-border focus:bg-white focus:border-brand-700 focus:outline-none"
+              className="w-full h-10 pl-9 pr-9 text-xs bg-surface-canvas rounded-xl border border-surface-border focus:bg-white focus:border-brand-700 focus:outline-none"
               aria-label="মোবাইল সার্চ"
             />
             <Search className="absolute left-3 top-3 w-4 h-4 text-charcoal-500 pointer-events-none" />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setIsSearchOpen(false);
+                }}
+                className="absolute right-3 top-2.5 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                aria-label="মুছে ফেলুন"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            {renderSearchDropdown()}
           </form>
           <nav aria-label="Mobile Navigation" className="flex flex-col space-y-1 text-sm font-semibold text-charcoal-700 pt-2">
             {NAV_ITEMS.map((item) => {
