@@ -175,7 +175,7 @@ export const Header: React.FC = () => {
         const storedPhone =
           typeof window !== "undefined"
             ? localStorage.getItem("sunnah_customer_phone") ||
-              localStorage.getItem("customer_phone")
+            localStorage.getItem("customer_phone")
             : null;
         if (storedPhone) {
           setCurrentUser({ phone: storedPhone });
@@ -413,13 +413,13 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 w-full font-bengali shadow-subtle">
       {/* 1. Main Header */}
       <div className="bg-white border-b border-surface-border">
-        <div className="container mx-auto px-4 max-w-7xl h-18 flex items-center justify-between gap-4 lg:gap-8">
+        <div className="container mx-auto px-4 max-w-7xl py-2 sm:py-2.5 min-h-[68px] sm:min-h-[70px] lg:h-[70px] flex items-center justify-between gap-3 sm:gap-4 lg:gap-6">
           {/* Left: Mobile Menu & Logo */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-charcoal-700 hover:text-brand-700 rounded-lg transition-colors"
+              className="lg:hidden p-1.5 text-charcoal-700 hover:text-brand-700 rounded-lg transition-colors"
               aria-label={isMobileMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -433,11 +433,11 @@ export const Header: React.FC = () => {
               <Image
                 src="/images/logo.svg"
                 alt="Sunnah Source"
-                width={145}
-                height={148}
+                width={160}
+                height={44}
                 priority
                 unoptimized
-                className="w-28 sm:w-32 md:w-[145px] h-auto object-contain transition-transform group-hover:scale-105"
+                className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105"
               />
             </Link>
           </div>
@@ -447,9 +447,9 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-11 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-10 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
-            <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -459,14 +459,14 @@ export const Header: React.FC = () => {
               }}
               onFocus={() => setIsSearchOpen(true)}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-11 pr-11 rounded-full"
+              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-10 pr-10 rounded-full"
               aria-label="পণ্য খুঁজুন"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
                 <X className="w-3.5 h-3.5" />
@@ -476,16 +476,16 @@ export const Header: React.FC = () => {
           </form>
 
           {/* Desktop Actions - 100% Uniform Font, Weight & Pixel-Perfect Baseline */}
-          <div className="hidden md:flex items-center gap-3 sm:gap-4 lg:gap-5 shrink-0">
+          <div className="hidden md:flex items-center gap-2 sm:gap-2.5 lg:gap-3.5 shrink-0">
             {/* Item 1: Order Track */}
             <Link
               href="/track-order"
               prefetch={true}
-              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+              className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
               title="অর্ডার ট্র্যাক করুন"
             >
               <Truck className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+              <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
                 Order Track
               </span>
             </Link>
@@ -494,7 +494,7 @@ export const Header: React.FC = () => {
             <Link
               href="/wishlist"
               prefetch={true}
-              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer relative"
+              className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer relative"
               title="পছন্দের তালিকা"
             >
               <div className="relative">
@@ -505,7 +505,7 @@ export const Header: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+              <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
                 Wishlist
               </span>
             </Link>
@@ -514,7 +514,7 @@ export const Header: React.FC = () => {
             <button
               onClick={openDrawer}
               type="button"
-              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer relative"
+              className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer relative"
               title="শপিং কার্ট"
             >
               <div className="relative">
@@ -525,7 +525,7 @@ export const Header: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+              <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
                 Cart
               </span>
             </button>
@@ -535,11 +535,11 @@ export const Header: React.FC = () => {
               <Link
                 href="/login"
                 prefetch={true}
-                className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+                className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
                 title="সাইন ইন / অ্যাকাউন্ট"
               >
                 <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-                <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
                   Sign In
                 </span>
               </Link>
@@ -548,7 +548,7 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsAccountOpen((prev) => !prev)}
-                  className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+                  className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
                   title="আমার অ্যাকাউন্ট"
                   aria-expanded={isAccountOpen}
                 >
@@ -556,7 +556,7 @@ export const Header: React.FC = () => {
                     <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
                     <span className="absolute -top-0.5 -right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
                   </div>
-                  <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                  <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
                     Account
                   </span>
                 </button>
@@ -631,12 +631,12 @@ export const Header: React.FC = () => {
               <button
                 onClick={() => setIsMoreOpen((prev) => !prev)}
                 type="button"
-                className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+                className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
                 title="আরও লিঙ্ক"
                 aria-expanded={isMoreOpen}
               >
                 <Menu className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-                <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
                   More
                 </span>
               </button>
@@ -707,20 +707,20 @@ export const Header: React.FC = () => {
       {/* 2. Secondary Navigation Bar with Category Mega Menu */}
       <nav
         aria-label="Secondary Navigation"
-        className="hidden lg:block bg-brand-900 border-b border-brand-800 text-stone-200 text-xs font-semibold"
+        className="hidden lg:block bg-brand-900 border-b border-brand-800 text-stone-200 text-sm font-medium"
       >
-        <div className="container mx-auto px-4 max-w-7xl flex items-center justify-between">
-          <ul className="flex items-center gap-1 xl:gap-2 py-1.5">
+        <div className="container mx-auto px-4 max-w-7xl h-10 flex items-center justify-between">
+          <ul className="flex items-center gap-1 xl:gap-2">
             {NAV_ITEMS.map((item) => {
               const category = item.categorySlug
                 ? CATEGORIES_DATA.find((c) => c.slug === item.categorySlug)
                 : null;
               const categoryProducts = item.categorySlug
                 ? ALL_PRODUCTS.filter(
-                    (p) =>
-                      p.categorySlug === item.categorySlug ||
-                      (item.categorySlug === "combos" && p.isCombo)
-                  )
+                  (p) =>
+                    p.categorySlug === item.categorySlug ||
+                    (item.categorySlug === "combos" && p.isCombo)
+                )
                 : [];
 
               return (
@@ -728,20 +728,19 @@ export const Header: React.FC = () => {
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-stone-200 hover:text-accent-amber hover:bg-brand-800/80 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-stone-200 hover:text-accent-amber hover:bg-brand-800/80 transition-colors whitespace-nowrap text-sm"
                   >
                     <span>{item.label}</span>
                     {item.hasMegaMenu && (
-                      <ChevronDown className="w-3 h-3 text-stone-400 group-hover:rotate-180 group-hover:text-accent-amber transition-transform duration-200" />
+                      <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:rotate-180 group-hover:text-accent-amber transition-transform duration-200" />
                     )}
                   </Link>
 
                   {/* Desktop Hover Mega Menu Dropdown */}
                   {item.hasMegaMenu && category && (
                     <div
-                      className={`absolute top-full ${
-                        item.alignRight ? "right-0" : "left-0"
-                      } pt-1.5 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[460px] sm:w-[500px]`}
+                      className={`absolute top-full ${item.alignRight ? "right-0" : "left-0"
+                        } pt-1.5 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[460px] sm:w-[500px]`}
                     >
                       <div className="bg-white rounded-2xl shadow-2xl border border-surface-border p-4 text-charcoal-900 font-bengali">
                         {/* Header Bar */}
@@ -844,9 +843,9 @@ export const Header: React.FC = () => {
             ref={mobileSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="relative flex items-center w-full h-11 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
+            className="relative flex items-center w-full h-10 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
-            <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -856,14 +855,14 @@ export const Header: React.FC = () => {
               }}
               onFocus={() => setIsSearchOpen(true)}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-11 pr-11 rounded-full"
+              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-10 pr-10 rounded-full"
               aria-label="মোবাইল সার্চ"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
                 <X className="w-3.5 h-3.5" />
@@ -878,10 +877,10 @@ export const Header: React.FC = () => {
                 : null;
               const categoryProducts = item.categorySlug
                 ? ALL_PRODUCTS.filter(
-                    (p) =>
-                      p.categorySlug === item.categorySlug ||
-                      (item.categorySlug === "combos" && p.isCombo)
-                  )
+                  (p) =>
+                    p.categorySlug === item.categorySlug ||
+                    (item.categorySlug === "combos" && p.isCombo)
+                )
                 : [];
               const isExpanded = expandedMobileCategory === item.categorySlug;
 
@@ -909,9 +908,8 @@ export const Header: React.FC = () => {
                         aria-label="ক্যাটাগরি পণ্য দেখুন"
                       >
                         <ChevronDown
-                          className={`w-4 h-4 transition-transform duration-200 ${
-                            isExpanded ? "rotate-180 text-brand-700" : ""
-                          }`}
+                          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180 text-brand-700" : ""
+                            }`}
                         />
                       </button>
                     </div>

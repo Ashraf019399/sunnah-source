@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -43,10 +42,7 @@ export default function HomePage() {
   }
   return (
     <div className="min-h-screen flex flex-col bg-surface-canvas font-bengali">
-      {/* ১. টপ অ্যানাউন্সমেন্ট বার */}
-      <AnnouncementBar />
-
-      {/* ২. মূল হেডার ও সার্চ বার */}
+      {/* মূল হেডার ও সার্চ বার */}
       <Header />
 
       {/* ৩. স্টোরফ্রন্ট বডি */}
