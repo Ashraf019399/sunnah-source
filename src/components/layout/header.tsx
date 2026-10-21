@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ArrowRight,
   Sparkles,
+  Package,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
@@ -392,6 +393,14 @@ export const Header: React.FC = () => {
               <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50">
                 <div className="bg-white rounded-2xl shadow-card border border-surface-border p-2 text-xs space-y-1">
                   <Link
+                    href="/account/orders"
+                    prefetch={true}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
+                  >
+                    <Package className="w-4 h-4 text-brand-700" />
+                    <span>আমার অর্ডারসমূহ</span>
+                  </Link>
+                  <Link
                     href="/admin/login"
                     prefetch={true}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
@@ -696,13 +705,24 @@ export const Header: React.FC = () => {
                 </Link>
               );
             })}
-            <div className="pt-3 mt-1 border-t border-surface-border flex gap-4 text-xs font-normal text-charcoal-500">
-              <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
-                Track Order
+            <div className="pt-3 mt-1 border-t border-surface-border flex flex-col gap-2">
+              <Link
+                href="/account/orders"
+                prefetch={true}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
+              >
+                <Package className="w-4 h-4 text-brand-700" />
+                <span>আমার অর্ডারসমূহ</span>
               </Link>
-              <Link href="/admin/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
-                Sign In
-              </Link>
+              <div className="flex gap-4 text-xs font-normal text-charcoal-500 pt-1 border-t border-surface-border/50">
+                <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
+                  Track Order
+                </Link>
+                <Link href="/admin/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
+                  Sign In
+                </Link>
+              </div>
             </div>
           </nav>
         </div>
