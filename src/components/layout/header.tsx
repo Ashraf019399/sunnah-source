@@ -295,8 +295,9 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full bg-surface-canvas/50 hover:bg-white focus-within:bg-white rounded-full border border-surface-border focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/20 transition-all shadow-xs"
           >
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-500 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -312,10 +313,9 @@ export const Header: React.FC = () => {
                 }
               }}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-11 pl-10 pr-9 text-xs xl:text-sm bg-surface-canvas rounded-full border border-surface-border focus:bg-white focus:border-brand-700 focus:outline-none transition-colors"
+              className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-charcoal-400 py-2.5 pl-10 pr-10"
               aria-label="পণ্য খুঁজুন"
             />
-            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-charcoal-500 pointer-events-none" />
             {searchQuery && (
               <button
                 type="button"
@@ -323,7 +323,7 @@ export const Header: React.FC = () => {
                   setSearchQuery("");
                   setIsSearchOpen(false);
                 }}
-                className="absolute right-3.5 top-3.5 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
                 <X className="w-4 h-4" />
@@ -546,8 +546,9 @@ export const Header: React.FC = () => {
             ref={mobileSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="relative w-full"
+            className="relative flex items-center w-full bg-surface-canvas/50 hover:bg-white focus-within:bg-white rounded-full border border-surface-border focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/20 transition-all shadow-xs"
           >
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-500 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -563,10 +564,9 @@ export const Header: React.FC = () => {
                 }
               }}
               placeholder="পণ্য খুঁজুন..."
-              className="w-full h-10 pl-9 pr-9 text-xs bg-surface-canvas rounded-xl border border-surface-border focus:bg-white focus:border-brand-700 focus:outline-none"
+              className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-charcoal-400 py-2.5 pl-10 pr-10"
               aria-label="মোবাইল সার্চ"
             />
-            <Search className="absolute left-3 top-3 w-4 h-4 text-charcoal-500 pointer-events-none" />
             {searchQuery && (
               <button
                 type="button"
@@ -574,7 +574,7 @@ export const Header: React.FC = () => {
                   setSearchQuery("");
                   setIsSearchOpen(false);
                 }}
-                className="absolute right-3 top-2.5 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
                 aria-label="মুছে ফেলুন"
               >
                 <X className="w-4 h-4" />
