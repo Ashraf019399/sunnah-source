@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, Mail, Facebook } from "lucide-react";
+import { ShieldCheck, Mail, Facebook, MapPin } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
@@ -77,6 +77,12 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-3 space-y-3.5">
             <h4 className="text-white font-bold text-sm tracking-wide">যোগাযোগ</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
+              <li className="flex items-center gap-2.5 text-stone-300">
+                <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-rose-400 shrink-0">
+                  <MapPin className="w-3.5 h-3.5" />
+                </span>
+                <span>লালমনিরহাট, বাংলাদেশ</span>
+              </li>
               <li>
                 <a
                   href="https://wa.me/8801914612007"

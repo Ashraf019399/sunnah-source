@@ -106,7 +106,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               </p>
               <div className="text-[11px] text-charcoal-500 mt-1.5 space-y-0.5 font-sans">
                 <p>হটলাইন: ০১৯১৪-৬১২০০৭ | ইমেইল: support@sunnahsourcebd.com</p>
-                <p>ওয়েবসাইট: www.sunnahsourcebd.com | ঢাকা, বাংলাদেশ</p>
+                <p>ওয়েবসাইট: www.sunnahsourcebd.com | লালমনিরহাট, বাংলাদেশ</p>
               </div>
             </div>
 

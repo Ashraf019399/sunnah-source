@@ -70,7 +70,7 @@ export default function ContactPage() {
       id: "office",
       icon: MapPin,
       title: "অফিস ও ওয়্যারহাউস",
-      value: "ঢাকা, বাংলাদেশ",
+      value: "লালমনিরহাট, বাংলাদেশ",
       subtext: "সারাদেশের ৬৪ জেলায় ক্যাশ অন হোম ডেলিভারি",
       actionLabel: "অর্ডার ট্র্যাক করুন",
       actionHref: "/track-order",
