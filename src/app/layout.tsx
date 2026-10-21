@@ -1,17 +1,42 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Hind_Siliguri } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
 
-const hindSiliguri = Hind_Siliguri({
-  weight: ["300", "400", "500", "600", "700"],
-  subsets: ["bengali", "latin"],
-  display: "swap",
+const hindSiliguri = localFont({
+  src: [
+    {
+      path: "./fonts/HindSiliguri Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./fonts/HindSiliguri Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/HindSiliguri Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/HindSiliguri SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "./fonts/HindSiliguri Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-bengali",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
