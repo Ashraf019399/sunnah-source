@@ -162,7 +162,7 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
         const incomingThana = customer.thana.trim();
         const incomingDistrict = customer.district.trim();
 
-        const existingShipping = (existingOrder.shipping_address as any) || {};
+        const existingShipping = (existingOrder.shipping_address as unknown as Record<string, string | undefined>) || {};
         let isMismatch =
           (existingOrder.guest_name || "").trim() !== customer.fullName.trim() ||
           existingOrder.guest_phone !== incomingPhone ||
@@ -240,7 +240,7 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
     const trustedGrandTotal = Math.max(0, trustedSubtotal + trustedDeliveryFee - trustedDiscount);
 
     // 8. Execute atomic RPC via service-role client with idempotency key
-    const rpcPayload: Record<string, any> = {
+    const rpcPayload: Record<string, unknown> = {
       p_order_id: orderId,
       p_order_number: orderNumber,
       p_guest_name: customer.fullName.trim(),
@@ -324,9 +324,10 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
         isDuplicate: Boolean(rpcData.is_duplicate),
       },
     };
-  } catch (err: any) {
-    console.error("[checkout-actions] Unexpected server error:", err);
-    return { success: false, message: err?.message || "সার্ভার এরর ঘটেছে।" };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[checkout-actions] Unexpected server error:", errorMsg);
+    return { success: false, message: errorMsg || "সার্ভার এরর ঘটেছে।" };
   }
 }
 

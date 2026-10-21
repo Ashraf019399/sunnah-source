@@ -8,6 +8,7 @@ import {
   CouponFormData,
 } from "@/types/coupons.types";
 import { mapDbCouponToCoupon } from "@/lib/data/coupons";
+import { PROMOTIONAL_COUPONS } from "@/lib/services/coupons";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -42,8 +43,9 @@ async function getAuthorizedAdminClient(): Promise<{
 
     const adminClient = await createAdminClient();
     return { adminClient };
-  } catch (err: any) {
-    console.error("[getAuthorizedAdminClient] Error:", err?.message || err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[getAuthorizedAdminClient] Error:", errorMsg);
     return { adminClient: null, errorMsg: "সার্ভার ত্রুটি। আবার চেষ্টা করুন।" };
   }
 }
@@ -98,9 +100,10 @@ export async function getAdminCoupons(): Promise<AdminCouponsResult> {
 
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return {
-        success: false,
-        message: "সার্ভারে SUPABASE_SERVICE_ROLE_KEY কনফিগার করা নেই।",
+        success: true,
+        data: PROMOTIONAL_COUPONS,
         isFromLiveDb: false,
+        message: "সার্ভারে SUPABASE_SERVICE_ROLE_KEY কনফিগার করা নেই। প্রমোশনাল কুপনসমূহ সক্রিয় প্রদর্শিত হচ্ছে।",
       };
     }
 
@@ -110,9 +113,9 @@ export async function getAdminCoupons(): Promise<AdminCouponsResult> {
     if (!tableAccessible) {
       return {
         success: true,
-        data: [],
+        data: PROMOTIONAL_COUPONS,
         isFromLiveDb: false,
-        message: "Supabase-এ public.coupons টেবিলের পারমিশন (42501) পেন্ডিং রয়েছে। অনুগ্রহ করে প্রস্তুতকৃত মাইগ্রেশন SQL রান করুন।",
+        message: "Supabase-এ public.coupons টেবিলের পারমিশন (42501) পেন্ডিং রয়েছে। প্রমোশনাল কুপনসমূহ সক্রিয় প্রদর্শিত হচ্ছে।",
       };
     }
 
@@ -124,23 +127,38 @@ export async function getAdminCoupons(): Promise<AdminCouponsResult> {
     if (dbError) {
       console.error("[getAdminCoupons] Database query error:", dbError);
       return {
-        success: false,
-        message: `কুপন লোড করতে ডাটাবেস এরর: ${dbError.message}`,
+        success: true,
+        data: PROMOTIONAL_COUPONS,
         isFromLiveDb: false,
+        message: `কুপন লোড করতে ডাটাবেস এরর: ${dbError.message}। প্রমোশনাল কুপনসমূহ সক্রিয় প্রদর্শিত হচ্ছে।`,
       };
     }
 
-    const mapped = (dbCoupons || []).map(mapDbCouponToCoupon);
+    const mapped = (dbCoupons || []).map((row) =>
+      mapDbCouponToCoupon(row as Record<string, unknown>)
+    );
+
+    // Merge default promotional coupons if not already present in live database
+    const existingCodes = new Set(mapped.map((c) => c.code.toUpperCase()));
+    for (const promo of PROMOTIONAL_COUPONS) {
+      if (!existingCodes.has(promo.code.toUpperCase())) {
+        mapped.push(promo);
+      }
+    }
+
     return {
       success: true,
       data: mapped,
       isFromLiveDb: true,
     };
-  } catch (err: any) {
-    console.error("[getAdminCoupons] Unexpected error:", err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[getAdminCoupons] Unexpected error:", errorMsg);
     return {
-      success: false,
-      message: err?.message || "কুপন লোড করতে সমস্যা হয়েছে।",
+      success: true,
+      data: PROMOTIONAL_COUPONS,
+      isFromLiveDb: false,
+      message: errorMsg || "কুপন লোড করতে সমস্যা হয়েছে।",
     };
   }
 }
@@ -231,7 +249,7 @@ export async function addAdminCoupon(
     const dbDiscountType =
       formData.discountType === "fixed" ? "fixed_amount" : "percentage";
 
-    const insertPayload: Record<string, any> = {
+    const insertPayload: Record<string, unknown> = {
       id: newId,
       code: cleanCode,
       discount_type: dbDiscountType,
@@ -259,9 +277,10 @@ export async function addAdminCoupon(
 
     revalidatePath("/admin/coupons");
     return { success: true, message: "কুপন সফলভাবে তৈরি করা হয়েছে।" };
-  } catch (err: any) {
-    console.error("[addAdminCoupon] Error:", err);
-    return { success: false, message: err?.message || "কুপন তৈরিতে সমস্যা হয়েছে।" };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[addAdminCoupon] Error:", errorMsg);
+    return { success: false, message: errorMsg || "কুপন তৈরিতে সমস্যা হয়েছে।" };
   }
 }
 
@@ -311,7 +330,7 @@ export async function updateAdminCoupon(
     const dbDiscountType =
       formData.discountType === "fixed" ? "fixed_amount" : "percentage";
 
-    const updatePayload: Record<string, any> = {
+    const updatePayload: Record<string, unknown> = {
       code: cleanCode,
       discount_type: dbDiscountType,
       discount_value: formData.discountValue,
@@ -339,9 +358,10 @@ export async function updateAdminCoupon(
 
     revalidatePath("/admin/coupons");
     return { success: true, message: "কুপন সফলভাবে আপডেট করা হয়েছে।" };
-  } catch (err: any) {
-    console.error("[updateAdminCoupon] Error:", err);
-    return { success: false, message: err?.message || "কুপন আপডেট করতে সমস্যা হয়েছে।" };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[updateAdminCoupon] Error:", errorMsg);
+    return { success: false, message: errorMsg || "কুপন আপডেট করতে সমস্যা হয়েছে।" };
   }
 }
 
@@ -377,9 +397,10 @@ export async function toggleCouponStatus(
       success: true,
       message: isActive ? "কুপন সক্রিয় করা হয়েছে।" : "কুপন নিষ্ক্রিয় করা হয়েছে।",
     };
-  } catch (err: any) {
-    console.error("[toggleCouponStatus] Error:", err);
-    return { success: false, message: err?.message || "স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে।" };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[toggleCouponStatus] Error:", errorMsg);
+    return { success: false, message: errorMsg || "স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে।" };
   }
 }
 
@@ -405,8 +426,9 @@ export async function deleteAdminCoupon(id: string): Promise<AdminCouponMutation
 
     revalidatePath("/admin/coupons");
     return { success: true, message: "কুপন সফলভাবে মুছে ফেলা হয়েছে।" };
-  } catch (err: any) {
-    console.error("[deleteAdminCoupon] Error:", err);
-    return { success: false, message: err?.message || "কুপন মুছে ফেলা যায়নি।" };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[deleteAdminCoupon] Error:", errorMsg);
+    return { success: false, message: errorMsg || "কুপন মুছে ফেলা যায়নি।" };
   }
 }

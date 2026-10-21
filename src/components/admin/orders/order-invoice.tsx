@@ -23,7 +23,7 @@ export const OrderInvoice: React.FC<OrderInvoiceProps> = ({ order, autoPrint = f
   }, [autoPrint]);
 
   const items = order.items || [];
-  const shipping = (order.shipping_address as any) || {};
+  const shipping = (order.shipping_address as unknown as Record<string, string | undefined>) || {};
 
   const isPaid = order.payment_status === "paid";
   const paymentMethodLabel =
@@ -281,11 +281,13 @@ export const OrderInvoice: React.FC<OrderInvoiceProps> = ({ order, autoPrint = f
                 </span>
               </div>
               {order.discount_amount > 0 && (
-                <div className="flex justify-between py-1 text-emerald-800 bg-emerald-50 px-2 rounded">
+                <div className="flex justify-between py-1 text-emerald-800 bg-emerald-50 px-2 rounded font-semibold">
                   <span>
-                    কুপন ছাড় {order.coupon_code ? `(${order.coupon_code})` : ""}:
+                    কুপন ছাড় ({order.coupon_code || "প্রমোশন"}):
                   </span>
-                  <span className="font-mono font-bold">-{formatBDT(order.discount_amount)}</span>
+                  <span className="font-mono font-bold text-emerald-800">
+                    - ৳{order.discount_amount}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between py-2 border-t-2 border-brand-900 text-sm sm:text-base font-black text-brand-900">

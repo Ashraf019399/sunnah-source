@@ -1,3 +1,5 @@
+import type { Coupon } from "@/types/coupons.types";
+
 export type DeliveryZone = 'inside_dhaka' | 'outside_dhaka';
 
 export type PaymentMethod = 'cod' | 'bkash' | 'nagad' | 'sslcommerz';
@@ -43,6 +45,7 @@ export interface OrderCreationPayload {
   deliveryFee: number;
   discountAmount: number;
   couponCode?: string;
+  appliedCoupon?: Coupon | null;
   grandTotal: number;
   paymentMethod: PaymentMethod;
   idempotencyKey?: string;

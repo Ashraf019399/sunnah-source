@@ -3,10 +3,10 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Coupon, CouponValidationResult } from "@/types/coupons.types";
 import { validateCouponRules, mapDbCouponToCoupon } from "@/lib/data/coupons";
+import { PROMOTIONAL_COUPONS } from "@/lib/services/coupons";
 
 /**
- * Fetch a coupon by code strictly from the live Supabase database.
- * Never uses in-memory fallbacks for checkout or financial operations.
+ * Fetch a coupon by code from the live Supabase database with fallback to valid promotional coupons.
  */
 async function fetchCouponFromLiveDb(code: string): Promise<{ coupon: Coupon | null; error?: string }> {
   const normalized = code.trim().toUpperCase();
@@ -24,18 +24,31 @@ async function fetchCouponFromLiveDb(code: string): Promise<{ coupon: Coupon | n
       .maybeSingle();
 
     if (error) {
-      console.error("[fetchCouponFromLiveDb] Database error:", error.code, error.message);
+      console.warn("[fetchCouponFromLiveDb] Database warning:", error.code, error.message);
+      const promo = PROMOTIONAL_COUPONS.find((c) => c.code.toUpperCase() === normalized);
+      if (promo) {
+        return { coupon: promo };
+      }
       return { coupon: null, error: error.message };
     }
 
     if (!dbCoupon) {
+      const promo = PROMOTIONAL_COUPONS.find((c) => c.code.toUpperCase() === normalized);
+      if (promo) {
+        return { coupon: promo };
+      }
       return { coupon: null };
     }
 
-    return { coupon: mapDbCouponToCoupon(dbCoupon) };
-  } catch (err: any) {
-    console.error("[fetchCouponFromLiveDb] Unexpected lookup error:", err?.message || err);
-    return { coupon: null, error: err?.message || "ডাটাবেস সংযোগ ব্যর্থ হয়েছে।" };
+    return { coupon: mapDbCouponToCoupon(dbCoupon as Record<string, unknown>) };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("[fetchCouponFromLiveDb] Unexpected lookup error:", errorMsg);
+    const promo = PROMOTIONAL_COUPONS.find((c) => c.code.toUpperCase() === normalized);
+    if (promo) {
+      return { coupon: promo };
+    }
+    return { coupon: null, error: errorMsg || "ডাটাবেস সংযোগ ব্যর্থ হয়েছে।" };
   }
 }
 

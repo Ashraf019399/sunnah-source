@@ -3,7 +3,7 @@ import type { Coupon, CouponValidationResult } from "@/types/coupons.types";
 /**
  * Normalizes a raw coupon row from the database into the Coupon interface.
  */
-export function mapDbCouponToCoupon(row: any): Coupon {
+export function mapDbCouponToCoupon(row: Record<string, unknown>): Coupon {
   const discountType =
     row.discount_type === "percentage"
       ? "percentage"
@@ -11,9 +11,12 @@ export function mapDbCouponToCoupon(row: any): Coupon {
       ? "free_shipping"
       : "fixed";
 
+  const code = typeof row.code === "string" ? row.code.toUpperCase() : "";
+  const id = typeof row.id === "string" ? row.id : String(row.id || "");
+
   return {
-    id: row.id,
-    code: (row.code || "").toUpperCase(),
+    id,
+    code,
     discountType,
     discountValue: Number(row.discount_value) || 0,
     minOrderAmount: Number(row.minimum_order_value ?? row.min_order_amount) || 0,
@@ -28,12 +31,17 @@ export function mapDbCouponToCoupon(row: any): Coupon {
         ? Number(row.usage_limit)
         : null,
     usedCount: Number(row.times_used ?? row.used_count) || 0,
-    startDate: row.start_date || null,
-    expiryDate: row.end_date || row.expiry_date || null,
+    startDate: typeof row.start_date === "string" ? row.start_date : null,
+    expiryDate:
+      typeof row.end_date === "string"
+        ? row.end_date
+        : typeof row.expiry_date === "string"
+        ? row.expiry_date
+        : null,
     isActive: Boolean(row.is_active ?? true),
-    description: row.description || null,
-    createdAt: row.created_at || undefined,
-    updatedAt: row.updated_at || undefined,
+    description: typeof row.description === "string" ? row.description : null,
+    createdAt: typeof row.created_at === "string" ? row.created_at : undefined,
+    updatedAt: typeof row.updated_at === "string" ? row.updated_at : undefined,
   };
 }
 

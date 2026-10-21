@@ -66,7 +66,7 @@ export function CouponsManager({
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "expired">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "percentage" | "fixed">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "percentage" | "fixed" | "free_shipping">("all");
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -420,14 +420,14 @@ export function CouponsManager({
             <span>স্ট্যাটাস:</span>
           </span>
           {[
-            { id: "all", label: "সকল কুপন" },
-            { id: "active", label: "সক্রিয়" },
-            { id: "expired", label: "মেয়াদোত্তীর্ণ" },
-            { id: "inactive", label: "নিষ্ক্রিয়" },
+            { id: "all" as const, label: "সকল কুপন" },
+            { id: "active" as const, label: "সক্রিয়" },
+            { id: "expired" as const, label: "মেয়াদোত্তীর্ণ" },
+            { id: "inactive" as const, label: "নিষ্ক্রিয়" },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setStatusFilter(tab.id as any)}
+              onClick={() => setStatusFilter(tab.id)}
               className={`px-3 py-1 rounded-full font-bold transition-all ${
                 statusFilter === tab.id
                   ? "bg-brand-700 text-white shadow-subtle"
@@ -442,13 +442,14 @@ export function CouponsManager({
 
           <span className="text-charcoal-500 font-bold shrink-0">ধরন:</span>
           {[
-            { id: "all", label: "সব ধরন" },
-            { id: "percentage", label: "শতাংশ (%)" },
-            { id: "fixed", label: "ফিক্সড (৳)" },
+            { id: "all" as const, label: "সব ধরন" },
+            { id: "percentage" as const, label: "শতাংশ (%)" },
+            { id: "fixed" as const, label: "ফিক্সড (৳)" },
+            { id: "free_shipping" as const, label: "ফ্রি ডেলিভারি" },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setTypeFilter(tab.id as any)}
+              onClick={() => setTypeFilter(tab.id)}
               className={`px-2.5 py-1 rounded-full font-bold transition-all ${
                 typeFilter === tab.id
                   ? "bg-purple-700 text-white shadow-subtle"
@@ -544,10 +545,16 @@ export function CouponsManager({
                     <span className="text-xl sm:text-2xl font-black text-charcoal-900 font-mono">
                       {coupon.discountType === "percentage"
                         ? `${coupon.discountValue}%`
+                        : coupon.discountType === "free_shipping"
+                        ? "১০০% ফ্রি"
                         : formatBDT(coupon.discountValue)}
                     </span>
                     <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
-                      {coupon.discountType === "percentage" ? "শতাংশ ছাড়" : "ফিক্সড ছাড়"}
+                      {coupon.discountType === "percentage"
+                        ? "শতাংশ ছাড়"
+                        : coupon.discountType === "free_shipping"
+                        ? "ফ্রি ডেলিভারি"
+                        : "ফিক্সড ছাড়"}
                     </span>
                   </div>
 
