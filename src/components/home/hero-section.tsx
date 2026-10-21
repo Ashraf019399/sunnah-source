@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -58,9 +58,17 @@ export function HeroSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Touch swipe coordinates
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  // Dragging & Swipe States
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [currentX, setCurrentX] = useState(0);
+  const [diffX, setDiffX] = useState(0);
+
+  // Synchronous refs for drag tracking & link click prevention
+  const isPointerDownRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragDistanceRef = useRef(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const prevSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev === 0 ? MAIN_BANNERS.length - 1 : prev - 1));
@@ -70,77 +78,171 @@ export function HeroSection() {
     setCurrentIndex((prev) => (prev === MAIN_BANNERS.length - 1 ? 0 : prev + 1));
   }, []);
 
-  // Auto-advance every 4.5 seconds
+  // Auto-advance every 4.5 seconds (resets on slide change or manual drag)
   useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
+    if (isPaused || isDragging) return;
+
+    timerRef.current = setInterval(() => {
       nextSlide();
     }, 4500);
 
-    return () => clearInterval(interval);
-  }, [isPaused, nextSlide]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPaused, isDragging, currentIndex, nextSlide]);
 
-  // Touch gestures for mobile swipe
-  const minSwipeDistance = 45;
+  // Mouse Drag Events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Only main left click
+    setIsPaused(true);
+    isPointerDownRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragDistanceRef.current = 0;
+    setStartX(e.clientX);
+    setCurrentX(e.clientX);
+    setDiffX(0);
+    setIsDragging(true);
+  };
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isPointerDownRef.current) return;
+    const delta = e.clientX - dragStartXRef.current;
+    dragDistanceRef.current = Math.abs(delta);
+    setCurrentX(e.clientX);
+    setDiffX(delta);
+  };
+
+  const handleMouseUp = () => {
+    if (!isPointerDownRef.current) return;
+    isPointerDownRef.current = false;
+    setIsDragging(false);
+    setIsPaused(false);
+
+    const delta = diffX;
+    // Swipe threshold: 40px
+    if (delta < -40) {
+      nextSlide();
+    } else if (delta > 40) {
+      prevSlide();
+    }
+
+    setDiffX(0);
+
+    // Keep distance briefly to prevent link navigation, then reset
+    setTimeout(() => {
+      dragDistanceRef.current = 0;
+    }, 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (isPointerDownRef.current) {
+      handleMouseUp();
+    } else {
+      setIsPaused(false);
+    }
+  };
+
+  // Touch Swipe Events
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsPaused(true);
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    const clientX = e.targetTouches[0].clientX;
+    isPointerDownRef.current = true;
+    dragStartXRef.current = clientX;
+    dragDistanceRef.current = 0;
+    setStartX(clientX);
+    setCurrentX(clientX);
+    setDiffX(0);
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (!isPointerDownRef.current) return;
+    const clientX = e.targetTouches[0].clientX;
+    const delta = clientX - dragStartXRef.current;
+    dragDistanceRef.current = Math.abs(delta);
+    setCurrentX(clientX);
+    setDiffX(delta);
   };
 
   const handleTouchEnd = () => {
+    if (!isPointerDownRef.current) return;
+    isPointerDownRef.current = false;
+    setIsDragging(false);
     setIsPaused(false);
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) {
+
+    const delta = diffX;
+    // Swipe threshold: 40px
+    if (delta < -40) {
       nextSlide();
-    } else if (distance < -minSwipeDistance) {
+    } else if (delta > 40) {
       prevSlide();
     }
+
+    setDiffX(0);
+
+    setTimeout(() => {
+      dragDistanceRef.current = 0;
+    }, 120);
   };
 
   return (
     <section
       aria-label="Sunnah Source Hero Graphic Banners"
-      className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 sm:py-5"
+      className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 sm:py-5 font-bengali"
     >
       {/* Sunnah Royal Split Grid: 12-Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 lg:gap-5 items-stretch">
         {/* Left Column: Pure Graphic Main Carousel (Takes lg:col-span-8 - 67% width) */}
         <div
-          className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-md group h-[230px] xs:h-[260px] sm:h-[340px] md:h-[400px] lg:h-[430px] xl:h-[460px] select-none bg-stone-900 border border-charcoal-200/50"
+          className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-md group h-[230px] xs:h-[260px] sm:h-[340px] md:h-[400px] lg:h-[430px] xl:h-[460px] select-none bg-stone-900 border border-charcoal-200/50 cursor-grab active:cursor-grabbing"
           onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
+          onMouseLeave={handleMouseLeave}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Horizontal Sliding Banner Track */}
+          {/* Horizontal Sliding Banner Track with Smooth Follow & Snap Animation */}
           <div
-            className="flex h-full transition-transform duration-700 ease-out will-change-transform"
-            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            className={`flex h-full will-change-transform ${
+              isDragging
+                ? "transition-none"
+                : "transition-transform duration-700 ease-out"
+            }`}
+            style={{
+              transform: isDragging
+                ? `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`
+                : `translateX(-${currentIndex * 100}%)`,
+            }}
           >
             {MAIN_BANNERS.map((slide, idx) => (
               <Link
                 key={slide.id}
                 href={slide.link}
                 prefetch={true}
+                draggable={false}
                 tabIndex={currentIndex === idx ? 0 : -1}
                 aria-label={slide.alt}
-                className="w-full h-full shrink-0 relative block overflow-hidden cursor-pointer"
+                onClick={(e) => {
+                  // Prevent accidental link navigation if user dragged more than 6px
+                  if (dragDistanceRef.current > 6) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+                onDragStart={(e) => e.preventDefault()}
+                className="w-full h-full shrink-0 relative block overflow-hidden"
               >
                 <Image
                   src={slide.image}
                   alt={slide.alt}
                   fill
+                  draggable={false}
                   priority={idx === 0}
                   sizes="(max-width: 1024px) 100vw, 68vw"
-                  className="object-cover rounded-2xl sm:rounded-3xl transition-transform duration-500 ease-out hover:scale-[1.01]"
+                  className="object-cover rounded-2xl sm:rounded-3xl transition-transform duration-500 ease-out hover:scale-[1.01] pointer-events-none select-none"
                 />
               </Link>
             ))}
@@ -151,6 +253,7 @@ export function HeroSection() {
             type="button"
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               prevSlide();
             }}
             aria-label="Previous Banner"
@@ -163,6 +266,7 @@ export function HeroSection() {
             type="button"
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               nextSlide();
             }}
             aria-label="Next Banner"
@@ -172,13 +276,14 @@ export function HeroSection() {
           </button>
 
           {/* Bottom Pagination Indicators (Smooth Active Pill Dot) */}
-          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-sm">
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-sm pointer-events-auto">
             {MAIN_BANNERS.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   setCurrentIndex(idx);
                 }}
                 aria-label={`Go to slide ${idx + 1}`}
@@ -199,15 +304,18 @@ export function HeroSection() {
               key={promo.id}
               href={promo.link}
               prefetch={true}
+              draggable={false}
               aria-label={promo.alt}
+              onDragStart={(e) => e.preventDefault()}
               className="group relative flex-1 w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-charcoal-200/60 hover:border-emerald-500/40 min-h-[155px] xs:min-h-[175px] sm:min-h-[195px] lg:min-h-0 block bg-stone-900"
             >
               <Image
                 src={promo.image}
                 alt={promo.alt}
                 fill
+                draggable={false}
                 sizes="(max-width: 1024px) 100vw, 34vw"
-                className="object-cover rounded-2xl sm:rounded-3xl transition-transform duration-300 group-hover:scale-[1.02]"
+                className="object-cover rounded-2xl sm:rounded-3xl transition-transform duration-300 group-hover:scale-[1.02] pointer-events-none select-none"
               />
             </Link>
           ))}
