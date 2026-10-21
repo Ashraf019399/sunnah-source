@@ -239,6 +239,9 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* গ্রাহকদের সন্তুষ্টি ও মতামত (What Our Customers Say - Review Slider) */}
+        <TestimonialsSection />
+
         {/* সম্পূর্ণ ক্যাটালগ ও সকল খাঁটি পণ্যসমূহ */}
         <section className="container mx-auto max-w-7xl px-4 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-surface-border">
@@ -268,9 +271,6 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-
-        {/* গ্রাহকদের সন্তুষ্টি ও মতামত (What Our Customers Say) */}
-        <TestimonialsSection />
       </main>
 
       {/* ৪. গ্লোবাল ফুটার */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Star,
@@ -9,52 +9,137 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Heart,
   Users,
-  Award,
-  ArrowRight,
-  MapPin,
-  Sparkles,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
-import { getFeaturedTestimonials, ALL_REVIEWS } from "@/lib/data/reviews";
-import { Review } from "@/types/commerce.types";
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  title: string;
+  comment: string;
+  rating: number;
+  product?: string;
+  avatarText: string;
+  avatarBg: string;
+  verifiedBuyer: boolean;
+}
+
+const TESTIMONIALS: Testimonial[] = [
+  {
+    id: "rev-1",
+    name: "ফারজানা চৌধুরী",
+    title: "শিক্ষিকা, ধানমন্ডি, ঢাকা",
+    comment:
+      "এই অবিশ্বাসের বাজারে সান্নাহ সোর্স এক টুকরো স্বস্তি। সুন্দরবনের চাকের কাঁচা মধু আর গাওয়া ঘিয়ের সুবাস ও দানাদার গঠন অসাধারণ।",
+    rating: 5,
+    product: "সুন্দরবনের চাকের কাঁচা মধু ও গাওয়া ঘি",
+    avatarText: "ফা",
+    avatarBg: "bg-rose-50 text-rose-700 border-rose-200",
+    verifiedBuyer: true,
+  },
+  {
+    id: "rev-2",
+    name: "প্রকৌশলী তানভীর আহমেদ",
+    title: "উত্তরা, ঢাকা",
+    comment:
+      "২য় বার সান্নাহ সোর্স থেকে অর্ডার করলাম। আগের মতো এবারও খাঁটি কালোজিরা তেল ও প্রথাগত গাওয়া ঘি পেয়েছি। কোয়ালিটি ও দ্রুত হোম ডেলিভারিতে আমি পুরোপুরি সন্তুষ্ট।",
+    rating: 5,
+    product: "খাঁটি কালোজিরা তেল ও গাওয়া ঘি",
+    avatarText: "তা",
+    avatarBg: "bg-brand-50 text-brand-800 border-brand-200",
+    verifiedBuyer: true,
+  },
+  {
+    id: "rev-3",
+    name: "ডা: সাজিদ হাসান",
+    title: "চিকিৎসক, চট্টগ্রাম",
+    comment:
+      "মদিনার ভিআইপি আজওয়া খেজুর ও সরিষার তেল নিয়েছিলাম। ১০০% নির্ভেজাল ও আসল স্বাদ। তাদের প্যাকেজিং এবং কুরিয়ার সার্ভিস সত্যিই দারুণ।",
+    rating: 5,
+    product: "মদিনার ভিআইপি আজওয়া খেজুর",
+    avatarText: "সা",
+    avatarBg: "bg-amber-50 text-amber-800 border-amber-200",
+    verifiedBuyer: true,
+  },
+  {
+    id: "rev-4",
+    name: "আয়েশা বেগম",
+    title: "গৃহিণী, সিলেট",
+    comment:
+      "খাঁটি খলিসা ফুলের মধু একদম প্রাকৃতিক। টেস্ট করলেই বোঝা যায় কোনো ভেজাল নেই। পরিবারের সবার জন্য নিয়মিত নিচ্ছি।",
+    rating: 5,
+    product: "খাঁটি খলিসা ফুলের মধু",
+    avatarText: "আ",
+    avatarBg: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    verifiedBuyer: true,
+  },
+  {
+    id: "rev-5",
+    name: "মাহফুজুর রহমান",
+    title: "ব্যবসায়ী, রাজশাহী",
+    comment:
+      "সরাসরি কাঠের ঘানি ভাঙা সরিষার তেল ও সুন্দরবনের মধুর কম্বো নিয়েছিলাম। সান্নাহ সোর্সের সততা ও সেবায় মুগ্ধ।",
+    rating: 5,
+    product: "ঘানি ভাঙা সরিষার তেল ও মধু কম্বো",
+    avatarText: "মা",
+    avatarBg: "bg-blue-50 text-blue-800 border-blue-200",
+    verifiedBuyer: true,
+  },
+];
 
 export function TestimonialsSection() {
-  const testimonials = getFeaturedTestimonials();
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [mounted, setMounted] = useState(false);
+  const [cardsPerView, setCardsPerView] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const categories = [
-    { id: "all", label: "সকল মতামত" },
-    { id: "honey", label: "সুন্দরবনের মধু" },
-    { id: "ghee", label: "বিলোনা ঘি" },
-    { id: "dates", label: "মদিনার খেজুর" },
-    { id: "oil-combo", label: "ঘানি ভাঙা তেল ও কম্বো" },
-  ];
+  useEffect(() => {
+    setMounted(true);
+    const updateCardsPerView = () => {
+      if (window.innerWidth >= 1024) {
+        setCardsPerView(3);
+      } else if (window.innerWidth >= 640) {
+        setCardsPerView(2);
+      } else {
+        setCardsPerView(1);
+      }
+    };
 
-  const filteredTestimonials: Review[] = testimonials.filter((t) => {
-    if (activeCategory === "all") return true;
-    if (activeCategory === "honey") return t.productSlug.includes("honey");
-    if (activeCategory === "ghee") return t.productSlug.includes("ghee");
-    if (activeCategory === "dates") return t.productSlug.includes("dates");
-    if (activeCategory === "oil-combo")
-      return t.productSlug.includes("oil") || t.productSlug.includes("combo") || t.productSlug.includes("gift");
-    return true;
-  });
+    updateCardsPerView();
+    window.addEventListener("resize", updateCardsPerView);
+    return () => window.removeEventListener("resize", updateCardsPerView);
+  }, []);
 
-  const displayList = filteredTestimonials.length > 0 ? filteredTestimonials : testimonials;
+  const maxIndex = Math.max(0, TESTIMONIALS.length - cardsPerView);
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? Math.max(0, displayList.length - 1) : prev - 1));
-  };
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  }, [maxIndex]);
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev >= displayList.length - 1 ? 0 : prev + 1));
-  };
+  const prevSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
+  }, [maxIndex]);
+
+  useEffect(() => {
+    if (currentIndex > maxIndex) {
+      setCurrentIndex(maxIndex);
+    }
+  }, [maxIndex, currentIndex]);
+
+  useEffect(() => {
+    if (!mounted || isPaused || maxIndex <= 0) return;
+
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [mounted, isPaused, maxIndex, nextSlide]);
 
   return (
-    <section className="container mx-auto max-w-7xl px-4 py-8 lg:py-12 space-y-10">
+    <section className="container mx-auto max-w-7xl px-4 py-8 lg:py-12 space-y-10 font-bengali">
       {/* 1. Header & Social Proof Eyebrow */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3.5 py-1 rounded-full text-xs font-bold shadow-xs">
@@ -130,120 +215,128 @@ export function TestimonialsSection() {
         </div>
       </div>
 
-      {/* 3. Category Filter Tabs & Navigation Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => {
-                setActiveCategory(cat.id);
-                setCurrentIndex(0);
-              }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                activeCategory === cat.id
-                  ? "bg-brand-700 text-white border-brand-700 shadow-xs"
-                  : "bg-white text-charcoal-700 border-surface-border hover:border-brand-700 hover:text-brand-700"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+      {/* 3. Auto-Playing Horizontal Review Slider (Ghorer Bazar Style) */}
+      <div className="space-y-6">
+        {/* Slider Viewport with Pause on Hover / Touch */}
+        <div
+          className="relative overflow-hidden py-2"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
+        >
+          <div
+            className="flex transition-transform duration-500 ease-out"
+            style={{
+              transform: `translateX(-${currentIndex * (100 / (mounted ? cardsPerView : 1))}%)`,
+            }}
+          >
+            {TESTIMONIALS.map((review) => (
+              <div
+                key={review.id}
+                className="w-full min-w-full sm:w-1/2 sm:min-w-[50%] lg:w-1/3 lg:min-w-[33.333333%] px-2.5 sm:px-3 shrink-0 flex"
+              >
+                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-bengali text-left flex flex-col justify-between w-full h-full space-y-4">
+                  {/* Top: Stars & Quote Icon */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className="w-4 h-4 fill-amber-400 text-amber-400"
+                        />
+                      ))}
+                    </div>
+                    <Quote className="w-7 h-7 text-brand-700/20 shrink-0" />
+                  </div>
+
+                  {/* Review Quote Body */}
+                  <p className="text-xs sm:text-sm text-charcoal-800 leading-relaxed font-normal flex-1">
+                    &ldquo;{review.comment}&rdquo;
+                  </p>
+
+                  {/* Product Tag */}
+                  {review.product && (
+                    <div className="pt-1">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200/70 truncate max-w-full">
+                        পণ্য: {review.product}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Bottom: Customer Avatar, Name, Verified Badge, Designation/Location */}
+                  <div className="pt-4 border-t border-stone-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-10 h-10 rounded-full ${review.avatarBg} font-extrabold flex items-center justify-center text-sm border shadow-2xs shrink-0`}
+                      >
+                        {review.avatarText}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-charcoal-900 text-xs sm:text-sm truncate">
+                          {review.name}
+                        </h4>
+                        <p className="text-[11px] text-charcoal-500 truncate mt-0.5">
+                          {review.title}
+                        </p>
+                      </div>
+                    </div>
+
+                    {review.verifiedBuyer && (
+                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        যাচাইকৃত ক্রেতা
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Carousel Arrow Controls */}
-        <div className="flex items-center gap-2">
+        {/* Bottom Pagination Dots & Arrows Controls */}
+        <div className="flex items-center justify-between pt-2">
+          {/* Previous Arrow Button */}
           <button
             type="button"
-            onClick={handlePrev}
-            className="w-9 h-9 rounded-full bg-white border border-surface-border flex items-center justify-center text-charcoal-700 hover:bg-stone-50 hover:border-brand-700 transition-colors shadow-xs cursor-pointer"
+            onClick={prevSlide}
             aria-label="পূর্ববর্তী রিভিউ"
+            className="w-9 h-9 rounded-full bg-white border border-stone-200 shadow-xs hover:border-brand-700 hover:text-brand-700 flex items-center justify-center text-charcoal-700 transition-all cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
+
+          {/* Styled Pagination Dots with Expansion */}
+          <div className="flex items-center gap-2">
+            {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  currentIndex === idx
+                    ? "w-6 bg-brand-700 shadow-xs"
+                    : "w-2 bg-stone-300 hover:bg-stone-400"
+                }`}
+                aria-label={`রিভিউ স্লাইড ${idx + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Next Arrow Button */}
           <button
             type="button"
-            onClick={handleNext}
-            className="w-9 h-9 rounded-full bg-white border border-surface-border flex items-center justify-center text-charcoal-700 hover:bg-stone-50 hover:border-brand-700 transition-colors shadow-xs cursor-pointer"
+            onClick={nextSlide}
             aria-label="পরবর্তী রিভিউ"
+            className="w-9 h-9 rounded-full bg-white border border-stone-200 shadow-xs hover:border-brand-700 hover:text-brand-700 flex items-center justify-center text-charcoal-700 transition-all cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* 4. Responsive Testimonial Cards Showcase */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        {displayList.slice(0, 6).map((review) => (
-          <div
-            key={review.id}
-            className="group relative bg-white rounded-3xl border border-surface-border p-6 sm:p-7 shadow-subtle hover:shadow-card hover:border-brand-700/60 transition-all duration-300 flex flex-col justify-between space-y-5"
-          >
-            {/* Top Row: Stars & Quote Icon */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < review.rating
-                        ? "fill-amber-400 text-amber-400"
-                        : "fill-stone-100 text-stone-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <Quote className="w-8 h-8 text-brand-700/15 group-hover:text-brand-700/30 transition-colors" />
-            </div>
-
-            {/* Comment Body */}
-            <p className="text-xs sm:text-sm text-charcoal-700 leading-relaxed font-normal italic flex-1">
-              &ldquo;{review.comment}&rdquo;
-            </p>
-
-            {/* Purchased Product Tag */}
-            {review.productSlug && review.productTitleBn && (
-              <div className="pt-2">
-                <Link
-                  href={`/product/${review.productSlug}`}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-800 bg-brand-50/80 hover:bg-brand-100 px-3 py-1.5 rounded-xl border border-brand-200/60 transition-colors max-w-full truncate group/prod"
-                >
-                  <span className="truncate">পণ্য: {review.productTitleBn}</span>
-                  <ArrowRight className="w-3 h-3 text-brand-700 shrink-0 group-hover/prod:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
-            )}
-
-            {/* Customer Profile & Verification */}
-            <div className="pt-4 border-t border-surface-border/70 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 text-brand-900 font-bold flex items-center justify-center text-sm border border-brand-300 shrink-0 shadow-xs">
-                  {review.avatarText || review.userName.charAt(0)}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-extrabold text-charcoal-900 text-xs sm:text-sm truncate">
-                    {review.userName}
-                  </h4>
-                  <div className="flex items-center gap-1 text-[11px] text-charcoal-500 mt-0.5">
-                    <MapPin className="w-3 h-3 text-charcoal-400 shrink-0" />
-                    <span className="truncate">{review.userLocation}</span>
-                  </div>
-                </div>
-              </div>
-
-              {review.verifiedBuyer && (
-                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  যাচাইকৃত ক্রেতা
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 5. High-Converting Bottom Trust & Action Banner */}
+      {/* 4. High-Converting Bottom Trust & Action Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-3xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2 text-center md:text-left max-w-xl">
           <span className="inline-block bg-accent-amber/20 text-accent-amber border border-accent-amber/40 text-xs font-bold px-3 py-1 rounded-full">
@@ -278,3 +371,5 @@ export function TestimonialsSection() {
     </section>
   );
 }
+
+export default TestimonialsSection;
