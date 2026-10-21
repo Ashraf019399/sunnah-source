@@ -20,12 +20,14 @@ import {
   Heart,
   HelpCircle,
   Info,
+  LogOut,
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 
 interface NavItem {
@@ -78,18 +80,27 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+export interface CustomerUser {
+  email?: string;
+  phone?: string;
+  name?: string;
+}
+
 export const Header: React.FC = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CustomerUser | null>(null);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const desktopSearchRef = useRef<HTMLFormElement>(null);
   const mobileSearchRef = useRef<HTMLFormElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   const openDrawer = useCartStore((state) => state.openDrawer);
   const cartCount = useCartStore((state) =>
@@ -100,9 +111,105 @@ export const Header: React.FC = () => {
 
   const rawWishlistCount = useWishlistStore((state) => state.items?.length ?? 0);
 
+  // Initialize and subscribe to Supabase Auth and localStorage phone session
   useEffect(() => {
     setMounted(true);
+    const supabase = createClient();
+
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          setCurrentUser({
+            email: user.email,
+            phone: user.phone || user.user_metadata?.phone,
+            name: user.user_metadata?.full_name,
+          });
+          return;
+        }
+      } catch {
+        // Ignore network / supabase error
+      }
+
+      if (typeof window !== "undefined") {
+        const storedPhone =
+          localStorage.getItem("sunnah_customer_phone") ||
+          localStorage.getItem("customer_phone");
+        const storedProfileRaw = localStorage.getItem("sunnah_customer_profile");
+        let storedName: string | undefined = undefined;
+        if (storedProfileRaw) {
+          try {
+            const parsed = JSON.parse(storedProfileRaw);
+            storedName = parsed?.name;
+          } catch {
+            // ignore JSON parse error
+          }
+        }
+
+        if (storedPhone) {
+          setCurrentUser({
+            phone: storedPhone,
+            name: storedName,
+          });
+        } else {
+          setCurrentUser(null);
+        }
+      }
+    };
+
+    checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser({
+          email: session.user.email,
+          phone: session.user.phone || session.user.user_metadata?.phone,
+          name: session.user.user_metadata?.full_name,
+        });
+      } else {
+        const storedPhone =
+          typeof window !== "undefined"
+            ? localStorage.getItem("sunnah_customer_phone") ||
+              localStorage.getItem("customer_phone")
+            : null;
+        if (storedPhone) {
+          setCurrentUser({ phone: storedPhone });
+        } else {
+          setCurrentUser(null);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  // Handle Customer Logout
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sunnah_customer_phone");
+        localStorage.removeItem("customer_phone");
+        localStorage.removeItem("sunnah_customer_auth");
+        localStorage.removeItem("sunnah_customer_profile");
+      }
+      setCurrentUser(null);
+      setIsAccountOpen(false);
+      setIsMobileMenuOpen(false);
+      router.push("/login");
+    }
+  };
 
   // Filter ALL_PRODUCTS in real-time
   const matchingProducts = useMemo(() => {
@@ -136,12 +243,16 @@ export const Header: React.FC = () => {
       if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
         setIsMoreOpen(false);
       }
+      if (accountMenuRef.current && !accountMenuRef.current.contains(target)) {
+        setIsAccountOpen(false);
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsSearchOpen(false);
         setIsMoreOpen(false);
+        setIsAccountOpen(false);
       }
     };
 
@@ -419,18 +530,101 @@ export const Header: React.FC = () => {
               </span>
             </button>
 
-            {/* Item 4: Sign In */}
-            <Link
-              href="/login"
-              prefetch={true}
-              className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
-              title="সাইন ইন / অ্যাকাউন্ট"
-            >
-              <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-              <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
-                Sign In
-              </span>
-            </Link>
+            {/* Item 4: Dynamic Sign In ↔ Account */}
+            {!currentUser ? (
+              <Link
+                href="/login"
+                prefetch={true}
+                className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+                title="সাইন ইন / অ্যাকাউন্ট"
+              >
+                <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                  Sign In
+                </span>
+              </Link>
+            ) : (
+              <div className="relative" ref={accountMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsAccountOpen((prev) => !prev)}
+                  className="flex flex-col items-center justify-center min-w-[50px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
+                  title="আমার অ্যাকাউন্ট"
+                  aria-expanded={isAccountOpen}
+                >
+                  <div className="relative">
+                    <User className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+                  </div>
+                  <span className="text-xs font-normal mt-1 leading-none whitespace-nowrap">
+                    Account
+                  </span>
+                </button>
+
+                {/* Account Dropdown Menu */}
+                {isAccountOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl shadow-xl border border-charcoal-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    {/* Customer Identifier Header */}
+                    <div className="px-4 py-2 border-b border-stone-100">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-charcoal-400">
+                        লগইন করা অ্যাকাউন্ট
+                      </p>
+                      {currentUser.name && (
+                        <p className="text-xs font-bold text-charcoal-900 truncate mt-0.5">
+                          {currentUser.name}
+                        </p>
+                      )}
+                      <p className="text-xs font-medium text-brand-700 truncate mt-0.5 font-mono">
+                        {currentUser.phone || currentUser.email || "গ্রাহক"}
+                      </p>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="py-1">
+                      <Link
+                        href="/account/orders"
+                        prefetch={true}
+                        onClick={() => setIsAccountOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
+                      >
+                        <Package className="w-4 h-4 text-brand-600" />
+                        <span>আমার অর্ডারসমূহ</span>
+                      </Link>
+                      <Link
+                        href="/track-order"
+                        prefetch={true}
+                        onClick={() => setIsAccountOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
+                      >
+                        <Truck className="w-4 h-4 text-brand-600" />
+                        <span>অর্ডার ট্র্যাক</span>
+                      </Link>
+                      <Link
+                        href="/wishlist"
+                        prefetch={true}
+                        onClick={() => setIsAccountOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
+                      >
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span>পছন্দের তালিকা</span>
+                      </Link>
+                    </div>
+
+                    {/* Sign Out Action */}
+                    <div className="pt-1 border-t border-stone-100">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:text-rose-700 hover:bg-rose-50/50 transition-colors text-left cursor-pointer font-medium"
+                      >
+                        <LogOut className="w-4 h-4 text-rose-600" />
+                        <span>সাইন আউট / লগআউট</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Item 5: More Dropdown */}
             <div className="relative" ref={moreMenuRef}>
@@ -837,14 +1031,63 @@ export const Header: React.FC = () => {
                 <Phone className="w-4 h-4 text-brand-700" />
                 <span>যোগাযোগ</span>
               </Link>
-              <div className="flex gap-4 text-xs font-normal text-charcoal-500 pt-1 border-t border-surface-border/50">
-                <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
-                  Track Order
-                </Link>
-                <Link href="/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700 font-semibold text-brand-800">
-                  Sign In
-                </Link>
-              </div>
+              {currentUser ? (
+                <div className="pt-2 mt-1 border-t border-surface-border/60 space-y-2">
+                  <div className="flex items-center justify-between text-xs bg-stone-50 p-2.5 rounded-xl border border-stone-200/60">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <span className="text-[10px] text-charcoal-400 block font-sans">লগইন করা অ্যাকাউন্ট</span>
+                      <span className="font-bold text-brand-800 truncate block font-mono text-xs">
+                        {currentUser.name || currentUser.phone || currentUser.email}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold py-1 px-2 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>লগআউট</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-normal text-charcoal-500 px-1">
+                    <Link
+                      href="/account/orders"
+                      prefetch={true}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="hover:text-brand-700 font-semibold text-brand-800"
+                    >
+                      আমার অর্ডারসমূহ →
+                    </Link>
+                    <Link
+                      href="/track-order"
+                      prefetch={true}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="hover:text-brand-700"
+                    >
+                      Track Order
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between text-xs font-normal text-charcoal-500 pt-2 mt-1 border-t border-surface-border/50">
+                  <Link
+                    href="/track-order"
+                    prefetch={true}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="hover:text-brand-700"
+                  >
+                    Track Order
+                  </Link>
+                  <Link
+                    href="/login"
+                    prefetch={true}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="hover:text-brand-700 font-semibold text-brand-800"
+                  >
+                    সাইন ইন / রেজিস্টার →
+                  </Link>
+                </div>
+              )}
             </div>
           </nav>
         </div>
