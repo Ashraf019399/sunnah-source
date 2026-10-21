@@ -12,6 +12,7 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { Product } from "@/types/commerce.types";
 import { ShieldCheck, Truck, Clock, Award, ArrowRight } from "lucide-react";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
+import { HeroSection } from "@/components/home/hero-section";
 
 // Top 8 Sunnah Source Best Selling products
 const BEST_SELLER_SLUGS = [
@@ -50,51 +51,8 @@ export default function HomePage() {
 
       {/* ৩. স্টোরফ্রন্ট বডি */}
       <main className="flex-1 space-y-12 pb-16 lg:pb-12">
-        {/* হিরো ব্যানার সেকশন */}
-        <section className="bg-brand-900 text-white py-12 md:py-16 lg:py-20 px-4 border-b border-brand-800">
-          <div className="container mx-auto max-w-7xl flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 xl:gap-16">
-            <div className="w-full lg:w-1/2 xl:flex-1 max-w-2xl lg:max-w-xl xl:max-w-2xl space-y-5 lg:space-y-6 text-center lg:text-left">
-              <span className="inline-block bg-accent-amber/20 text-accent-amber border border-accent-amber/40 text-xs font-bold px-3 py-1 rounded-full">
-                ১০০% খাঁটি ও প্রাকৃতিক গ্যারান্টি
-              </span>
-              <h1 className="text-3xl md:text-5xl font-black leading-tight lg:leading-[1.2]">
-                প্রকৃতির আসল বিশুদ্ধতা, <br />সুন্নাহর স্বাস্থ্যকর উপহার
-              </h1>
-              <p className="text-stone-300 text-sm md:text-base leading-relaxed">
-                সুন্দরবনের গভীর জঙ্গলের কাঁচা মধু, প্রথাগত বিলোনা গাওয়া ঘি, কাঠের ঘানি ভাঙা ঝাঁঝালো সরিষার তেল ও মদিনার আজওয়া খেজুর।
-              </p>
-              <div className="pt-2 sm:pt-3 flex flex-wrap gap-3 justify-center lg:justify-start">
-                <Link
-                  href="/shop"
-                  prefetch={true}
-                  className="bg-accent-amber hover:bg-accent-dark text-charcoal-900 font-extrabold px-6 py-3 rounded-xl text-sm transition-all shadow-card"
-                >
-                  পণ্যসমূহ দেখুন
-                </Link>
-                <Link
-                  href="/combos"
-                  prefetch={true}
-                  className="bg-brand-800 hover:bg-brand-700 text-white font-bold px-6 py-3 rounded-xl text-sm border border-brand-700 transition-all"
-                >
-                  স্পেশাল কম্বো
-                </Link>
-              </div>
-            </div>
-            <div className="w-full lg:w-1/2 xl:flex-1 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-lg lg:max-w-[480px] xl:max-w-[540px] aspect-[1402/1122] rounded-3xl overflow-hidden shadow-2xl border-4 border-brand-800">
-                <Image
-                  src="/images/hero-honey.png"
-                  alt="Sunnah Source Raw Honey"
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 540px"
-                  className="object-cover object-center"
-                  priority
-                  fetchPriority="high"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* হিরো ব্যানার সেকশন — Sunnah Royal Split */}
+        <HeroSection />
 
         {/* ৪টি ট্রাস্ট ফিচার ব্যাজ */}
         <section className="container mx-auto max-w-7xl px-4">
