@@ -7,7 +7,6 @@ import {
   Search,
   ShoppingCart,
   Truck,
-  Menu,
   X,
   User,
   Phone,
@@ -422,7 +421,23 @@ export const Header: React.FC = () => {
               className="lg:hidden p-1.5 text-charcoal-700 hover:text-brand-700 rounded-lg transition-colors"
               aria-label={isMobileMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <svg
+                  className="w-6 h-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="11" y1="18" x2="21" y2="18" />
+                </svg>
+              )}
             </button>
             <Link
               href="/"
@@ -635,8 +650,20 @@ export const Header: React.FC = () => {
                 title="আরও লিঙ্ক"
                 aria-expanded={isMoreOpen}
               >
-                <Menu className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-                <span className="text-[11px] font-normal mt-0.5 leading-none whitespace-nowrap">
+                <svg
+                  className="w-5 h-5 transition-transform duration-200 group-hover:scale-110"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="11" y1="18" x2="21" y2="18" />
+                </svg>
+                <span className="text-[11px] font-medium tracking-tight mt-0.5 leading-none whitespace-nowrap">
                   More
                 </span>
               </button>
