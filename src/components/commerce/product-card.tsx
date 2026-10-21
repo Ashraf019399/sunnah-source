@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, Heart, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, Star, ShoppingCart, Zap } from "lucide-react";
 import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
+import { fbAddToCart } from "@/lib/services/facebook-pixel";
 import { formatBDT, cn } from "@/lib/utils";
 
 export interface ProductCardProps {
@@ -15,6 +17,7 @@ export interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   // Safely resolve default variant with fallback if variants array is empty or undefined
@@ -25,10 +28,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     defaultVariant
   );
-
-  // Store accessors
-  const addItem = useCartStore((state) => state.addItem);
-  const openDrawer = useCartStore((state) => state.openDrawer);
 
   // Avoid hydration mismatch from client-side persisted localStorage
   useEffect(() => {
@@ -55,13 +54,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
       : 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (isOutOfStock || !activeVariant) return;
-
-    const cartItem: CartItem = {
+  const buildCartItem = (): CartItem | null => {
+    if (isOutOfStock || !activeVariant) return null;
+    return {
       id: `${product.id}-${activeVariant.id}`,
       productId: product.id,
       variantId: activeVariant.id,
@@ -75,13 +70,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       quantity: 1,
       maxStock: activeVariant.stockQuantity,
     };
+  };
 
-    if (typeof addItem === "function") {
-      addItem(cartItem);
-    }
-    if (typeof openDrawer === "function") {
-      openDrawer();
-    }
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const cartItem = buildCartItem();
+    if (!cartItem) return;
+
+    useCartStore.getState().addItem(cartItem);
+    useCartStore.getState().openDrawer();
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const cartItem = buildCartItem();
+    if (!cartItem) return;
+
+    useCartStore.getState().addItem(cartItem);
+    fbAddToCart({
+      id: product.id,
+      name: product.titleBn || product.titleEn,
+      price: currentPrice,
+      quantity: 1,
+    });
+    router.push("/checkout");
   };
 
   return (
@@ -215,44 +231,65 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           )}
         </div>
 
-        {/* Pricing & Cart Action */}
-        <div className="pt-2 border-t border-surface-border/60 flex items-center justify-between gap-2">
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-mono font-bold text-brand-700 text-base">
-                {formatBDT(currentPrice)}
-              </span>
-              {hasDiscount && (
-                <span className="font-mono text-[11px] text-stone-400 line-through">
-                  {formatBDT(regularPrice)}
-                </span>
-              )}
-            </div>
-            {isOutOfStock && (
-              <span className="text-[10px] font-bold text-red-600 block mt-0.5">
-                স্টক শেষ
+        {/* Pricing & Stock Status */}
+        <div className="pt-2.5 border-t border-surface-border/60 flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-mono font-bold text-brand-700 text-base sm:text-lg">
+              {formatBDT(currentPrice)}
+            </span>
+            {hasDiscount && (
+              <span className="font-mono text-[11px] text-stone-400 line-through">
+                {formatBDT(regularPrice)}
               </span>
             )}
           </div>
+          {isOutOfStock ? (
+            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200/80 px-2 py-0.5 rounded-full">
+              স্টক শেষ
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+              স্টকে আছে
+            </span>
+          )}
+        </div>
 
+        {/* Dual Action Buttons (Ghorer Bazar Style) */}
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-3 font-bengali">
+          {/* Button 1: Add to Cart */}
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             className={cn(
-              "p-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5",
+              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl border border-brand-700/80 text-brand-800 text-[11px] sm:text-xs font-semibold bg-white hover:bg-brand-50 transition-colors shadow-2xs",
               isOutOfStock
-                ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
-                : "bg-brand-50 hover:bg-brand-700 text-brand-700 hover:text-white border border-brand-200 active:scale-95"
+                ? "bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed"
+                : "active:scale-95 cursor-pointer"
             )}
-            aria-label={
-              isOutOfStock
-                ? "পণ্যটি বর্তমানে স্টকে নেই"
-                : `${product.titleBn} কার্টে যোগ করুন`
-            }
+            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} কার্টে যোগ করুন`}
             title={isOutOfStock ? "স্টক শেষ" : "কার্টে যোগ করুন"}
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">কার্টে যোগ করুন</span>
+          </button>
+
+          {/* Button 2: Buy Now */}
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={isOutOfStock}
+            className={cn(
+              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs hover:shadow-sm",
+              isOutOfStock
+                ? "bg-stone-200 text-stone-400 cursor-not-allowed"
+                : "active:scale-95 cursor-pointer"
+            )}
+            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} এখনই কিনুন`}
+            title={isOutOfStock ? "স্টক শেষ" : "এখনই কিনুন"}
+          >
+            <Zap className="w-3.5 h-3.5 shrink-0 fill-current" />
+            <span className="truncate">এখনই কিনুন</span>
           </button>
         </div>
       </div>
