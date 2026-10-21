@@ -443,12 +443,12 @@ export const Header: React.FC = () => {
                     <span>Faqs</span>
                   </Link>
                   <Link
-                    href="/admin/login"
+                    href="/login"
                     prefetch={true}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 hover:bg-brand-50 hover:text-brand-700 transition-colors font-medium"
                   >
-                    <User className="w-4 h-4 text-charcoal-500" />
-                    <span>Sign In / Admin</span>
+                    <User className="w-4 h-4 text-brand-700" />
+                    <span>Sign In</span>
                   </Link>
                   <a
                     href="https://wa.me/8801914612007"
@@ -795,7 +795,7 @@ export const Header: React.FC = () => {
                 <Link href="/track-order" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
                   Track Order
                 </Link>
-                <Link href="/admin/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700">
+                <Link href="/login" prefetch={true} onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-700 font-semibold text-brand-800">
                   Sign In
                 </Link>
               </div>
