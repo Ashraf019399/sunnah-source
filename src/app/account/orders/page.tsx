@@ -30,11 +30,193 @@ import { WhatsAppIcon } from "@/components/commerce/whatsapp-order-button";
 import {
   getCustomerOrdersByPhone,
   CustomerOrderDTO,
+  CustomerOrderItem,
 } from "@/lib/actions/customer-order-actions";
 import { formatBDT, formatBanglaDateTime, isValidBDPhone, normalizeBDPhone } from "@/lib/utils";
-import { OrderStatus } from "@/types/commerce.types";
+import { OrderStatus, PaymentMethod } from "@/types/commerce.types";
+import { PaymentStatus } from "@/types/orders.types";
 
 const STORAGE_PHONE_KEY = "sunnah_customer_phone";
+
+const LOCAL_STORAGE_ORDER_KEYS = [
+  "sunnah_orders",
+  "sunnah_placed_orders",
+  "sunnah_latest_order",
+  "sunnah_order_history",
+];
+
+/**
+ * Extracts and normalizes orders stored locally across guest checkout sessions.
+ */
+function getLocalOrdersByPhone(cleanPhone: string): CustomerOrderDTO[] {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return [];
+  }
+
+  const last10 = cleanPhone.slice(-10);
+  const matchedList: CustomerOrderDTO[] = [];
+
+  for (const key of LOCAL_STORAGE_ORDER_KEYS) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+
+      const parsed: unknown = JSON.parse(raw);
+      const candidates: Record<string, unknown>[] = [];
+
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (item && typeof item === "object") {
+            candidates.push(item as Record<string, unknown>);
+          }
+        }
+      } else if (parsed && typeof parsed === "object") {
+        candidates.push(parsed as Record<string, unknown>);
+      }
+
+      for (const item of candidates) {
+        // Collect all possible phone fields
+        const shipping = (item.shippingAddress || item.shipping_address) as
+          | Record<string, unknown>
+          | string
+          | undefined;
+
+        const candidatePhones: string[] = [
+          item.phone,
+          item.customerPhone,
+          item.customer_phone,
+          item.guest_phone,
+          item.guestPhone,
+          typeof shipping === "object" && shipping ? shipping.phone : undefined,
+          typeof shipping === "object" && shipping ? shipping.guest_phone : undefined,
+          typeof shipping === "object" && shipping ? shipping.customer_phone : undefined,
+        ].filter((p): p is string => typeof p === "string" && p.trim().length > 0);
+
+        const isMatch = candidatePhones.some((p) => {
+          const norm = normalizeBDPhone(p);
+          return norm === cleanPhone || (norm.length >= 10 && norm.slice(-10) === last10);
+        });
+
+        if (!isMatch) continue;
+
+        // Parse line items
+        const rawItems = Array.isArray(item.items) ? item.items : [];
+        const parsedItems: CustomerOrderItem[] = rawItems.map((it, idx) => {
+          const itObj = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+          const pTitle = String(
+            itObj.titleBn || itObj.productTitle || itObj.title || itObj.name || "পণ্য"
+          );
+          const vName = (itObj.variantName || itObj.variantTitle || itObj.weightLabel || null) as
+            | string
+            | null;
+          const uPrice = Number(itObj.unitPrice ?? itObj.price ?? itObj.unit_price ?? 0);
+          const qty = Number(itObj.quantity ?? 1);
+          const lTotal = Number(itObj.lineTotal ?? itObj.line_total ?? uPrice * qty);
+          const img =
+            (typeof itObj.image === "string" && itObj.image) ||
+            (Array.isArray(itObj.images) && typeof itObj.images[0] === "string" ? itObj.images[0] : "") ||
+            "/images/hero-honey.png";
+
+          return {
+            id: String(itObj.id || itObj.productId || itObj.variantId || `item-${idx}`),
+            productId: String(itObj.productId || itObj.id || ""),
+            productTitle: pTitle,
+            variantName: vName,
+            unitPrice: uPrice,
+            quantity: qty,
+            lineTotal: lTotal,
+            image: img,
+          };
+        });
+
+        const orderNum = String(
+          item.orderNumber || item.order_number || item.id || `SS-${Date.now()}`
+        );
+        const orderId = String(item.id || orderNum);
+        const createdAt = String(item.createdAt || item.created_at || item.date || new Date().toISOString());
+
+        const rawStatus = String(item.status || item.order_status || "pending").toLowerCase();
+        let status: OrderStatus = "pending";
+        if (
+          [
+            "pending",
+            "confirmed",
+            "processing",
+            "shipped",
+            "delivered",
+            "cancelled",
+            "returned",
+          ].includes(rawStatus)
+        ) {
+          status = rawStatus as OrderStatus;
+        }
+
+        const subtotal = Number(item.subtotal ?? item.grandTotal ?? item.grand_total ?? 0);
+        const deliveryFee = Number(item.deliveryFee ?? item.delivery_fee ?? item.shipping_fee ?? 0);
+        const discountAmount = Number(item.discountAmount ?? item.discount_amount ?? item.discount ?? 0);
+        const grandTotal = Number(
+          item.grandTotal ?? item.grand_total ?? Math.max(0, subtotal + deliveryFee - discountAmount)
+        );
+
+        let deliveryAddr = "ঠিকানা দেওয়া হয়নি";
+        if (typeof item.shippingAddress === "string" && item.shippingAddress.trim()) {
+          deliveryAddr = item.shippingAddress.trim();
+        } else if (typeof item.delivery_address === "string" && item.delivery_address.trim()) {
+          deliveryAddr = item.delivery_address.trim();
+        } else if (typeof item.address === "string" && item.address.trim()) {
+          deliveryAddr = item.address.trim();
+        } else if (typeof shipping === "object" && shipping) {
+          const parts = [shipping.fullAddress, shipping.address, shipping.thana, shipping.district]
+            .filter((p): p is string => typeof p === "string" && p.trim().length > 0);
+          if (parts.length > 0) deliveryAddr = parts.join(", ");
+        }
+
+        const customerName = String(
+          item.customerName ||
+            item.fullName ||
+            item.guest_name ||
+            item.customer_name ||
+            "সম্মানিত গ্রাহক"
+        );
+
+        const couponCode =
+          typeof item.couponCode === "string"
+            ? item.couponCode
+            : typeof item.coupon_code === "string"
+            ? item.coupon_code
+            : item.appliedCoupon && typeof item.appliedCoupon === "object"
+            ? String((item.appliedCoupon as Record<string, unknown>).code || "")
+            : null;
+
+        matchedList.push({
+          id: orderId,
+          order_number: orderNum,
+          created_at: createdAt,
+          status,
+          grand_total: grandTotal,
+          subtotal,
+          discount_amount: discountAmount,
+          delivery_fee: deliveryFee,
+          coupon_code: couponCode,
+          delivery_address: deliveryAddr,
+          customer_name: customerName,
+          customer_phone: cleanPhone,
+          payment_method: (item.paymentMethod || item.payment_method || "cod") as PaymentMethod,
+          payment_status: (item.paymentStatus || item.payment_status || "unpaid") as PaymentStatus,
+          courier_partner: (item.courierPartner || item.courier_partner || null) as string | null,
+          courier_tracking_code: (item.courierTrackingCode || item.courier_tracking_code || null) as
+            | string
+            | null,
+          items: parsedItems,
+        });
+      }
+    } catch {
+      // Ignore corrupted localStorage entries
+    }
+  }
+
+  return matchedList;
+}
 
 export default function CustomerOrdersPage() {
   const [phoneInput, setPhoneInput] = useState("");
@@ -47,7 +229,7 @@ export default function CustomerOrdersPage() {
   // Selected order for Printable Invoice Modal
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<InvoiceOrderData | null>(null);
 
-  // Perform search
+  // Perform search with Dual-Source resolution (Supabase + localStorage)
   const handleFetchOrders = useCallback(async (targetPhone: string) => {
     const cleanRaw = targetPhone.trim();
     if (!cleanRaw) {
@@ -64,31 +246,64 @@ export default function CustomerOrdersPage() {
     setErrorMessage(null);
     setIsLoading(true);
 
+    const serverOrders: CustomerOrderDTO[] = [];
+    let isRealNetworkCrash = false;
+
+    // 1. Query orders from Supabase via Server Action
     try {
       const result = await getCustomerOrdersByPhone(cleanRaw);
+      if (result.success && Array.isArray(result.orders)) {
+        serverOrders.push(...result.orders);
+      }
+    } catch (netErr) {
+      console.warn("[CustomerOrdersPage] Server query encountered network exception:", netErr);
+      isRealNetworkCrash = true;
+    }
 
-      if (result.success) {
-        setOrders(result.orders);
-        setSearchedPhone(cleanRaw);
-        setHasSearched(true);
-        // Persist verified phone for future visits
-        try {
-          if (typeof window !== "undefined") {
-            window.localStorage?.setItem(STORAGE_PHONE_KEY, cleanRaw);
-          }
-        } catch {
-          // Ignore quota errors
-        }
-      } else {
-        setOrders([]);
-        setHasSearched(true);
-        setErrorMessage(result.message || "অর্ডার লোড করতে সমস্যা হয়েছে।");
+    // 2. Query orders from client-side localStorage
+    const localOrders = getLocalOrdersByPhone(normalized);
+
+    // 3. Deduplicate orders by order_number / id (Server orders have priority for live status)
+    const orderMap = new Map<string, CustomerOrderDTO>();
+    for (const order of serverOrders) {
+      const key = (order.order_number || order.id).trim().toUpperCase();
+      orderMap.set(key, order);
+    }
+    for (const order of localOrders) {
+      const key = (order.order_number || order.id).trim().toUpperCase();
+      if (!orderMap.has(key)) {
+        orderMap.set(key, order);
+      }
+    }
+
+    // 4. Sort descending by creation date
+    const finalOrders = Array.from(orderMap.values()).sort((a, b) => {
+      const timeA = new Date(a.created_at).getTime() || 0;
+      const timeB = new Date(b.created_at).getTime() || 0;
+      return timeB - timeA;
+    });
+
+    setOrders(finalOrders);
+    setSearchedPhone(normalized);
+    setHasSearched(true);
+
+    // Persist verified phone for future visits
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage?.setItem(STORAGE_PHONE_KEY, normalized);
       }
     } catch {
-      setErrorMessage("সার্ভারে সমস্যা দেখা দিয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।");
-    } finally {
-      setIsLoading(false);
+      // Ignore quota errors
     }
+
+    // 5. Error handling: Never show red error for 0 orders unless a real network crash occurred with 0 local orders
+    if (finalOrders.length === 0 && isRealNetworkCrash) {
+      setErrorMessage("নেটওয়ার্ক সংযোগে সমস্যা হয়েছে। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।");
+    } else {
+      setErrorMessage(null);
+    }
+
+    setIsLoading(false);
   }, []);
 
   // Auto-detect previously used phone on initial mount
@@ -106,10 +321,25 @@ export default function CustomerOrdersPage() {
         const latestOrderStr = window.localStorage?.getItem("sunnah_latest_order");
         if (latestOrderStr) {
           const parsed = JSON.parse(latestOrderStr);
-          const orderPhone = parsed.phone || parsed.customerPhone;
+          const orderPhone = parsed.phone || parsed.customerPhone || parsed.customer_phone;
           if (orderPhone && isValidBDPhone(orderPhone)) {
             setPhoneInput(orderPhone);
             handleFetchOrders(orderPhone);
+            return;
+          }
+        }
+
+        // Try reading from sunnah_order_history
+        const historyStr = window.localStorage?.getItem("sunnah_order_history");
+        if (historyStr) {
+          const parsed = JSON.parse(historyStr);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const first = parsed[0];
+            const phone = first?.phone || first?.customerPhone;
+            if (phone && isValidBDPhone(phone)) {
+              setPhoneInput(phone);
+              handleFetchOrders(phone);
+            }
           }
         }
       }
@@ -342,10 +572,10 @@ export default function CustomerOrdersPage() {
               </div>
               <div className="space-y-1.5 max-w-md mx-auto">
                 <h3 className="text-lg sm:text-xl font-black text-charcoal-900">
-                  কোনো অর্ডার পাওয়া যায়নি
+                  এই নম্বরে কোনো পূর্ববর্তী অর্ডার পাওয়া যায়নি।
                 </h3>
                 <p className="text-xs sm:text-sm text-charcoal-500">
-                  {searchedPhone} নম্বরে সান্নাহ সোর্সে কোনো পূর্ববর্তী অর্ডারের রেকর্ড নেই। মোবাইল নম্বরটি পুনরায় যাচাই করে দেখুন।
+                  {searchedPhone} নম্বরে সুন্নাহ সোর্সে কোনো পূর্ববর্তী অর্ডারের রেকর্ড পাওয়া যায়নি। মোবাইল নম্বরটি যাচাই করুন অথবা নতুন অর্ডার করুন।
                 </p>
               </div>
               <div className="pt-2">
@@ -354,7 +584,7 @@ export default function CustomerOrdersPage() {
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-sm shadow-card transition-all active:scale-[0.99]"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>এখনই কেনাকাটা করুন</span>
+                  <span>নতুন পণ্য কিনুন</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

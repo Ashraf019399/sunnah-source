@@ -535,6 +535,7 @@ export default function CheckoutPage() {
         const fullShippingAddress = `${fullAddress.trim()}, ${thana.trim()}, ${district.trim()}`;
         const placedOrderData = {
           orderNumber: result.data.orderNumber,
+          createdAt: new Date().toISOString(),
           grandTotal: isNaN(grandTotal) ? 0 : grandTotal,
           fullName: fullName.trim(),
           phone: phone.trim(),
@@ -568,6 +569,33 @@ export default function CheckoutPage() {
         try {
           if (typeof window !== "undefined") {
             window.localStorage?.setItem("sunnah_latest_order", JSON.stringify(placedOrderData));
+            window.localStorage?.setItem("sunnah_customer_phone", phone.trim());
+
+            // Append to order history list
+            const existingStr =
+              window.localStorage?.getItem("sunnah_order_history") ||
+              window.localStorage?.getItem("sunnah_orders");
+            let historyList: Record<string, unknown>[] = [];
+            if (existingStr) {
+              try {
+                const parsed = JSON.parse(existingStr);
+                if (Array.isArray(parsed)) {
+                  historyList = parsed.filter(
+                    (o): o is Record<string, unknown> => Boolean(o && typeof o === "object")
+                  );
+                }
+              } catch {
+                historyList = [];
+              }
+            }
+
+            const dedupedList = [
+              placedOrderData as unknown as Record<string, unknown>,
+              ...historyList.filter((o) => o.orderNumber !== placedOrderData.orderNumber),
+            ].slice(0, 30);
+
+            window.localStorage?.setItem("sunnah_order_history", JSON.stringify(dedupedList));
+            window.localStorage?.setItem("sunnah_orders", JSON.stringify(dedupedList));
           }
         } catch {
           // Ignore storage quota
