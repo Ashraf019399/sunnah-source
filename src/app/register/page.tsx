@@ -22,6 +22,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { GoogleIcon } from "@/components/ui/google-icon";
 import { createClient } from "@/lib/supabase/client";
 import { isValidBDPhone, normalizeBDPhone } from "@/lib/utils";
 
@@ -37,6 +38,35 @@ export default function CustomerRegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Google 1-Click Sign-In
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState("");
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setGoogleError("");
+    try {
+      const supabase = createClient();
+      const redirectOrigin = typeof window !== "undefined" ? window.location.origin : "";
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${redirectOrigin}/auth/callback?next=/account/orders`,
+        },
+      });
+
+      if (error) {
+        setGoogleError(error.message || "গুগল সাইন-ইনে সমস্যা হয়েছে।");
+        setIsGoogleLoading(false);
+      } else if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setGoogleError("গুগল সাইন-ইনে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -298,6 +328,42 @@ export default function CustomerRegisterPage() {
                 )}
               </button>
             </form>
+
+            {/* 1-Click Google Sign-In (Ghorer Bazar Style) */}
+            <div className="pt-6 border-t border-stone-200/80">
+              <div className="relative flex items-center justify-center mb-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-stone-200" />
+                </div>
+                <span className="relative bg-white px-4 text-xs font-medium text-charcoal-500 lowercase tracking-wide font-sans">
+                  or signin with
+                </span>
+              </div>
+
+              {googleError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-center gap-2 text-xs text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{googleError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLoading}
+                  className="h-12 w-12 rounded-full border border-charcoal-200 bg-white shadow-sm hover:shadow-md hover:border-brand-500 transition-all flex items-center justify-center active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group cursor-pointer"
+                  title="Google দিয়ে সাইন ইন / অ্যাকাউন্ট তৈরি করুন"
+                  aria-label="Google Sign In"
+                >
+                  {isGoogleLoading ? (
+                    <Loader2 className="w-5 h-5 text-brand-700 animate-spin" />
+                  ) : (
+                    <GoogleIcon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                  )}
+                </button>
+              </div>
+            </div>
 
             <div className="pt-4 border-t border-stone-100 flex items-center justify-center gap-2 text-xs text-charcoal-500">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />

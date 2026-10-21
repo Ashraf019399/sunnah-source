@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,11 +23,16 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { GoogleIcon } from "@/components/ui/google-icon";
 import { createClient } from "@/lib/supabase/client";
 import { isValidBDPhone, normalizeBDPhone } from "@/lib/utils";
 
 export default function CustomerLoginPage() {
   const router = useRouter();
+
+  // Google 1-Click Sign-In
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState("");
 
   // Column 1: Mobile OTP / Instant Phone Login
   const [phone, setPhone] = useState("");
@@ -43,6 +48,41 @@ export default function CustomerLoginPage() {
   const [isCredLoading, setIsCredLoading] = useState(false);
   const [credError, setCredError] = useState("");
   const [credSuccess, setCredSuccess] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("error")) {
+        setGoogleError("অথেনটিকেশনে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+      }
+    }
+  }, []);
+
+  // Handler: 1-Click Google Sign-In
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setGoogleError("");
+    try {
+      const supabase = createClient();
+      const redirectOrigin = typeof window !== "undefined" ? window.location.origin : "";
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${redirectOrigin}/auth/callback?next=/account/orders`,
+        },
+      });
+
+      if (error) {
+        setGoogleError(error.message || "গুগল সাইন-ইনে সমস্যা হয়েছে।");
+        setIsGoogleLoading(false);
+      } else if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setGoogleError("গুগল সাইন-ইনে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+      setIsGoogleLoading(false);
+    }
+  };
 
   // Handler: Mobile Number Login
   const handleMobileLogin = async (e: React.FormEvent) => {
@@ -408,6 +448,42 @@ export default function CustomerLoginPage() {
                 <div className="pt-4 border-t border-stone-100 text-center text-xs text-charcoal-500">
                   <span>নিরাপদ এসএসএল এনক্রিপ্টেড প্রবেশাধিকার</span>
                 </div>
+              </div>
+            </div>
+
+            {/* 1-Click Google Sign-In (Ghorer Bazar Style) */}
+            <div className="pt-8 mt-8 border-t border-stone-200/80">
+              <div className="relative flex items-center justify-center mb-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-stone-200" />
+                </div>
+                <span className="relative bg-white px-4 text-xs font-medium text-charcoal-500 lowercase tracking-wide font-sans">
+                  or signin with
+                </span>
+              </div>
+
+              {googleError && (
+                <div className="max-w-md mx-auto mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-center gap-2 text-xs text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{googleError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLoading}
+                  className="h-12 w-12 rounded-full border border-charcoal-200 bg-white shadow-sm hover:shadow-md hover:border-brand-500 transition-all flex items-center justify-center active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group cursor-pointer"
+                  title="Google দিয়ে সাইন ইন করুন"
+                  aria-label="Google Sign In"
+                >
+                  {isGoogleLoading ? (
+                    <Loader2 className="w-5 h-5 text-brand-700 animate-spin" />
+                  ) : (
+                    <GoogleIcon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
