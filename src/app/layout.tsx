@@ -7,8 +7,69 @@ import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sunnahsourcebd.com"),
-  title: "SUNNAH SOURCE | Pure & Natural Organic Foods",
-  description: "১০০% খাঁটি ও প্রাকৃতিক খাদ্যপণ্য। সুন্দরবনের কাঁচা মধু, গাওয়া ঘি, সরিষার তেল ও আজওয়া খেজুর।"
+  title: {
+    default: "সুন্নাহ সোর্স | প্রকৃতির বিশুদ্ধতা, সুন্নাহর অনুপ্রেরণা",
+    template: "%s | সুন্নাহ সোর্স - প্রকৃতির বিশুদ্ধতা, সুন্নাহর অনুপ্রেরণা",
+  },
+  description:
+    "১০০% খাঁটি ও প্রাকৃতিক খাদ্যপণ্য। সুন্দরবনের কাঁচা মধু, প্রথাগত বিলোনা গাওয়া ঘি, ঘানি ভাঙা সরিষার তেল, কোল্ড প্রেসড কালোজিরা তেল ও মদিনার আজওয়া খেজুর। ল্যাব সার্টিফাইড ও সারা দেশে ক্যাশ অন ডেলিভারি।",
+  keywords: [
+    "সুন্নাহ সোর্স",
+    "Sunnah Source",
+    "খাঁটি মধু",
+    "সুন্দরবনের মধু",
+    "বিলোনা ঘি",
+    "ঘানি ভাঙা সরিষার তেল",
+    "কালোজিরা তেল",
+    "আজওয়া খেজুর",
+    "অর্গানিক ফুড",
+    "প্রাকৃতিক খাদ্যপণ্য",
+  ],
+  authors: [{ name: "Sunnah Source", url: "https://sunnahsourcebd.com" }],
+  creator: "Sunnah Source",
+  publisher: "Sunnah Source",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "https://sunnahsourcebd.com",
+  },
+  openGraph: {
+    type: "website",
+    locale: "bn_BD",
+    url: "https://sunnahsourcebd.com",
+    siteName: "সুন্নাহ সোর্স | Sunnah Source",
+    title: "সুন্নাহ সোর্স | প্রকৃতির বিশুদ্ধতা, সুন্নাহর অনুপ্রেরণা",
+    description:
+      "১০০% খাঁটি ও প্রাকৃতিক খাদ্যপণ্য। সুন্দরবনের কাঁচা মধু, প্রথাগত বিলোনা গাওয়া ঘি, সরিষার তেল ও আজওয়া খেজুর।",
+    images: [
+      {
+        url: "https://sunnahsourcebd.com/images/hero-honey.png",
+        width: 1200,
+        height: 630,
+        alt: "সুন্নাহ সোর্স - প্রকৃতির বিশুদ্ধতা, সুন্নাহর অনুপ্রেরণা",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "সুন্নাহ সোর্স | প্রকৃতির বিশুদ্ধতা, সুন্নাহর অনুপ্রেরণা",
+    description:
+      "১০০% খাঁটি ও প্রাকৃতিক খাদ্যপণ্য। সুন্দরবনের কাঁচা মধু, প্রথাগত বিলোনা গাওয়া ঘি, সরিষার তেল ও আজওয়া খেজুর।",
+    images: ["https://sunnahsourcebd.com/images/hero-honey.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/images/logo.svg", type: "image/svg+xml" },
+      { url: "/images/logo.svg", sizes: "32x32", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/images/logo.svg", sizes: "180x180", type: "image/svg+xml" },
+    ],
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
