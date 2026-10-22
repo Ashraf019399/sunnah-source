@@ -2,18 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-const SYSTEM_INSTRUCTION = `আপনি হলেন সুন্নাহ সোর্স (Sunnah Source)-এর অফিসিয়াল এআই কনসিয়ার্জ ও প্রধান বিজনেস অ্যাম্বাসেডর (AI Concierge & Brand Ambassador)। আপনি সবসময় অত্যন্ত বিনম্র, মার্জিত, বুদ্ধিদীপ্ত, প্রজ্ঞাবান এবং ইসলামিক আদব ও সদ্ব্যবহার বজায় রেখে সাবলীল বাংলায় কথা বলবেন।
+const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন সুন্নাহ সোর্স (Sunnah Source)-এর অফিসিয়াল এআই কনসিয়ার্জ ও প্রধান বিজনেস অ্যাম্বাসেডর (AI Concierge & Brand Ambassador)। আপনি সবসময় অত্যন্ত বিনম্র, মার্জিত, বুদ্ধিদীপ্ত, প্রজ্ঞাবান এবং ইসলামিক আদব ও সদ্ব্যবহার বজায় রেখে সাবলীল বাংলায় কথা বলবেন।
 
 ১. যেকোনো প্রশ্নের খোলামেলা ও বুদ্ধিদীপ্ত উত্তর (Versatile & Intelligent Conversationalist):
-- আপনি কেবল একটি সীমাবদ্ধ শপ-বট নন, বরং একজন বুদ্ধিমান, আধুনিক ও বিশ্বস্ত ইসলামিক স্বাস্থ্য, পুষ্টি ও জীবনধারা বিষয়ক পরামর্শক।
+- আপনি একজন বুদ্ধিমান, আধুনিক ও বিশ্বস্ত ইসলামিক স্বাস্থ্য, পুষ্টি ও জীবনধারা বিষয়ক পরামর্শক।
 - কুশলবিনিময় (যেমন: 'কেমন আছো', 'তুমি কে', 'কী করছো', 'আসসালামু আলাইকুম', 'হ্যালো', 'হাই'): আন্তরিকতা ও ইসলামিক শালীনতা বজায় রেখে সুন্দরভাবে উত্তর দিন।
 - সাধারণ জ্ঞান, বিজ্ঞান, স্বাস্থ্য ও পুষ্টি, সুন্নাহ খাদ্য ও জীবনধারা, দৈনন্দিন সুস্থতা বিষয়ক যেকোনো প্রশ্নের খোলাখুলি, তথ্যবহুল ও প্রাসঙ্গিক উত্তর দিন।
-- কখনো একঘেয়ে রোবটের মতো একই কথা বারবার বলবেন না। গ্রাহকের মেজাজ ও প্রশ্নের ধরণ বুঝে স্বাভাবিক ও আকর্ষণীয় কথোপকথন চালিয়ে যান। অপ্রাসঙ্গিকভাবে বড় প্যারাগ্রাফ বা অপ্রয়োজনীয় ক্যাটালগ ডাম্প করবেন না।
+- অপ্রাসঙ্গিকভাবে বড় প্যারাগ্রাফ বা অপ্রয়োজনীয় ক্যাটালগ ডাম্প করবেন না। গ্রাহক যে নির্দিষ্ট বিষয়ে জানতে চাইবেন ঠিক সে বিষয়েই সুনির্দিষ্ট উত্তর দিন।
 
 ২. আমাদের বিজনেস পরিচিতি, দর্শন ও মিশন (Business Identity & Mission):
 - সুন্নাহ সোর্স (Sunnah Source) হলো বাংলাদেশের একটি বিশ্বস্ত ও প্রিমিয়াম সুন্নাহভিত্তিক খাঁটি অর্গানিক ব্র্যান্ড।
@@ -51,25 +54,25 @@ const SYSTEM_INSTRUCTION = `আপনি হলেন সুন্নাহ স�
 - হটলাইন ও হোয়াটসঅ্যাপ: 01914-612007 (সকাল ৯টা - রাত ১০টা)
 - ইমেইল: sunnahsourcebd@gmail.com
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
-- ওয়েবসাইট: sunnahsourcebd.com`;
+- ওয়েবসাইট: sunnahsourcebd.com]`;
 
 function getApiKey(): string | null {
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0) {
-    return process.env.GEMINI_API_KEY.trim();
-  }
-
-  // Backup file lookup in case runtime env cache is stale
+  // Check .env.local first to guarantee freshest key even if dev server process wasn't restarted
   try {
     const envPath = path.join(process.cwd(), ".env.local");
     if (fs.existsSync(envPath)) {
       const content = fs.readFileSync(envPath, "utf8");
       const match = content.match(/GEMINI_API_KEY=([^\r\n]+)/);
-      if (match && match[1]) {
+      if (match && match[1] && match[1].trim().length > 0) {
         return match[1].trim();
       }
     }
   } catch (err) {
-    console.error("Error reading .env.local fallback:", err);
+    console.error("Error reading .env.local:", err);
+  }
+
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0) {
+    return process.env.GEMINI_API_KEY.trim();
   }
 
   return null;
@@ -96,7 +99,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Fix Multi-Turn History (Strictly prevent Google Gemini 400 errors):
+    // 1. Fix Multi-Turn History (Strictly prevent Google Gemini 400 errors):
     // a) The first message must have role 'user' (strip leading assistant greetings)
     // b) Roles must alternate strictly: 'user' -> 'model' -> 'user' -> 'model'
     const firstUserIndex = messages.findIndex((m) => m && m.role === "user");
@@ -126,12 +129,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verified working Google Gemini models
+    // Prepend the System Instruction directly to the first user message
+    // This avoids schema/model version incompatibilities with 'systemInstruction' across different Gemini models
+    contents[0].parts[0].text = `${SYSTEM_INSTRUCTION}\n\n${contents[0].parts[0].text}`;
+
+    // Verified working Google Gemini models in priority order
     const CANDIDATE_MODELS = [
       "gemini-3.5-flash-lite",
-      "gemini-flash-latest",
-      "gemini-3.8-flash",
-      "gemini-1.5-flash",
+      "gemini-3.5-flash",
+      "gemini-flash-lite-latest",
     ];
 
     let generatedText: string | null = null;
@@ -146,16 +152,14 @@ export async function POST(req: NextRequest) {
               "Content-Type": "application/json",
               "x-goog-api-key": apiKey,
             },
+            cache: "no-store",
             body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: SYSTEM_INSTRUCTION }],
-              },
               contents,
               generationConfig: {
                 temperature: 0.7,
                 topK: 40,
                 topP: 0.95,
-                maxOutputTokens: 1024,
+                maxOutputTokens: 2048,
               },
             }),
           }
@@ -164,28 +168,33 @@ export async function POST(req: NextRequest) {
         if (response.ok) {
           const data = await response.json();
           const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            generatedText = text;
+          if (text && text.trim().length > 0) {
+            generatedText = text.trim();
             break;
           }
         } else {
-          console.warn(`Model ${model} returned HTTP ${response.status}. Trying next candidate...`);
+          const errorBody = await response.text();
+          console.error(
+            `[Gemini API Failure] Model '${model}' returned HTTP ${response.status} ${response.statusText}:`,
+            errorBody
+          );
         }
-      } catch (callErr) {
-        console.warn(`Failed calling ${model}:`, callErr);
+      } catch (callErr: any) {
+        console.error(`[Gemini API Exception] Failed calling model '${model}':`, callErr?.message || callErr);
       }
     }
 
     if (!generatedText) {
       const lastUserQuery = messages[messages.length - 1]?.content || "";
+      console.warn("[Gemini API] All candidate models failed. Triggering local knowledge fallback.");
       return NextResponse.json({
         reply: generateLocalFallbackResponse(lastUserQuery),
       });
     }
 
     return NextResponse.json({ reply: generatedText });
-  } catch (error) {
-    console.error("Chat API error:", error);
+  } catch (error: any) {
+    console.error("[Chat Route Critical Error]:", error?.message || error);
     return NextResponse.json({
       reply:
         "আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। সাময়িক প্রযুক্তিগত সমস্যার কারণে উত্তর দিতে সামান্য বিলম্ব হচ্ছে। আমাদের খাঁটি পণ্য, অর্ডার বা পরামর্শের জন্য সরাসরি আমাদের হটলাইন অথবা হোয়াটসঅ্যাপে যোগাযোগ করুন: **01914-612007**। আমরা সার্বক্ষণিক আপনার সেবায় নিয়োজিত।",
@@ -217,6 +226,46 @@ function generateLocalFallbackResponse(query: string): string {
 আশা করি আপনিও আল্লাহর রহমতে সুস্থ ও ভালো আছেন। খাঁটি মধু, ঘি, খেজুর, স্বাস্থ্য সুরক্ষার সুন্নাহ খাদ্যপণ্য কিংবা যেকোনো তথ্যের জন্য আজ আপনাকে কীভাবে সহায়তা করতে পারি?`;
   }
 
+  // All Products List
+  if (
+    q.includes("পণ্য") ||
+    q.includes("product") ||
+    q.includes("মেনু") ||
+    q.includes("আইটেম") ||
+    q.includes("তালিকা") ||
+    q.includes("কী কী আছে") ||
+    q.includes("কি কি আছে")
+  ) {
+    return `আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ! 🌿
+
+সুন্নাহ সোর্স (Sunnah Source)-এ আমাদের সংগৃহীত সকল খাঁটি ও সুন্নাহভিত্তিক প্রাকৃতিক খাদ্যপণ্যের তালিকা:
+
+🍯 **মধু:**
+• সুন্দরবনের প্রাকৃতিক কাঁচা মধু: ৫০০ গ্রাম ৳৯৮০ | ১ কেজি ৳১,৯৫০
+• সুন্দরবনের খাঁটি খলিসা মধু: ৫০০ গ্রাম ৳৯৮০ | ১ কেজি ৳১,৯৫০
+
+🧈 **ঘি ও তেল:**
+• প্রথাগত বিলোনা গাওয়া ঘি: ৪০০ গ্রাম ৳৮৮০ | ১ কেজি ৳১,৯৫০
+• ঘানি ভাঙা খাঁটি সরিষার তেল: ১ লিটার ৳২৯০ | ২ লিটার ৳৫৭০
+• কোল্ড প্রেসড কালোজিরা তেল: ১০০ মিলি ৳৩৪০ | ২০০ মিলি ৳৬৫০
+
+🌴 **মদিনার খেজুর:**
+• ভিআইপি আজওয়া খেজুর: ৫০০ গ্রাম ৳১,২৫০ | ১ কেজি ৳২,৪৫০
+• প্রিমিয়াম আম্বার খেজুর: ৫০০ গ্রাম ৳১,১৫০ | ১ কেজি ৳২,২৫০
+
+🥜 **ড্রাই ফ্রুটস ও সুপারফুড:**
+• প্রিমিয়াম কাজু বাদাম: ২৫০ গ্রাম ৳৪৪০ | ৫০০ গ্রাম ৳৮৫০
+• রোস্টেড পেস্তা বাদাম: ২৫০ গ্রাম ৳৫৯০ | ৫০০ গ্রাম ৳১,১৫০
+• অর্গানিক চিয়া সিড: ২৫০ গ্রাম ৳৩৮০ | ৫০০ গ্রাম ৳৭২০
+• প্রিমিয়াম কালোজিরা: ২০০ গ্রাম ৳১৯০ | ৫০০ গ্রাম ৳৪৫০
+
+🎁 **সাশ্রয়ী কম্বো ও গিফট প্যাক:**
+• সুন্নাহ হেলথ বুস্টার কম্বো: ৳২,৬৯০ (মধু + ঘি + আজওয়া খেজুর)
+• সুন্নাহ ভিআইপি গিফট বক্স: ৳৩,১৫০ (খলিসা মধু + আজওয়া খেজুর + সরিষার তেল + কালোজিরা তেল)
+
+সারা দেশে ক্যাশ অন ডেলিভারি এবং ৩,০০০ টাকার অর্ডারে সম্পূর্ণ ফ্রি ডেলিভারি! যেকোনো পণ্য অর্ডার করতে অথবা বিস্তারিত জানতে আমাদের কল বা হোয়াটসঅ্যাপ করতে পারেন: **01914-612007**।`;
+  }
+
   // Wholesale / Dealer / Corporate
   if (
     q.includes("পাইকারি") ||
@@ -245,7 +294,7 @@ function generateLocalFallbackResponse(query: string): string {
 
 **আসল মধু চেনার সহজ উপায়:**
 ১. খাঁটি মধুর সুবাস প্রাকৃতিক ফুলের মতো হালকা মিষ্টি হবে, কোনো কৃত্রিম সুবাস থাকবে না।
-২. কাঁচা মধুতে সামান্য প্রোপোলিস ও পরাগরেণু বা ন্যাচারাল ফেনা থাকতে পারে, যা খাঁটি হওয়ার লক্ষণ।
+2. কাঁচা মধুতে সামান্য প্রোপোলিস ও পরাগরেণু বা ন্যাচারাল ফেনা থাকতে পারে, যা খাঁটি হওয়ার লক্ষণ।
 ৩. পানিতে এক চামচ মধু দিলে তা সাথে সাথে গুলে না গিয়ে নিচে জমাট বাঁধবে।
 
 অর্ডার করতে অথবা বিস্তারিত জানতে আমাদের কল বা হোয়াটসঅ্যাপ করতে পারেন: **01914-612007**।`;
