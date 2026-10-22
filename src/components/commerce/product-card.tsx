@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Heart, Star, ShoppingCart, Zap } from "lucide-react";
+import { Heart, ShoppingCart, Zap } from "lucide-react";
 import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
@@ -53,9 +53,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     hasDiscount && regularPrice > 0 && salePrice !== undefined
       ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
       : 0;
-
-  const rating = product.ratingAverage ?? 0;
-  const reviewCount = product.reviewCount ?? 0;
 
   const buildCartItem = (): CartItem | null => {
     if (isOutOfStock || !activeVariant) return null;
@@ -134,27 +131,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           )}
         </Link>
 
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
-          {product.badge && (
-            <span className="bg-brand-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-              {product.badge}
-            </span>
-          )}
-          {hasDiscount && (
+        {/* Discount Badge on Top-Left */}
+        {hasDiscount && (
+          <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none select-none">
             <span className="bg-accent-amber text-charcoal-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
               {discountPercent}% ছাড়
             </span>
-          )}
-        </div>
-
-        {/* Floating Glass Rating Badge on Bottom-Left */}
-        {rating > 0 && (
-          <div className="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[11px] font-semibold text-stone-800 shadow-xs border border-white/80 select-none">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span>{rating.toFixed(1)}</span>
-            {reviewCount > 0 && (
-              <span className="text-[10px] text-stone-500 font-normal">({reviewCount})</span>
-            )}
           </div>
         )}
 
