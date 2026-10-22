@@ -67,7 +67,9 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "Dry Fruits",
     labelBn: "ড্রাই ফ্রুটস",
-    href: "/shop?category=dry-fruits",
+    href: "/category/dry-fruits",
+    categorySlug: "dry-fruits",
+    hasMegaMenu: true,
   },
   {
     label: "Organic Seeds",

@@ -78,4 +78,17 @@ export const CATEGORIES_DATA: Category[] = [
     displayOrder: 5,
     isActive: true,
   },
+  {
+    id: "cat-6",
+    slug: "dry-fruits",
+    nameEn: "Premium Dry Fruits & Nuts",
+    nameBn: "প্রিমিয়াম ড্রাই ফ্রুটস ও বাদাম",
+    taglineBn: "প্রাকৃতিক পুষ্টি, ক্রাঞ্চি স্বাদ ও শতভাগ প্রিমিয়াম গ্রেড",
+    descriptionBn: "বাছাইকৃত ক্রাঞ্চি কাজু বাদাম, রোস্টেড পেস্তা, কাঠবাদাম ও প্রিমিয়াম ড্রাই ফ্রুটস। স্বাস্থ্যকর স্ন্যাকিং ও শক্তির প্রাকৃতিক উৎস।",
+    sourcingOriginBn: "আমদানিকৃত প্রিমিয়াম গ্রেড বাদাম ও ড্রাই ফ্রুটস কালেকশন",
+    purityPromiseBn: "প্রাকৃতিক পুষ্টি, ক্রাঞ্চি স্বাদ ও শতভাগ প্রিমিয়াম গ্রেড।",
+    imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80",
+    displayOrder: 6,
+    isActive: true,
+  },
 ];
