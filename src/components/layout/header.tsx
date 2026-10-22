@@ -903,11 +903,11 @@ export const Header: React.FC = () => {
           </ul>
           <a
             href="tel:01914612007"
-            className="flex items-center gap-1.5 text-xs lg:text-[13px] font-semibold text-emerald-100 hover:text-amber-300 transition-colors py-1 px-3 rounded-full bg-emerald-900/50 border border-emerald-700/60 hover:border-amber-400/50 whitespace-nowrap"
+            className="group flex items-center gap-1.5 text-xs lg:text-[13px] font-semibold text-emerald-100 py-1 px-3 rounded-full bg-emerald-900/50 border border-emerald-700/60 hover:border-emerald-500/60 whitespace-nowrap transition-colors"
             title="Call our hotline"
           >
-            <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
-            <span>Hotline: 01914-612007</span>
+            <PhoneCall className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+            <span className="text-emerald-100 group-hover:text-white transition-colors">Hotline: 01914-612007</span>
           </a>
         </div>
       </nav>
