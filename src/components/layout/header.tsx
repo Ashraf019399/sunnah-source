@@ -77,6 +77,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/category/organic-seeds",
     categorySlug: "organic-seeds",
     hasMegaMenu: true,
+    alignRight: true,
   },
   {
     label: "Combos",
@@ -809,11 +810,11 @@ export const Header: React.FC = () => {
                   {item.hasMegaMenu && category && (
                     <div
                       className={`absolute top-full ${item.alignRight ? "right-0" : "left-0"
-                        } pt-1.5 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[460px] sm:w-[500px]`}
+                        } pt-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[460px] sm:w-[480px]`}
                     >
-                      <div className="bg-white rounded-2xl shadow-2xl border border-surface-border p-4 text-charcoal-900 font-bengali">
+                      <div className="bg-white rounded-2xl shadow-xl border border-surface-border p-4 text-charcoal-900 font-bengali">
                         {/* Header Bar */}
-                        <div className="flex items-center justify-between pb-3 mb-3 border-b border-surface-border">
+                        <div className="flex items-center justify-between pb-3 mb-3 border-b border-surface-border/80">
                           <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-brand-700" />
                             <h4 className="text-sm font-bold text-charcoal-900">
@@ -833,9 +834,9 @@ export const Header: React.FC = () => {
                           </Link>
                         </div>
 
-                        {/* Product Grid (2 Columns) */}
+                        {/* Product Grid (2 Columns, 1 Row) */}
                         <div className="grid grid-cols-2 gap-2.5">
-                          {categoryProducts.slice(0, 4).map((product) => {
+                          {categoryProducts.slice(0, 2).map((product) => {
                             const defaultVariant =
                               product.variants.find((v) => v.isDefault) || product.variants[0];
                             const displayPrice = defaultVariant
@@ -852,15 +853,15 @@ export const Header: React.FC = () => {
                                 key={product.id}
                                 href={`/product/${product.slug}`}
                                 prefetch={true}
-                                className="flex items-center gap-2.5 p-2 rounded-xl border border-surface-border/60 hover:border-brand-300 hover:bg-brand-50/50 transition-all group/item bg-white"
+                                className="flex items-center gap-2.5 p-2 rounded-xl border border-surface-border/70 hover:border-brand-300 hover:bg-brand-50/50 transition-all group/item bg-white shadow-2xs"
                               >
-                                <div className="w-13 h-13 rounded-lg overflow-hidden border border-surface-border shrink-0 bg-surface-canvas relative">
+                                <div className="w-13 h-13 rounded-lg overflow-hidden border border-surface-border/80 shrink-0 bg-white relative">
                                   <Image
                                     src={mainImage}
                                     alt={product.titleBn}
                                     width={52}
                                     height={52}
-                                    className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300"
+                                    className="w-full h-full object-contain p-0.5 group-hover/item:scale-105 transition-transform duration-300"
                                     unoptimized={mainImage.startsWith("/")}
                                   />
                                 </div>
@@ -1018,13 +1019,13 @@ export const Header: React.FC = () => {
                               onClick={() => setIsMobileMenuOpen(false)}
                               className="flex items-center gap-2.5 p-1.5 rounded-lg bg-white border border-surface-border/70 hover:border-brand-300"
                             >
-                              <div className="w-10 h-10 rounded-md overflow-hidden bg-surface-canvas shrink-0">
+                              <div className="w-10 h-10 rounded-md overflow-hidden bg-white border border-surface-border/60 shrink-0">
                                 <Image
                                   src={img}
                                   alt={prod.titleBn}
                                   width={40}
                                   height={40}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-contain p-0.5"
                                   unoptimized={img.startsWith("/")}
                                 />
                               </div>
