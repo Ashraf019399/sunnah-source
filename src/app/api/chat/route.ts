@@ -56,7 +56,7 @@ const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com]`;
 
-const SERVER_BACKUP_KEY = "AQ.Ab8RN6JqQeKDq8AK2Ck7RftOxUFNwg_0l9ul7UFEKq6ucz8ODQ";
+const SERVER_BACKUP_KEY = "AQ.Ab8RN6I6w7F47J_yQs7tjZfIPPqQ7OiY_JVCdNpz25zIWNJZcQ";
 
 function getApiKey(): string {
   const envKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
