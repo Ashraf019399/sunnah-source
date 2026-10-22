@@ -56,7 +56,7 @@ const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com]`;
 
-const SERVER_BACKUP_KEY = "AQ.Ab8RN6KBhgIX64WyaHpiKd4OAZffxX0XhtCDamIiQKpCtpAUxA";
+const SERVER_BACKUP_KEY = "AQ.Ab8RN6IhUezntwcvtwpJq3Sl0xvEnS14zvwqjPoyNgDlvBhaEw";
 
 function getApiKey(): string {
   const envKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -135,11 +135,14 @@ export async function POST(req: NextRequest) {
     // This avoids schema/model version incompatibilities with 'systemInstruction' across different Gemini models
     contents[0].parts[0].text = `${SYSTEM_INSTRUCTION}\n\n${contents[0].parts[0].text}`;
 
-    // Verified working Google Gemini models in priority order
+    // Candidate models hierarchy per Google Gemini specification
     const CANDIDATE_MODELS = [
-      "gemini-3.5-flash-lite",
+      "gemini-flash-latest",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
       "gemini-3.5-flash",
-      "gemini-flash-lite-latest",
+      "gemini-3.5-flash-lite",
+      "gemini-3.8-flash",
     ];
 
     let generatedText: string | null = null;
@@ -149,13 +152,14 @@ export async function POST(req: NextRequest) {
     for (const model of CANDIDATE_MODELS) {
       try {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "x-goog-api-key": apiKey,
+              "X-goog-api-key": apiKey,
             },
+            signal: AbortSignal.timeout(6000),
             cache: "no-store",
             body: JSON.stringify({
               contents,
