@@ -10,6 +10,7 @@ import {
   X,
   User,
   Phone,
+  PhoneCall,
   MessageCircle,
   ChevronDown,
   ChevronRight,
@@ -62,6 +63,11 @@ const NAV_ITEMS: NavItem[] = [
     href: "/category/dates",
     categorySlug: "dates",
     hasMegaMenu: true,
+  },
+  {
+    label: "Dry Fruits",
+    labelBn: "ড্রাই ফ্রুটস",
+    href: "/shop?category=dry-fruits",
   },
   {
     label: "Organic Seeds",
@@ -760,7 +766,18 @@ export const Header: React.FC = () => {
         className="hidden lg:block bg-brand-900 border-b border-brand-800 text-stone-200 text-sm font-medium"
       >
         <div className="container mx-auto px-4 max-w-7xl py-3 lg:py-3.5 min-h-[48px] lg:min-h-[50px] flex items-center justify-between">
-          <ul className="flex items-center gap-1 xl:gap-2">
+          <ul className="flex items-center gap-5 lg:gap-7">
+            {/* Offer Zone */}
+            <li>
+              <Link
+                href="/shop?filter=offer"
+                className="flex items-center gap-1 font-semibold text-amber-300 hover:text-amber-200 transition-colors whitespace-nowrap text-[13.5px] lg:text-sm"
+              >
+                <span>🔥</span>
+                <span>Offer Zone</span>
+              </Link>
+            </li>
+
             {NAV_ITEMS.map((item) => {
               const category = item.categorySlug
                 ? CATEGORIES_DATA.find((c) => c.slug === item.categorySlug)
@@ -778,7 +795,7 @@ export const Header: React.FC = () => {
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-stone-200 hover:text-accent-amber hover:bg-brand-800/80 transition-colors whitespace-nowrap text-sm"
+                    className="flex items-center gap-1.5 py-1.5 text-stone-200 hover:text-accent-amber transition-colors whitespace-nowrap text-[13.5px] lg:text-sm font-medium"
                   >
                     <span>{item.label}</span>
                     {item.hasMegaMenu && (
@@ -882,9 +899,14 @@ export const Header: React.FC = () => {
               );
             })}
           </ul>
-          <span className="text-xs text-stone-300 font-sans tracking-wide shrink-0 select-none">
-            হটলাইন: ০১৯১৪-৬১২০০৭
-          </span>
+          <a
+            href="tel:01914612007"
+            className="flex items-center gap-1.5 text-xs lg:text-[13px] font-semibold text-emerald-100 hover:text-amber-300 transition-colors py-1 px-3 rounded-full bg-emerald-900/50 border border-emerald-700/60 hover:border-amber-400/50 whitespace-nowrap"
+            title="Call our hotline"
+          >
+            <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
+            <span>Hotline: 01914-612007</span>
+          </a>
         </div>
       </nav>
 
@@ -923,6 +945,20 @@ export const Header: React.FC = () => {
             {renderSearchDropdown()}
           </form>
           <nav aria-label="Mobile Navigation" className="flex flex-col space-y-1 text-sm font-semibold text-charcoal-700 pt-2">
+            <Link
+              href="/shop?filter=offer"
+              prefetch={true}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2.5 px-2 text-sm font-bold text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg flex items-center justify-between border-b border-surface-border/60"
+            >
+              <span className="flex items-center gap-1.5">
+                <span>🔥</span>
+                <span>অফার জোন</span>
+              </span>
+              <span className="text-[11px] text-amber-600 font-sans font-semibold">
+                Offer Zone
+              </span>
+            </Link>
             {NAV_ITEMS.map((item) => {
               const category = item.categorySlug
                 ? CATEGORIES_DATA.find((c) => c.slug === item.categorySlug)
