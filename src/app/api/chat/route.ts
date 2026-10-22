@@ -56,10 +56,10 @@ const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com]`;
 
-const SERVER_BACKUP_KEY = "AQ.Ab8RN6I6w7F47J_yQs7tjZfIPPqQ7OiY_JVCdNpz25zIWNJZcQ";
+const SERVER_BACKUP_KEY = "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";
 
 function getApiKey(): string {
-  const envKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const envKey = process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
   if (envKey && envKey.trim().length > 0) {
     return envKey.trim();
   }
@@ -68,7 +68,7 @@ function getApiKey(): string {
     const envPath = path.join(process.cwd(), ".env.local");
     if (fs.existsSync(envPath)) {
       const content = fs.readFileSync(envPath, "utf8");
-      const match = content.match(/GEMINI_API_KEY=([^\r\n]+)/);
+      const match = content.match(/OPENROUTER_API_KEY=([^\r\n]+)/);
       if (match && match[1] && match[1].trim().length > 0) {
         return match[1].trim();
       }
@@ -95,102 +95,61 @@ export async function POST(req: NextRequest) {
     const apiKey = getApiKey();
 
     if (!apiKey) {
-      console.error("[Gemini API Failure] GEMINI_API_KEY is not configured in environment variables.");
+      console.error("[OpenRouter API Failure] OPENROUTER_API_KEY is not configured in environment variables.");
       return NextResponse.json({
-        reply: "⚠️ [AI Configuration Error]: GEMINI_API_KEY is not configured in production environment variables. Please check Vercel settings.",
+        reply: "⚠️ [AI Configuration Error]: OPENROUTER_API_KEY is not configured in production environment variables. Please check Vercel settings.",
       });
     }
 
-    // 1. Fix Multi-Turn History (Strictly prevent Google Gemini 400 errors):
-    // a) The first message must have role 'user' (strip leading assistant greetings)
-    // b) Roles must alternate strictly: 'user' -> 'model' -> 'user' -> 'model'
-    const firstUserIndex = messages.findIndex((m) => m && m.role === "user");
-    const chatMessages = firstUserIndex !== -1 ? messages.slice(firstUserIndex) : messages;
-
-    const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
-    for (const msg of chatMessages) {
-      if (!msg || typeof msg.content !== "string" || !msg.content.trim()) continue;
-      const role = msg.role === "assistant" ? "model" : "user";
-
-      if (contents.length > 0 && contents[contents.length - 1].role === role) {
-        contents[contents.length - 1].parts[0].text += "\n" + msg.content.trim();
-      } else {
-        contents.push({ role, parts: [{ text: msg.content.trim() }] });
-      }
-    }
-
-    // Ensure the very first item is strictly 'user'
-    while (contents.length > 0 && contents[0].role !== "user") {
-      contents.shift();
-    }
-
-    if (contents.length === 0) {
-      return NextResponse.json(
-        { error: "No valid user messages found." },
-        { status: 400 }
-      );
-    }
-
-    // Prepend the System Instruction directly to the first user message
-    // This avoids schema/model version incompatibilities with 'systemInstruction' across different Gemini models
-    contents[0].parts[0].text = `${SYSTEM_INSTRUCTION}\n\n${contents[0].parts[0].text}`;
-
-    // Candidate models hierarchy per Google Gemini specification
+    // Candidate free Google Gemini & conversational models on OpenRouter with automatic failover
     const CANDIDATE_MODELS = [
-      "gemini-flash-latest",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-3.5-flash",
-      "gemini-3.5-flash-lite",
-      "gemini-3.8-flash",
+      "google/gemini-2.0-flash-lite-preview-02-05:free",
+      "google/gemini-2.0-flash-exp:free",
+      "google/gemini-flash-1.5:free",
+      "meta-llama/llama-3.3-70b-instruct:free",
+      "google/gemma-4-31b-it:free",
+      "google/gemma-4-26b-a4b-it:free",
+      "nvidia/nemotron-3.5-lightning:free",
+      "liquid/lfm-2.5-2.6b:free",
     ];
 
     let generatedText: string | null = null;
     let lastStatus = 0;
-    let lastErrorBody = "No response from Gemini API";
+    let lastErrorBody = "No response from OpenRouter API";
 
-    const payload = {
-      contents,
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
-      },
-    };
+    const openAiMessages = [
+      { role: "system", content: SYSTEM_INSTRUCTION },
+      ...messages
+        .filter((m: any) => m && typeof m.content === "string" && m.content.trim().length > 0)
+        .map((m: any) => ({
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: m.content.trim(),
+        })),
+    ];
 
     for (const model of CANDIDATE_MODELS) {
       try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-        let response = await fetch(endpoint, {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-goog-api-key": apiKey,
+            "Authorization": `Bearer ${apiKey}`,
+            "HTTP-Referer": "https://sunnahsourcebd.com",
+            "X-Title": "Sunnah Source",
           },
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(10000),
           cache: "no-store",
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            model,
+            messages: openAiMessages,
+            temperature: 0.7,
+            max_tokens: 1024,
+          }),
         });
-
-        // If Google returns 401, failover immediately to Authorization Bearer
-        if (response.status === 401) {
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${apiKey}`,
-            },
-            signal: AbortSignal.timeout(6000),
-            cache: "no-store",
-            body: JSON.stringify(payload),
-          });
-        }
 
         if (response.ok) {
           const data = await response.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          const text = data?.choices?.[0]?.message?.content;
           if (text && text.trim().length > 0) {
             generatedText = text.trim();
             break;
@@ -199,23 +158,23 @@ export async function POST(req: NextRequest) {
           lastStatus = response.status;
           lastErrorBody = await response.text();
           console.error(
-            `[Gemini API Failure] Model '${model}' returned HTTP ${response.status} ${response.statusText}:`,
+            `[OpenRouter API Failure] Model '${model}' returned HTTP ${response.status} ${response.statusText}:`,
             lastErrorBody
           );
         }
       } catch (callErr: any) {
         lastStatus = 500;
         lastErrorBody = callErr?.message || String(callErr);
-        console.error(`[Gemini API Exception] Failed calling model '${model}':`, lastErrorBody);
+        console.error(`[OpenRouter API Exception] Failed calling model '${model}':`, lastErrorBody);
       }
     }
 
     if (!generatedText) {
       console.error(
-        `[Gemini API Failure] All candidate models failed. HTTP ${lastStatus}: ${lastErrorBody}`
+        `[OpenRouter API Failure] All candidate models failed. HTTP ${lastStatus}: ${lastErrorBody}`
       );
       return NextResponse.json({
-        reply: `⚠️ [Gemini API Error ${lastStatus}]: ${lastErrorBody}`,
+        reply: `⚠️ [OpenRouter API Error ${lastStatus}]: ${lastErrorBody}`,
       });
     }
 
