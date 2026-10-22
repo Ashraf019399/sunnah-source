@@ -77,9 +77,9 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-3 space-y-3.5">
             <h4 className="text-white font-bold text-sm tracking-wide">যোগাযোগ</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
-              <li className="flex items-center gap-2.5 text-stone-300">
-                <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-rose-400 shrink-0">
-                  <MapPin className="w-3.5 h-3.5" />
+              <li className="flex items-center gap-2.5 text-stone-300 group">
+                <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                 </span>
                 <span>লালমনিরহাট, বাংলাদেশ</span>
               </li>
@@ -91,8 +91,8 @@ export const Footer: React.FC = () => {
                   className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
                   aria-label="WhatsApp: 01914-612007"
                 >
-                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:bg-brand-700/80 transition-colors shrink-0">
-                    <WhatsAppIcon className="w-3.5 h-3.5 fill-current" />
+                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
+                    <WhatsAppIcon className="w-3.5 h-3.5 fill-current text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                   </span>
                   <span className="font-sans font-medium tracking-wide">01914-612007</span>
                 </a>
@@ -103,8 +103,8 @@ export const Footer: React.FC = () => {
                   className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
                   aria-label="Email: sunnahsourcebd@gmail.com"
                 >
-                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-accent-amber group-hover:bg-brand-700/80 transition-colors shrink-0">
-                    <Mail className="w-3.5 h-3.5" />
+                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
+                    <Mail className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                   </span>
                   <span className="font-sans text-xs break-all">sunnahsourcebd@gmail.com</span>
                 </a>
@@ -117,8 +117,8 @@ export const Footer: React.FC = () => {
                   className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
                   aria-label="Facebook Page"
                 >
-                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-sky-400 group-hover:bg-brand-700/80 transition-colors shrink-0">
-                    <Facebook className="w-3.5 h-3.5" />
+                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
+                    <Facebook className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                   </span>
                   <span>Facebook</span>
                 </a>
