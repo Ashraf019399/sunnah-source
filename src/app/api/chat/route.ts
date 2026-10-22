@@ -12,11 +12,11 @@ interface ChatMessage {
 
 const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন সুন্নাহ সোর্স (Sunnah Source)-এর অফিসিয়াল এআই কনসিয়ার্জ ও প্রধান বিজনেস অ্যাম্বাসেডর (AI Concierge & Brand Ambassador)। আপনি সবসময় অত্যন্ত বিনম্র, মার্জিত, বুদ্ধিদীপ্ত, প্রজ্ঞাবান এবং ইসলামিক আদব ও সদ্ব্যবহার বজায় রেখে সাবলীল বাংলায় কথা বলবেন।
 
-১. যেকোনো প্রশ্নের খোলামেলা ও বুদ্ধিদীপ্ত উত্তর (Versatile & Intelligent Conversationalist):
+১. যেকোনো প্রশ্নের খোলামেলা ও বুদ্ধিদীপ্ত উত্তর (Versatile Bengali & Intelligent Conversationalist):
 - আপনি একজন বুদ্ধিমান, আধুনিক ও বিশ্বস্ত ইসলামিক স্বাস্থ্য, পুষ্টি ও জীবনধারা বিষয়ক পরামর্শক।
-- কুশলবিনিময় (যেমন: 'কেমন আছো', 'তুমি কে', 'কী করছো', 'আসসালামু আলাইকুম', 'হ্যালো', 'হাই'): আন্তরিকতা ও ইসলামিক শালীনতা বজায় রেখে সুন্দরভাবে উত্তর দিন।
-- সাধারণ জ্ঞান, বিজ্ঞান, স্বাস্থ্য ও পুষ্টি, সুন্নাহ খাদ্য ও জীবনধারা, দৈনন্দিন সুস্থতা বিষয়ক যেকোনো প্রশ্নের খোলাখুলি, তথ্যবহুল ও প্রাসঙ্গিক উত্তর দিন।
-- অপ্রাসঙ্গিকভাবে বড় প্যারাগ্রাফ বা অপ্রয়োজনীয় ক্যাটালগ ডাম্প করবেন না। গ্রাহক যে নির্দিষ্ট বিষয়ে জানতে চাইবেন ঠিক সে বিষয়েই সুনির্দিষ্ট উত্তর দিন।
+- বাংলা বানান ও কথ্য রূপের সব ধরণের বৈচিত্র্য (যথা: 'কি করছো' / 'কী করছো' / 'কি করছেন' / 'কী করছেন', 'কেমন আছো' / 'কেমন আছেন', 'তুমি কে' / 'আপনি কে', 'হ্যালো', 'হাই', 'আসসালামু আলাইকুম'): সব ধরণের কুশলবিনিময় ও দৈনন্দিন আলাপকে গভীর আন্তরিকতা, ইসলামিক আদব ও প্রাঞ্জল সাবলীল ভাষায় গ্রহণ করে জীবন্ত ও গতিশীলভাবে উত্তর দিন।
+- কোনো পরিস্থিতিতেই যান্ত্রিক বা কৃত্রিম উত্তর দেবেন না। কুশলবিনিময়ের জবাবে সম্পূর্ণ অপ্রাসঙ্গিকভাবে পণ্যের লম্বা ক্যাটালগ ডাম্প করবেন না। আগে গ্রাহকের কুশলবিনিময়ের আন্তরিক উত্তর দিন, তারপর জিজ্ঞেস করুন আজ কীভাবে সাহায্য করতে পারেন।
+- সাধারণ জ্ঞান, বিজ্ঞান, স্বাস্থ্য ও পুষ্টি, সুন্নাহ খাদ্য ও জীবনধারা, দৈনন্দিন সুস্থতা বিষয়ক যেকোনো প্রশ্নের খোলাখুলি, তথ্যবহুল ও প্রাসঙ্গিক উত্তর দিন। গ্রাহক যে নির্দিষ্ট বিষয়ে জানতে চাইবেন ঠিক সে বিষয়েই সুনির্দিষ্ট উত্তর দিন।
 
 ২. আমাদের বিজনেস পরিচিতি, দর্শন ও মিশন (Business Identity & Mission):
 - সুন্নাহ সোর্স (Sunnah Source) হলো বাংলাদেশের একটি বিশ্বস্ত ও প্রিমিয়াম সুন্নাহভিত্তিক খাঁটি অর্গানিক ব্র্যান্ড।
@@ -93,9 +93,9 @@ export async function POST(req: NextRequest) {
     const apiKey = getApiKey();
 
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not defined. Falling back to local concierge.");
+      console.error("[Gemini API Failure] GEMINI_API_KEY is not configured in environment variables.");
       return NextResponse.json({
-        reply: generateLocalFallbackResponse(messages[messages.length - 1]?.content || ""),
+        reply: "⚠️ [AI Configuration Error]: GEMINI_API_KEY is not configured in production environment variables. Please check Vercel settings.",
       });
     }
 
@@ -141,6 +141,8 @@ export async function POST(req: NextRequest) {
     ];
 
     let generatedText: string | null = null;
+    let lastStatus = 0;
+    let lastErrorBody = "No response from Gemini API";
 
     for (const model of CANDIDATE_MODELS) {
       try {
@@ -173,22 +175,26 @@ export async function POST(req: NextRequest) {
             break;
           }
         } else {
-          const errorBody = await response.text();
+          lastStatus = response.status;
+          lastErrorBody = await response.text();
           console.error(
             `[Gemini API Failure] Model '${model}' returned HTTP ${response.status} ${response.statusText}:`,
-            errorBody
+            lastErrorBody
           );
         }
       } catch (callErr: any) {
-        console.error(`[Gemini API Exception] Failed calling model '${model}':`, callErr?.message || callErr);
+        lastStatus = 500;
+        lastErrorBody = callErr?.message || String(callErr);
+        console.error(`[Gemini API Exception] Failed calling model '${model}':`, lastErrorBody);
       }
     }
 
     if (!generatedText) {
-      const lastUserQuery = messages[messages.length - 1]?.content || "";
-      console.warn("[Gemini API] All candidate models failed. Triggering local knowledge fallback.");
+      console.error(
+        `[Gemini API Failure] All candidate models failed. HTTP ${lastStatus}: ${lastErrorBody}`
+      );
       return NextResponse.json({
-        reply: generateLocalFallbackResponse(lastUserQuery),
+        reply: `⚠️ [Gemini API Error ${lastStatus}]: ${lastErrorBody}`,
       });
     }
 
@@ -196,8 +202,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("[Chat Route Critical Error]:", error?.message || error);
     return NextResponse.json({
-      reply:
-        "আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। সাময়িক প্রযুক্তিগত সমস্যার কারণে উত্তর দিতে সামান্য বিলম্ব হচ্ছে। আমাদের খাঁটি পণ্য, অর্ডার বা পরামর্শের জন্য সরাসরি আমাদের হটলাইন অথবা হোয়াটসঅ্যাপে যোগাযোগ করুন: **01914-612007**। আমরা সার্বক্ষণিক আপনার সেবায় নিয়োজিত।",
+      reply: `⚠️ [Chat Route Error]: ${error?.message || "Internal server error"}`,
     });
   }
 }
