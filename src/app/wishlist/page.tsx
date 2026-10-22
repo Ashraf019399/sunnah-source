@@ -267,7 +267,7 @@ export default function WishlistPage() {
                   >
                     {/* Top Section: Image & Remove Button */}
                     <div>
-                      <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-surface-canvas border border-stone-100 mb-3 select-none">
+                      <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-white border border-stone-100 mb-3 select-none">
                         <Link
                           href={`/product/${product.slug}`}
                           className="block w-full h-full cursor-pointer"
@@ -278,7 +278,8 @@ export default function WishlistPage() {
                               alt={product.titleBn}
                               fill
                               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              quality={95}
+                              className="object-contain group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-charcoal-400 text-xs">

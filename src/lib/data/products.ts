@@ -16,8 +16,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1587049352851-8d4e89133924?auto=format&fit=crop&w=800&q=80",
+      "/images/products/sundarbans-raw-honey.png",
     ],
     variants: [
       {
@@ -73,7 +72,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1631379578550-7038263db699?auto=format&fit=crop&w=800&q=80",
+      "/images/products/golden-ghee.png",
     ],
     variants: [
       {
@@ -117,7 +116,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: false,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=800&q=80",
+      "/images/products/pure-mustard-oil.png",
     ],
     variants: [
       {
@@ -161,7 +160,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=800&q=80",
+      "/images/products/premium-ajwa-dates.png",
     ],
     variants: [
       {
@@ -205,7 +204,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1587049352851-8d4e89133924?auto=format&fit=crop&w=800&q=80",
+      "/images/products/pure-flower-honey.png",
     ],
     variants: [
       {
@@ -249,7 +248,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80",
+      "/images/products/black-seed-oil.png",
     ],
     variants: [
       {
@@ -293,7 +292,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: false,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=800&q=80",
+      "/images/products/premium-amber-dates.png",
     ],
     variants: [
       {

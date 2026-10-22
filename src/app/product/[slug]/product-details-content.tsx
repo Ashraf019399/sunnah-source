@@ -256,7 +256,8 @@ export function ProductDetailsContent({
                   fill
                   sizes="(max-width: 1024px) 100vw, 42vw"
                   priority
-                  className="object-cover transition-all duration-300"
+                  quality={95}
+                  className="object-contain transition-all duration-300"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-charcoal-400 text-sm">
@@ -317,7 +318,8 @@ export function ProductDetailsContent({
                       alt={`${product.titleBn} thumbnail ${idx + 1}`}
                       fill
                       sizes="80px"
-                      className="object-cover"
+                      quality={90}
+                      className="object-contain"
                     />
                   </button>
                 ))}

@@ -282,14 +282,15 @@ export function FrequentlyBoughtTogether({ mainProduct }: FrequentlyBoughtTogeth
                 />
               </label>
 
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-surface-border bg-stone-50 shrink-0">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-surface-border bg-white shrink-0">
                 {mainProduct.images?.[0] ? (
                   <Image
                     src={mainProduct.images[0]}
                     alt={mainProduct.titleBn}
                     fill
                     sizes="(max-width: 640px) 64px, 80px"
-                    className="object-cover"
+                    quality={95}
+                    className="object-contain"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-400">
@@ -371,14 +372,15 @@ export function FrequentlyBoughtTogether({ mainProduct }: FrequentlyBoughtTogeth
                 />
               </label>
 
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-surface-border bg-stone-50 shrink-0">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-surface-border bg-white shrink-0">
                 {bundleProduct.images?.[0] ? (
                   <Image
                     src={bundleProduct.images[0]}
                     alt={bundleProduct.titleBn}
                     fill
                     sizes="(max-width: 640px) 64px, 80px"
-                    className="object-cover"
+                    quality={95}
+                    className="object-contain"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-400">

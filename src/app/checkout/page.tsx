@@ -718,14 +718,15 @@ export default function CheckoutPage() {
                       key={`${item.id}-${idx}`}
                       className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-surface-border/60"
                     >
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-100 shrink-0 border border-surface-border/40">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-white shrink-0 border border-surface-border/40">
                         {item.image ? (
                           <Image
                             src={item.image}
                             alt={item.titleBn || item.title}
                             fill
-                            className="object-cover"
+                            className="object-contain"
                             sizes="48px"
+                            quality={90}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-charcoal-400">
@@ -1373,13 +1374,14 @@ export default function CheckoutPage() {
                         className="py-3 flex items-center gap-3.5 first:pt-1"
                       >
                         {/* Mini Thumbnail with Quantity Badge */}
-                        <div className="relative w-13 h-13 rounded-xl overflow-hidden bg-stone-100 border border-charcoal-200/60 shrink-0">
+                        <div className="relative w-13 h-13 rounded-xl overflow-hidden bg-white border border-charcoal-200/60 shrink-0">
                           <Image
                             src={itemImage}
                             alt={title}
                             fill
                             sizes="52px"
-                            className="object-cover"
+                            quality={90}
+                            className="object-contain"
                           />
                           <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand-800 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow-xs">
                             {qty}

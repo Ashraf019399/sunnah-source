@@ -224,13 +224,14 @@ export const CartDrawer: React.FC = () => {
           {items.length > 0 ? (
             items.map((item) => (
               <div key={item.id || item.variantId} className="py-3.5 flex gap-3 first:pt-0">
-                <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-surface-canvas border border-surface-border shrink-0">
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white border border-surface-border shrink-0">
                   <Image
                     src={item.image}
                     alt={item.titleBn || item.title}
                     fill
                     sizes="64px"
-                    className="object-cover"
+                    quality={90}
+                    className="object-contain"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
