@@ -6,6 +6,7 @@ import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
+import { GeminiConcierge } from "@/components/chat/gemini-concierge";
 
 const hindSiliguri = localFont({
   src: [
@@ -119,6 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthRecoveryRedirect />
         {children}
         <FloatingWhatsApp />
+        <GeminiConcierge />
         <LiveSalesNotification />
       </body>
     </html>
