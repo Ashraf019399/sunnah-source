@@ -56,7 +56,7 @@ const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com]`;
 
-const SERVER_BACKUP_KEY = "AQ.Ab8RN6IhUezntwcvtwpJq3Sl0xvEnS14zvwqjPoyNgDlvBhaEw";
+const SERVER_BACKUP_KEY = "AQ.Ab8RN6JqQeKDq8AK2Ck7RftOxUFNwg_0l9ul7UFEKq6ucz8ODQ";
 
 function getApiKey(): string {
   const envKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -149,29 +149,44 @@ export async function POST(req: NextRequest) {
     let lastStatus = 0;
     let lastErrorBody = "No response from Gemini API";
 
+    const payload = {
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      },
+    };
+
     for (const model of CANDIDATE_MODELS) {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+        let response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-goog-api-key": apiKey,
+          },
+          signal: AbortSignal.timeout(6000),
+          cache: "no-store",
+          body: JSON.stringify(payload),
+        });
+
+        // If Google returns 401, failover immediately to Authorization Bearer
+        if (response.status === 401) {
+          response = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-goog-api-key": apiKey,
+              "Authorization": `Bearer ${apiKey}`,
             },
             signal: AbortSignal.timeout(6000),
             cache: "no-store",
-            body: JSON.stringify({
-              contents,
-              generationConfig: {
-                temperature: 0.7,
-                topK: 40,
-                topP: 0.95,
-                maxOutputTokens: 2048,
-              },
-            }),
-          }
-        );
+            body: JSON.stringify(payload),
+          });
+        }
 
         if (response.ok) {
           const data = await response.json();
