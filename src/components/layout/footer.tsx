@@ -191,7 +191,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Right Side: Curated 7 Payment Badges */}
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-2.5">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-2.5 md:pr-28 lg:pr-32">
             <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mr-1">
               We Accept:
             </span>
