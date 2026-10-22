@@ -262,16 +262,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             className={cn(
-              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl border border-brand-700/80 text-brand-800 text-[11px] sm:text-xs font-semibold bg-white hover:bg-brand-50 transition-colors shadow-2xs",
+              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold font-sans transition-all duration-200",
               isOutOfStock
-                ? "bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed"
-                : "active:scale-95 cursor-pointer"
+                ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
+                : "bg-white text-emerald-800 border border-emerald-700/80 hover:bg-emerald-800 hover:text-white hover:border-emerald-800 shadow-sm active:scale-95 cursor-pointer"
             )}
-            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} কার্টে যোগ করুন`}
-            title={isOutOfStock ? "স্টক শেষ" : "কার্টে যোগ করুন"}
+            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} Add to Cart`}
+            title={isOutOfStock ? "স্টক শেষ" : "Add to Cart"}
           >
             <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">কার্টে যোগ করুন</span>
+            <span className="truncate">Add to Cart</span>
           </button>
 
           {/* Button 2: Buy Now */}
@@ -280,10 +280,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
             onClick={handleBuyNow}
             disabled={isOutOfStock}
             className={cn(
-              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs hover:shadow-sm",
+              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 shadow-xs hover:shadow-sm",
               isOutOfStock
                 ? "bg-stone-200 text-stone-400 cursor-not-allowed"
-                : "active:scale-95 cursor-pointer"
+                : "bg-emerald-900 text-white hover:bg-emerald-950 active:scale-95 cursor-pointer"
             )}
             aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} এখনই কিনুন`}
             title={isOutOfStock ? "স্টক শেষ" : "এখনই কিনুন"}
