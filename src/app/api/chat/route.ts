@@ -56,8 +56,14 @@ const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com]`;
 
-function getApiKey(): string | null {
-  // Check .env.local first to guarantee freshest key even if dev server process wasn't restarted
+const SERVER_BACKUP_KEY = "AQ.Ab8RN6KBhgIX64WyaHpiKd4OAZffxX0XhtCDamIiQKpCtpAUxA";
+
+function getApiKey(): string {
+  const envKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (envKey && envKey.trim().length > 0) {
+    return envKey.trim();
+  }
+
   try {
     const envPath = path.join(process.cwd(), ".env.local");
     if (fs.existsSync(envPath)) {
@@ -67,15 +73,11 @@ function getApiKey(): string | null {
         return match[1].trim();
       }
     }
-  } catch (err) {
-    console.error("Error reading .env.local:", err);
+  } catch {
+    // Ignore error in serverless environment
   }
 
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0) {
-    return process.env.GEMINI_API_KEY.trim();
-  }
-
-  return null;
+  return SERVER_BACKUP_KEY;
 }
 
 export async function POST(req: NextRequest) {
