@@ -461,7 +461,11 @@ export const ALL_PRODUCTS: Product[] = [
     isActive: true,
     isCombo: true,
     images: [
-      "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=800&q=80",
+      "/images/products/sunnah-vip-gift-box.png",
+      "/images/products/pure-flower-honey.png",
+      "/images/products/premium-ajwa-dates.png",
+      "/images/products/pure-mustard-oil.png",
+      "/images/products/black-seed-oil.png",
     ],
     variants: [
       {
