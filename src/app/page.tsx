@@ -52,8 +52,8 @@ export default function HomePage() {
 
         {/* ৪টি ট্রাস্ট ফিচার ব্যাজ */}
         <section className="container mx-auto max-w-7xl px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-white rounded-2xl border border-surface-border shadow-subtle text-xs">
-            <div className="flex items-center gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 px-6 sm:px-8 lg:px-12 py-5 bg-white rounded-2xl border border-surface-border shadow-subtle text-xs">
+            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
               <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
                 <ShieldCheck className="w-5 h-5" />
               </div>
@@ -62,7 +62,7 @@ export default function HomePage() {
                 <span className="text-charcoal-500">Lab Tested & Certified</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
               <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
                 <Truck className="w-5 h-5" />
               </div>
@@ -71,7 +71,7 @@ export default function HomePage() {
                 <span className="text-charcoal-500">Cash on Delivery Available</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
               <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
                 <Clock className="w-5 h-5" />
               </div>
@@ -80,7 +80,7 @@ export default function HomePage() {
                 <span className="text-charcoal-500">Within 24-48 Hours</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
               <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
                 <Award className="w-5 h-5" />
               </div>
