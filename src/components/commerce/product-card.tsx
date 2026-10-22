@@ -54,6 +54,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
       : 0;
 
+  const rating = product.ratingAverage ?? 0;
+  const reviewCount = product.reviewCount ?? 0;
+
   const buildCartItem = (): CartItem | null => {
     if (isOutOfStock || !activeVariant) return null;
     return {
@@ -144,6 +147,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           )}
         </div>
 
+        {/* Floating Glass Rating Badge on Bottom-Left */}
+        {rating > 0 && (
+          <div className="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[11px] font-semibold text-stone-800 shadow-xs border border-white/80 select-none">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span>{rating.toFixed(1)}</span>
+            {reviewCount > 0 && (
+              <span className="text-[10px] text-stone-500 font-normal">({reviewCount})</span>
+            )}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={(e) => {
@@ -169,19 +183,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       {/* Product Meta & Variant Selection */}
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div className="space-y-1.5">
-          {product.reviewCount > 0 && (
-            <div className="flex items-center gap-1 text-accent-amber text-xs">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span className="font-mono font-bold text-charcoal-900">
-                {product.ratingAverage.toFixed(1)}
-              </span>
-              <span className="text-[10px] text-charcoal-500 font-mono">
-                ({product.reviewCount})
-              </span>
-            </div>
-          )}
-
-          <h3 className="font-bold text-charcoal-900 text-sm line-clamp-2 leading-snug">
+          <h3 className="font-bold text-charcoal-900 text-sm line-clamp-2 leading-snug mt-2 sm:mt-2.5">
             <Link
               href={`/product/${product.slug}`}
               prefetch={true}
