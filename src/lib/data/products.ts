@@ -416,7 +416,7 @@ export const ALL_PRODUCTS: Product[] = [
     titleBn: "সুন্নাহ হেলথ বুস্টার কম্বো",
     slug: "sunnah-health-booster-combo",
     badge: "জনপ্রিয় কম্বো",
-    originSource: "সান্নাহ সোর্স প্রিমিয়াম কালেকশন",
+    originSource: "সুন্নাহ সোর্স প্রিমিয়াম কালেকশন",
     shortDescriptionBn: "সুন্দরবন মধু (৫০০ গ্রাম) + বিলোনা ঘি (৪০০ গ্রাম) + আজওয়া খেজুর (৫০০ গ্রাম)।",
     fullDescriptionBn: "দৈনন্দিন সুন্নাহভিত্তিক স্বাস্থ্য সুরক্ষায় অসাধারণ একটি সাশ্রয়ী কম্বো প্যাক। প্রতিটি উপাদান ১০০% খাঁটি ও গুণগত মানসম্পন্ন।",
     ratingAverage: 5.0,
@@ -425,7 +425,10 @@ export const ALL_PRODUCTS: Product[] = [
     isActive: true,
     isCombo: true,
     images: [
-      "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=800&q=80",
+      "/images/products/sunnah-health-booster-combo.png",
+      "/images/products/sundarbans-raw-honey.png",
+      "/images/products/golden-ghee.png",
+      "/images/products/premium-ajwa-dates.png",
     ],
     variants: [
       {
@@ -446,10 +449,10 @@ export const ALL_PRODUCTS: Product[] = [
     id: "prod-c-2",
     categorySlug: "combos",
     titleEn: "Sunnah Ramadan VIP Gift Box",
-    titleBn: "সান্নাহ প্রিমিয়াম গিফট বক্স",
+    titleBn: "সুন্নাহ প্রিমিয়াম গিফট বক্স",
     slug: "sunnah-premium-gift-box",
     badge: "উপহারের সেরা পছন্দ",
-    originSource: "সান্নাহ সোর্স এক্সক্লুসিভ কালেকশন",
+    originSource: "সুন্নাহ সোর্স এক্সক্লুসিভ কালেকশন",
     shortDescriptionBn: "খলিসা মধু + আজওয়া খেজুর + ঘানিভাঙা সরিষার তেল ও কালোজিরার স্পেশাল গিফট বক্স।",
     fullDescriptionBn: "প্রিয়জনকে খাঁটি খাবারের উপহার দিতে আকর্ষণীয় প্যাকেজিংয়ে তৈরি বিশেষ প্রিমিয়াম বক্স। স্বাস্থ্যকর ও বরকতময় উপহার।",
     ratingAverage: 4.95,

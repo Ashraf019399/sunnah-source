@@ -151,11 +151,11 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-5">
             {CATEGORIES_DATA.map((cat) => {
               const categoryImages: Record<string, string> = {
-                honey: "/images/hero-honey.png",
-                "ghee-oil": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=800&q=80",
-                dates: "https://images.unsplash.com/photo-1648288725055-5ba4063355b9?auto=format&fit=crop&w=800&q=80",
+                honey: "/images/products/sundarbans-raw-honey.png",
+                "ghee-oil": "/images/products/golden-ghee.png",
+                dates: "/images/products/premium-ajwa-dates.png",
                 "organic-seeds": "https://images.unsplash.com/photo-1514733670139-4d87a1941d55?auto=format&fit=crop&w=800&q=80",
-                combos: "https://images.unsplash.com/photo-1777768785464-826af9f5d2e4?auto=format&fit=crop&w=800&q=80",
+                combos: "/images/products/sunnah-health-booster-combo.png",
               };
               const imageSrc = categoryImages[cat.slug] || cat.imageUrl;
 

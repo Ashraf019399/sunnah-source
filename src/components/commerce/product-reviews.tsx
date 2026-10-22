@@ -142,7 +142,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed max-w-2xl">
-                সান্নাহ সোর্সের প্রতিটি খাদ্যপণ্য শতভাগ প্রাকৃতিক ও কোনো রাসায়নিক প্রিজারভেটিভ ছাড়া সংগৃহীত।
+                সুন্নাহ সোর্সের প্রতিটি খাদ্যপণ্য শতভাগ প্রাকৃতিক ও কোনো রাসায়নিক প্রিজারভেটিভ ছাড়া সংগৃহীত।
                 পণ্যের খাঁটি হওয়ার বিষয়ে সামান্যতম অসন্তোষ থাকলে আমরা দিচ্ছি ৭ দিনের মধ্যে কোনো প্রশ্ন ছাড়াই ১০০% মানি-ব্যাক নিশ্চয়তা।
               </p>
             </div>
@@ -358,7 +358,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                     </button>
 
                     <span className="text-[11px] text-charcoal-400">
-                      সান্নাহ সোর্স ভেরিফাইড রিভিউ
+                      সুন্নাহ সোর্স ভেরিফাইড রিভিউ
                     </span>
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                   আপনার রিভিউ সফলভাবে যুক্ত হয়েছে!
                 </h4>
                 <p className="text-xs text-emerald-700">
-                  সান্নাহ সোর্সের সাথে আপনার খাঁটি খাদ্য অভিজ্ঞতা শেয়ার করার জন্য আন্তরিক শুকরিয়া।
+                  সুন্নাহ সোর্সের সাথে আপনার খাঁটি খাদ্য অভিজ্ঞতা শেয়ার করার জন্য আন্তরিক শুকরিয়া।
                 </p>
               </div>
             ) : (

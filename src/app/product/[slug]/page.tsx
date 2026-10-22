@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const title = `${product.titleBn} | খাঁটি ও প্রাকৃতিক - সুন্নাহ সোর্স`;
   const description = `${product.titleBn} - ১০০% প্রাকৃতিক, ল্যাব-টেস্টেড খাঁটি খাদ্যপণ্য। মূল্য মাত্র ৳${price}। ${
     product.shortDescriptionBn || product.fullDescriptionBn || ""
-  } সান্নাহ সোর্স থেকে ক্যাশ অন ডেলিভারিতে অর্ডার করুন।`;
+  } সুন্নাহ সোর্স থেকে ক্যাশ অন ডেলিভারিতে অর্ডার করুন।`;
 
   const canonicalUrl = `https://sunnahsourcebd.com/product/${slug}`;
   const imageUrl = product.images?.[0]

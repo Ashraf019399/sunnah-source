@@ -22,11 +22,11 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 export const metadata: Metadata = {
   title: "যোগাযোগ (Contact Us) | Sunnah Source - খাঁটি প্রাকৃতিক খাদ্য",
   description:
-    "সান্নাহ সোর্স (Sunnah Source)-এর সাথে যোগাযোগ করুন। খাঁটি মধু, ঘি, তেল ও যেকোনো অর্ডার বা তথ্যের জন্য আমাদের হটলাইন, হোয়াটসঅ্যাপ বা ইমেইলে সরাসরি মেসেজ দিন।",
+    "সুন্নাহ সোর্স (Sunnah Source)-এর সাথে যোগাযোগ করুন। খাঁটি মধু, ঘি, তেল ও যেকোনো অর্ডার বা তথ্যের জন্য আমাদের হটলাইন, হোয়াটসঅ্যাপ বা ইমেইলে সরাসরি মেসেজ দিন।",
   openGraph: {
     title: "যোগাযোগ (Contact Us) | Sunnah Source",
     description:
-      "সান্নাহ সোর্স (Sunnah Source)-এর সাথে যোগাযোগ করুন। আমাদের হটলাইন: 01914-612007 (WhatsApp & Call)।",
+      "সুন্নাহ সোর্স (Sunnah Source)-এর সাথে যোগাযোগ করুন। আমাদের হটলাইন: 01914-612007 (WhatsApp & Call)।",
     url: "https://sunnahsourcebd.com/contact",
   },
 };
@@ -109,13 +109,13 @@ export default function ContactPage() {
           <div className="max-w-2xl mx-auto space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100/80 border border-brand-200 text-brand-800 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>সান্নাহ সোর্স গ্রাহক সেবা</span>
+              <span>সুন্নাহ সোর্স গ্রাহক সেবা</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-charcoal-900 tracking-tight">
               আমাদের সাথে যোগাযোগ করুন
             </h1>
             <p className="text-sm md:text-base text-charcoal-600 leading-relaxed">
-              যেকোনো পণ্য সংক্রান্ত তথ্য, বাল্ক বা হোলসেল অর্ডার, অথবা অর্ডারের তথ্যের জন্য সান্নাহ সোর্স টিম সবসময় আপনার পাশে আছে।
+              যেকোনো পণ্য সংক্রান্ত তথ্য, বাল্ক বা হোলসেল অর্ডার, অথবা অর্ডারের তথ্যের জন্য সুন্নাহ সোর্স টিম সবসময় আপনার পাশে আছে।
             </p>
           </div>
         </div>

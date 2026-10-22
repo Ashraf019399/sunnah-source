@@ -179,7 +179,7 @@ export default function CustomerRegisterPage() {
                   অ্যাকাউন্ট তৈরি করুন / Register
                 </h1>
                 <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed max-w-sm mx-auto">
-                  সান্নাহ সোর্স পরিবারে আপনাকে স্বাগতম। খাঁটি প্রাকৃতিক পণ্য নিরাপদে অর্ডার করুন।
+                  সুন্নাহ সোর্স পরিবারে আপনাকে স্বাগতম। খাঁটি প্রাকৃতিক পণ্য নিরাপদে অর্ডার করুন।
                 </p>
               </div>
             </div>

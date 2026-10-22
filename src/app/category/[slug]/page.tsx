@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const description =
     category.descriptionBn ||
     category.taglineBn ||
-    `${category.nameBn} - ১০০% খাঁটি ও প্রাকৃতিক পণ্যসমূহ। সান্নাহ সোর্স থেকে অর্ডার করুন।`;
+    `${category.nameBn} - ১০০% খাঁটি ও প্রাকৃতিক পণ্যসমূহ। সুন্নাহ সোর্স থেকে অর্ডার করুন।`;
 
   return {
     title,

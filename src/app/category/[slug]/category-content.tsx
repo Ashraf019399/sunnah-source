@@ -81,7 +81,7 @@ export function CategoryContent({ category, products }: CategoryContentProps) {
             <div className="space-y-3 max-w-3xl">
               <div className="inline-flex items-center gap-1.5 bg-brand-50 border border-brand-200/80 text-brand-800 text-[11px] font-bold px-3 py-1 rounded-full">
                 <Sparkles className="w-3 h-3 text-accent-amber" />
-                <span>সান্নাহ সোর্স প্রিমিয়াম ক্যাটাগরি</span>
+                <span>সুন্নাহ সোর্স প্রিমিয়াম ক্যাটাগরি</span>
               </div>
 
               <div>
