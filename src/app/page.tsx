@@ -58,8 +58,8 @@ export default function HomePage() {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">১০০% নির্ভেজাল</strong>
-                <span className="text-charcoal-500">ল্যাব টেস্ট সার্টিফাইড</span>
+                <strong className="block text-charcoal-900">100% Pure & Natural</strong>
+                <span className="text-charcoal-500">Lab Tested & Certified</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -67,8 +67,8 @@ export default function HomePage() {
                 <Truck className="w-5 h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">সারাদেশে ডেলিভারি</strong>
-                <span className="text-charcoal-500">হোম ডেলিভারি ক্যাশ অন</span>
+                <strong className="block text-charcoal-900">Nationwide Delivery</strong>
+                <span className="text-charcoal-500">Cash on Delivery Available</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -76,8 +76,8 @@ export default function HomePage() {
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">দ্রুত ডেলিভারি</strong>
-                <span className="text-charcoal-500">২৪-৪৮ ঘণ্টার মধ্যে</span>
+                <strong className="block text-charcoal-900">Fast Delivery</strong>
+                <span className="text-charcoal-500">Within 24-48 Hours</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -85,8 +85,8 @@ export default function HomePage() {
                 <Award className="w-5 h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">৭ দিনের রিটার্ন</strong>
-                <span className="text-charcoal-500">ঝুঁকিমুক্ত গ্যারান্টি</span>
+                <strong className="block text-charcoal-900">7 Days Return</strong>
+                <span className="text-charcoal-500">Hassle-Free Guarantee</span>
               </div>
             </div>
           </div>
