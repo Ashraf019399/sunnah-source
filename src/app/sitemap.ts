@@ -81,6 +81,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.5,
     },
+    {
+      url: `${BASE_URL}/privacy`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/terms`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
   ];
 
   // 2. Dynamic Product routes

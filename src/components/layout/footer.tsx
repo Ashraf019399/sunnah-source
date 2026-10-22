@@ -115,10 +115,18 @@ export const Footer: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      href="/about"
+                      href="/privacy"
                       className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
                     >
                       Privacy Policy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/terms"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Terms of Service
                     </Link>
                   </li>
                 </ul>
@@ -300,7 +308,13 @@ export const Footer: React.FC = () => {
           <div className="w-full border-t border-stone-100 pt-3 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-xs text-stone-500 text-center">
             <span>© 2026 SUNNAH SOURCE. All rights reserved.</span>
             <span className="hidden sm:inline text-stone-300">•</span>
-            <span>Pure & Natural Organic Foods</span>
+            <Link href="/privacy" className="hover:text-emerald-700 transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-stone-300">•</span>
+            <Link href="/terms" className="hover:text-emerald-700 transition-colors">
+              Terms of Service
+            </Link>
           </div>
         </div>
       </div>
