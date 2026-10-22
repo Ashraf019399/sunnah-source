@@ -17,10 +17,10 @@ const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" 
 
 export const Footer: React.FC = () => {
   return (
-    <footer role="contentinfo" aria-label="Site Footer" className="w-full">
-      {/* 1. Main Footer Body: Signature Deep Emerald Green */}
-      <div className="bg-[#0a2f22] text-stone-300 pt-10 pb-12 lg:pt-14 lg:pb-14 border-t border-emerald-950/80">
-        <div className="container mx-auto px-4 max-w-7xl">
+    <footer role="contentinfo" aria-label="Site Footer" className="w-full bg-white">
+      {/* 1. Main Footer Body: Signature Deep Emerald Green Floating Island Card */}
+      <div className="mx-3 sm:mx-6 lg:mx-8 bg-[#0a2f22] text-stone-300 rounded-b-[28px] sm:rounded-b-[36px] border-b border-x border-emerald-800/40 shadow-sm py-10 sm:py-14 px-6 sm:px-10 lg:px-12">
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8">
             {/* Column 1: Brand */}
             <div className="lg:col-span-4 space-y-3.5">
@@ -181,7 +181,7 @@ export const Footer: React.FC = () => {
       </div>
 
       {/* 2. Dual-Tone Luxury Sub-Footer: Crisp Full-Width White Strip */}
-      <div className="bg-white border-t border-stone-200 py-5 pb-20 md:pb-6">
+      <div className="bg-white py-5 pb-20 md:pb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-4">
           {/* Tier 1: Payment Badges Row */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
