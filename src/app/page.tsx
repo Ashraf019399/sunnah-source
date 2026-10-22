@@ -154,8 +154,9 @@ export default function HomePage() {
                 honey: "/images/products/sundarbans-raw-honey.png",
                 "ghee-oil": "/images/products/golden-ghee.png",
                 dates: "/images/products/premium-ajwa-dates.png",
-                "organic-seeds": "https://images.unsplash.com/photo-1514733670139-4d87a1941d55?auto=format&fit=crop&w=800&q=80",
+                "organic-seeds": "/images/products/organic-seeds-banner.png",
                 combos: "/images/products/sunnah-health-booster-combo.png",
+                "dry-fruits": "/images/products/dry-fruits-banner.png",
               };
               const imageSrc = categoryImages[cat.slug] || cat.imageUrl;
 

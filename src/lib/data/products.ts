@@ -336,7 +336,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1514733670139-4d87a1941d55?auto=format&fit=crop&w=800&q=80",
+      "/images/products/chia-seeds.png",
     ],
     variants: [
       {
@@ -380,7 +380,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: false,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1514733670139-4d87a1941d55?auto=format&fit=crop&w=800&q=80",
+      "/images/products/black-seeds.png",
     ],
     variants: [
       {
@@ -493,7 +493,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80",
+      "/images/products/cashew-nuts.png",
     ],
     variants: [
       {
@@ -537,7 +537,7 @@ export const ALL_PRODUCTS: Product[] = [
     isFeatured: true,
     isActive: true,
     images: [
-      "https://images.unsplash.com/photo-1528751014936-863e6e7a319c?auto=format&fit=crop&w=800&q=80",
+      "/images/products/pistachio.png",
     ],
     variants: [
       {
