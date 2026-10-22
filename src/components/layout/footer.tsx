@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, Mail, Facebook, MapPin } from "lucide-react";
+import { ShieldCheck, Mail, Facebook, MapPin, Truck } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
@@ -180,8 +180,108 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
+        {/* We Accept / Payment Methods Trust Row */}
+        <div className="border-t border-emerald-900/60 pt-6 pb-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-200/90">
+              We Accept / Payment Methods:
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-2.5">
+            {/* bKash */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              title="bKash"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 13L13 2.5L16.5 9.5L3 13Z" fill="#E2136E" />
+                <path d="M13 2.5L22 4L16.5 9.5L13 2.5Z" fill="#C70059" />
+                <path d="M16.5 9.5L21.5 16L12.5 14L16.5 9.5Z" fill="#E2136E" />
+                <path d="M12.5 14L7.5 21.5L9.5 13.5L12.5 14Z" fill="#A8004B" />
+              </svg>
+              <span className="font-sans font-black text-xs text-[#E2136E] tracking-tight">bKash</span>
+            </div>
+
+            {/* Nagad */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              title="Nagad"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#F7941D" />
+                <path d="M12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C16.42 20 20 16.42 20 12" stroke="#ED1C24" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M9 12L12 8L15 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="font-sans font-black text-xs text-[#ED1C24] tracking-tight">Nagad</span>
+            </div>
+
+            {/* Rocket */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              title="Rocket (DBBL)"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M15 3C15 3 17 6 16 9L8 17L4 16L3 20L7 19L6 15L14 7C17 6 20 8 20 8C20 8 22 4 15 3Z" fill="#8C3494" />
+                <circle cx="15" cy="8" r="1.5" fill="white" />
+              </svg>
+              <span className="font-sans font-black text-xs text-[#8C3494] tracking-tight">Rocket</span>
+            </div>
+
+            {/* Islami Bank (IBBL) */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              title="Islami Bank Bangladesh Limited"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect width="24" height="24" rx="4" fill="#00843D" />
+                <path d="M12 4C12 4 10 6.5 10 8.5C10 9.6 10.9 10.5 12 10.5C13.1 10.5 14 9.6 14 8.5C14 6.5 12 4 12 4Z" fill="white" />
+                <path d="M8 11.5C8 10.4 9.79 9.5 12 9.5C14.21 9.5 16 10.4 16 11.5V19H8V11.5Z" fill="white" />
+                <path d="M10 19V14C10 12.9 10.9 12 12 12C13.1 12 14 12.9 14 14V19H10Z" fill="#00843D" />
+              </svg>
+              <span className="font-sans font-black text-xs text-[#00843D] tracking-tight">IBBL</span>
+            </div>
+
+            {/* Visa */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center justify-center transition-transform hover:scale-105 select-none"
+              title="Visa"
+            >
+              <span className="font-sans font-black italic text-sm tracking-tighter text-[#1A1F71] leading-none">
+                VISA
+              </span>
+            </div>
+
+            {/* Mastercard */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1 justify-center transition-transform hover:scale-105 select-none"
+              title="Mastercard"
+            >
+              <svg className="w-6 h-4 shrink-0" viewBox="0 0 32 20" fill="none" aria-hidden="true">
+                <circle cx="10" cy="10" r="9" fill="#EB001B" />
+                <circle cx="22" cy="10" r="9" fill="#F79E1B" fillOpacity="0.92" />
+                <path d="M16 3.8C17.9 5.3 19 7.5 19 10C19 12.5 17.9 14.7 16 16.2C14.1 14.7 13 12.5 13 10C13 7.5 14.1 5.3 16 3.8Z" fill="#FF5F00" />
+              </svg>
+              <span className="font-sans font-bold text-[10px] text-charcoal-800 tracking-tight hidden xs:inline">
+                Mastercard
+              </span>
+            </div>
+
+            {/* Cash on Delivery (COD) */}
+            <div
+              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none text-emerald-800"
+              title="Cash on Delivery (COD)"
+            >
+              <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="font-sans font-extrabold text-[11px] tracking-tight uppercase text-emerald-900 whitespace-nowrap">
+                Cash on Delivery
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Bottom Bar: Copyright */}
-        <div className="pt-6 text-center text-xs text-stone-400">
+        <div className="pt-2 text-center text-xs text-stone-400">
           <p>© 2026 SUNNAH SOURCE. All rights reserved. Pure & Natural Organic Foods.</p>
         </div>
       </div>
