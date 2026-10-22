@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Heart, ShoppingCart, Zap } from "lucide-react";
+import { Heart, ShoppingCart, ShoppingBag } from "lucide-react";
 import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
@@ -270,11 +270,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
                 ? "bg-stone-200 text-stone-400 cursor-not-allowed"
                 : "bg-emerald-900 text-white hover:bg-emerald-950 active:scale-95 cursor-pointer"
             )}
-            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} এখনই কিনুন`}
-            title={isOutOfStock ? "স্টক শেষ" : "এখনই কিনুন"}
+            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} Buy Now`}
+            title={isOutOfStock ? "স্টক শেষ" : "Buy Now"}
           >
-            <Zap className="w-3.5 h-3.5 shrink-0 fill-current" />
-            <span className="truncate">এখনই কিনুন</span>
+            <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Buy Now</span>
           </button>
         </div>
       </div>
