@@ -17,181 +17,188 @@ const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" 
 
 export const Footer: React.FC = () => {
   return (
-    <footer
-      role="contentinfo"
-      aria-label="Site Footer"
-      className="bg-brand-900 text-stone-300 pt-10 pb-20 lg:pt-12 lg:pb-10 border-t border-brand-800/90"
-    >
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8 pb-8 border-b border-brand-800/80">
-          {/* Column 1: Brand */}
-          <div className="lg:col-span-4 space-y-3.5">
-            <BrandLogo className="bg-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl shadow-subtle hover:bg-stone-50 transition-all [&_img]:h-10 sm:[&_img]:h-11 md:[&_img]:h-12 [&_img]:w-auto w-fit" />
-            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-sm">
-              Pure & natural organic food inspired by prophetic traditions. 100% authentic, lab-tested, and wholesome nutrition for your family.
-            </p>
-            <div className="inline-flex items-center gap-2 text-xs text-accent-amber font-semibold pt-1">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>100% Pure & Authentic Guaranteed</span>
+    <footer role="contentinfo" aria-label="Site Footer" className="w-full">
+      {/* 1. Main Footer Body: Signature Deep Emerald Green */}
+      <div className="bg-[#0a2f22] text-stone-300 pt-10 pb-12 lg:pt-14 lg:pb-14 border-t border-emerald-950/80">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8">
+            {/* Column 1: Brand */}
+            <div className="lg:col-span-4 space-y-3.5">
+              <BrandLogo className="bg-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl shadow-subtle hover:bg-stone-50 transition-all [&_img]:h-10 sm:[&_img]:h-11 md:[&_img]:h-12 [&_img]:w-auto w-fit" />
+              <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-sm">
+                Pure & natural organic food inspired by prophetic traditions. 100% authentic, lab-tested, and wholesome nutrition for your family.
+              </p>
+              <div className="inline-flex items-center gap-2 text-xs text-accent-amber font-semibold pt-1">
+                <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>100% Pure & Authentic Guaranteed</span>
+              </div>
+            </div>
+
+            {/* Column 2: Quick Links */}
+            <div className="lg:col-span-2 space-y-3.5">
+              <h4 className="text-white font-bold text-sm tracking-wide">Quick Links</h4>
+              <nav aria-label="Quick Links">
+                <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
+                  <li>
+                    <Link
+                      href="/"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Home
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/shop"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Shop Collection
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/track-order"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Order Tracking
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/account"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      My Account
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+
+            {/* Column 3: Customer Care */}
+            <div className="lg:col-span-3 space-y-3.5">
+              <h4 className="text-white font-bold text-sm tracking-wide">Customer Care</h4>
+              <nav aria-label="Customer Care">
+                <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
+                  <li>
+                    <Link
+                      href="/about"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      About Us
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/faq"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      FAQs
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/contact"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Contact Support
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/faq"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Shipping & Returns
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/about"
+                      className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+
+            {/* Column 4: Get in Touch */}
+            <div className="lg:col-span-3 space-y-3.5">
+              <h4 className="text-white font-bold text-sm tracking-wide">Get in Touch</h4>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
+                <li className="flex items-center gap-2.5 text-stone-300 group">
+                  <span className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-emerald-900/80 transition-colors shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                  </span>
+                  <span>Lalmonirhat, Bangladesh</span>
+                </li>
+                <li>
+                  <a
+                    href="https://wa.me/8801914612007"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
+                    aria-label="WhatsApp: +880 1914-612007"
+                  >
+                    <span className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-emerald-900/80 transition-colors shrink-0">
+                      <WhatsAppIcon className="w-3.5 h-3.5 fill-current text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                    </span>
+                    <span className="font-sans font-medium tracking-wide">+880 1914-612007</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:sunnahsourcebd@gmail.com"
+                    className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
+                    aria-label="Email: sunnahsourcebd@gmail.com"
+                  >
+                    <span className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-emerald-900/80 transition-colors shrink-0">
+                      <Mail className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                    </span>
+                    <span className="font-sans text-xs break-all">sunnahsourcebd@gmail.com</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.facebook.com/profile.php?id=61572120171387"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
+                    aria-label="Official Facebook Page"
+                  >
+                    <span className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-emerald-900/80 transition-colors shrink-0">
+                      <Facebook className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                    </span>
+                    <span>Official Facebook</span>
+                  </a>
+                </li>
+              </ul>
             </div>
           </div>
-
-          {/* Column 2: Quick Links */}
-          <div className="lg:col-span-2 space-y-3.5">
-            <h4 className="text-white font-bold text-sm tracking-wide">Quick Links</h4>
-            <nav aria-label="Quick Links">
-              <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
-                <li>
-                  <Link
-                    href="/"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/shop"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    Shop Collection
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/track-order"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    Order Tracking
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/account"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    My Account
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-
-          {/* Column 3: Customer Care */}
-          <div className="lg:col-span-3 space-y-3.5">
-            <h4 className="text-white font-bold text-sm tracking-wide">Customer Care</h4>
-            <nav aria-label="Customer Care">
-              <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
-                <li>
-                  <Link
-                    href="/about"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/faq"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    FAQs
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/contact"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    Contact Support
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/faq"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    Shipping & Returns
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/about"
-                    className="hover:text-white hover:translate-x-0.5 transition-all duration-200 inline-block"
-                  >
-                    Privacy Policy
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-
-          {/* Column 4: Get in Touch */}
-          <div className="lg:col-span-3 space-y-3.5">
-            <h4 className="text-white font-bold text-sm tracking-wide">Get in Touch</h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-stone-300">
-              <li className="flex items-center gap-2.5 text-stone-300 group">
-                <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
-                </span>
-                <span>Lalmonirhat, Bangladesh</span>
-              </li>
-              <li>
-                <a
-                  href="https://wa.me/8801914612007"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
-                  aria-label="WhatsApp: +880 1914-612007"
-                >
-                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
-                    <WhatsAppIcon className="w-3.5 h-3.5 fill-current text-emerald-400 group-hover:text-emerald-300 transition-colors" />
-                  </span>
-                  <span className="font-sans font-medium tracking-wide">+880 1914-612007</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="mailto:sunnahsourcebd@gmail.com"
-                  className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
-                  aria-label="Email: sunnahsourcebd@gmail.com"
-                >
-                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
-                    <Mail className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
-                  </span>
-                  <span className="font-sans text-xs break-all">sunnahsourcebd@gmail.com</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.facebook.com/profile.php?id=61572120171387"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-stone-300 hover:text-white transition-colors group"
-                  aria-label="Official Facebook Page"
-                >
-                  <span className="w-7 h-7 rounded-lg bg-brand-800/80 border border-brand-700/60 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 group-hover:bg-brand-700/80 transition-colors shrink-0">
-                    <Facebook className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
-                  </span>
-                  <span>Official Facebook</span>
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
+      </div>
 
-        {/* We Accept / Payment Methods Trust Row */}
-        <div className="border-t border-emerald-900/60 pt-6 pb-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-200/90">
-              We Accept / Payment Methods:
-            </span>
+      {/* 2. Dual-Tone Luxury Sub-Footer: Crisp Full-Width White Strip */}
+      <div className="bg-white border-t border-stone-200 py-4 sm:py-5 pb-20 md:pb-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col-reverse md:flex-row items-center justify-between gap-4">
+          {/* Left Side: Copyright & Slogan */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-stone-600 font-medium text-center sm:text-left">
+            <span>© 2026 SUNNAH SOURCE. All rights reserved.</span>
+            <span className="hidden sm:inline text-stone-300">•</span>
+            <span className="text-stone-500">Pure & Natural Organic Foods</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-2.5">
+          {/* Right Side: Curated 7 Payment Badges */}
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-2.5">
+            <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mr-1">
+              We Accept:
+            </span>
+
             {/* bKash */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
               title="bKash"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -205,7 +212,7 @@ export const Footer: React.FC = () => {
 
             {/* Nagad */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
               title="Nagad"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -218,7 +225,7 @@ export const Footer: React.FC = () => {
 
             {/* Rocket */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
               title="Rocket (DBBL)"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -230,7 +237,7 @@ export const Footer: React.FC = () => {
 
             {/* Islami Bank (IBBL) */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
               title="Islami Bank Bangladesh Limited"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -244,7 +251,7 @@ export const Footer: React.FC = () => {
 
             {/* Visa */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center justify-center transition-transform hover:scale-105 select-none"
               title="Visa"
             >
               <span className="font-sans font-black italic text-sm tracking-tighter text-[#1A1F71] leading-none">
@@ -254,7 +261,7 @@ export const Footer: React.FC = () => {
 
             {/* Mastercard */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1 justify-center transition-transform hover:scale-105 select-none"
               title="Mastercard"
             >
               <svg className="w-6 h-4 shrink-0" viewBox="0 0 32 20" fill="none" aria-hidden="true">
@@ -269,7 +276,7 @@ export const Footer: React.FC = () => {
 
             {/* Cash on Delivery (COD) */}
             <div
-              className="bg-white rounded-md px-2.5 py-1.5 shadow-sm border border-stone-200/40 h-8 flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none text-emerald-800"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none text-emerald-800"
               title="Cash on Delivery (COD)"
             >
               <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -278,11 +285,6 @@ export const Footer: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Bottom Bar: Copyright */}
-        <div className="pt-2 text-center text-xs text-stone-400">
-          <p>© 2026 SUNNAH SOURCE. All rights reserved. Pure & Natural Organic Foods.</p>
         </div>
       </div>
     </footer>
