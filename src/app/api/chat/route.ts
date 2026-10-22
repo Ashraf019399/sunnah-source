@@ -103,12 +103,11 @@ export async function POST(req: NextRequest) {
 
     // Candidate free Google Gemini & conversational models on OpenRouter with automatic failover
     const CANDIDATE_MODELS = [
-      "google/gemini-2.0-flash-lite-preview-02-05:free",
       "google/gemini-2.0-flash-exp:free",
-      "google/gemini-flash-1.5:free",
       "meta-llama/llama-3.3-70b-instruct:free",
-      "google/gemma-4-31b-it:free",
-      "google/gemma-4-26b-a4b-it:free",
+      "google/gemini-flash-1.5:free",
+      "google/gemini-2.0-flash-lite-preview-02-05:free",
+      "mistralai/mistral-small-24b-instruct-2501:free",
       "nvidia/nemotron-3.5-lightning:free",
       "liquid/lfm-2.5-2.6b:free",
     ];
@@ -137,7 +136,7 @@ export async function POST(req: NextRequest) {
             "HTTP-Referer": "https://sunnahsourcebd.com",
             "X-Title": "Sunnah Source",
           },
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(25000),
           cache: "no-store",
           body: JSON.stringify({
             model,
