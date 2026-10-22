@@ -809,12 +809,11 @@ export const Header: React.FC = () => {
                   {/* Desktop Hover Mega Menu Dropdown */}
                   {item.hasMegaMenu && category && (
                     <div
-                      className={`absolute top-full ${item.alignRight ? "right-0" : "left-0"
-                        } pt-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[460px] sm:w-[480px]`}
+                      className={`absolute top-full ${item.alignRight ? "right-0" : "left-0"} pt-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto w-[480px] max-w-[480px]`}
                     >
-                      <div className="bg-white rounded-2xl shadow-xl border border-surface-border p-4 text-charcoal-900 font-bengali">
+                      <div className="w-[480px] max-w-[480px] overflow-hidden rounded-2xl shadow-xl bg-white border border-gray-100 p-4 text-charcoal-900 font-bengali">
                         {/* Header Bar */}
-                        <div className="flex items-center justify-between pb-3 mb-3 border-b border-surface-border/80">
+                        <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
                           <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-brand-700" />
                             <h4 className="text-sm font-bold text-charcoal-900">
@@ -834,7 +833,7 @@ export const Header: React.FC = () => {
                           </Link>
                         </div>
 
-                        {/* Product Grid (2 Columns, 1 Row) */}
+                        {/* Product Grid (Exactly 2 Columns, 1 Row) */}
                         <div className="grid grid-cols-2 gap-2.5">
                           {categoryProducts.slice(0, 2).map((product) => {
                             const defaultVariant =
@@ -853,15 +852,15 @@ export const Header: React.FC = () => {
                                 key={product.id}
                                 href={`/product/${product.slug}`}
                                 prefetch={true}
-                                className="flex items-center gap-2.5 p-2 rounded-xl border border-surface-border/70 hover:border-brand-300 hover:bg-brand-50/50 transition-all group/item bg-white shadow-2xs"
+                                className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-100 hover:border-brand-400 hover:bg-brand-50/40 transition-all group/item bg-white shadow-2xs"
                               >
-                                <div className="w-13 h-13 rounded-lg overflow-hidden border border-surface-border/80 shrink-0 bg-white relative">
+                                <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-white">
                                   <Image
                                     src={mainImage}
                                     alt={product.titleBn}
-                                    width={52}
-                                    height={52}
-                                    className="w-full h-full object-contain p-0.5 group-hover/item:scale-105 transition-transform duration-300"
+                                    fill
+                                    sizes="56px"
+                                    className="object-contain p-1 group-hover/item:scale-105 transition-transform duration-300"
                                     unoptimized={mainImage.startsWith("/")}
                                   />
                                 </div>
@@ -890,7 +889,7 @@ export const Header: React.FC = () => {
 
                         {/* Category Purity Promise Strip */}
                         {category.purityPromiseBn && (
-                          <div className="mt-3 pt-2.5 border-t border-surface-border/60 flex items-center gap-2 text-[11px] text-charcoal-600 bg-surface-canvas/60 px-3 py-1.5 rounded-lg">
+                          <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center gap-2 text-[11px] text-charcoal-600 bg-surface-canvas/60 px-3 py-1.5 rounded-lg">
                             <Sparkles className="w-3.5 h-3.5 text-accent-amber shrink-0" />
                             <span className="line-clamp-1 font-medium">{category.purityPromiseBn}</span>
                           </div>
