@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -52,11 +54,33 @@ const SYSTEM_INSTRUCTION = `আপনি হলেন সুন্নাহ স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com
 
-আপনার পরামর্শ প্রদানের নিয়ম:
-- গ্রাহকের প্রশ্ন মনোযোগ সহকারে পড়ে সুনির্দিষ্ট ও তথ্যবহুল উত্তর দিন।
-- সুন্নাহ খাদ্যের স্বাস্থ্য উপকারিতা যেমন মধু, কালোজিরা, বিলোনা ঘি ও আজওয়া খেজুরের উপকারিতা বৈজ্ঞানিক ও ইসলামিক দৃষ্টিকোণ থেকে সুন্দরভাবে তুলে ধরুন।
+আপনার আচরণ ও কথোপকথনের নিয়ম:
+- গ্রাহক সাধারণ কুশল বিনিময় বা সম্ভাষণ জানালে (যেমন: 'কেমন আছো', 'কেমন আছেন', 'হ্যালো', 'হাই', 'আসসালামু আলাইকুম') স্বাভাবিক, প্রাণবন্ত ও আন্তরিকভাবে উত্তর দিন (যেমন: 'وعليكم السلام ورحمة الله وبركاته। আলহামদুলিল্লাহ, আল্লাহর অশেষ রহমতে আমি ভালো আছি। সুন্নাহ সোর্স-এ আপনাকে স্বাগতম। আশা করি আপনিও সুস্থ ও ভালো আছেন। আজ আপনাকে কীভাবে সহায়তা করতে পারি?')।
+- সরাসরি ও প্রাসঙ্গিকভাবে উত্তর দিন। গ্রাহক যে নির্দিষ্ট বিষয়ে জানতে চাইবেন ঠিক সে বিষয়েই সুনির্দিষ্ট উত্তর দিন। অপ্রয়োজনে পণ্যের সম্পূর্ণ তালিকা একবারে দেবেন না।
 - কোনো গ্রাহক পণ্য কিনতে চাইলে তাকে ওয়েবসাইট থেকে অর্ডার করার জন্য অথবা সরাসরি হটলাইন/হোয়াটসঅ্যাপে (01914-612007) যোগাযোগ করতে আন্তরিকভাবে উৎসাহিত করুন।
 - সবসময় বাংলা ভাষায় সাবলীল, প্রাঞ্জল ও শ্রদ্ধাপূর্ণ শব্দ ব্যবহার করবেন।`;
+
+function getApiKey(): string | null {
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0) {
+    return process.env.GEMINI_API_KEY.trim();
+  }
+
+  // Backup file lookup in case runtime env cache is stale
+  try {
+    const envPath = path.join(process.cwd(), ".env.local");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf8");
+      const match = content.match(/GEMINI_API_KEY=([^\r\n]+)/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+  } catch (err) {
+    console.error("Error reading .env.local fallback:", err);
+  }
+
+  return null;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -70,7 +94,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = getApiKey();
 
     if (!apiKey) {
       console.warn("GEMINI_API_KEY is not defined. Falling back to local concierge.");
@@ -80,7 +104,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Format conversation history for Gemini API
-    // Ensure alternating user/model roles and non-empty content
     const contents = messages
       .filter((m) => m && typeof m.content === "string" && m.content.trim().length > 0)
       .map((m) => ({
@@ -95,12 +118,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Candidate Gemini models with automatic fallback
+    // Verified working Google Gemini models
     const CANDIDATE_MODELS = [
-      "gemini-1.5-flash",
       "gemini-3.5-flash-lite",
-      "gemini-3.8-flash",
       "gemini-flash-latest",
+      "gemini-3.8-flash",
+      "gemini-1.5-flash",
     ];
 
     let generatedText: string | null = null;
@@ -141,7 +164,7 @@ export async function POST(req: NextRequest) {
           console.warn(`Model ${model} returned HTTP ${response.status}. Trying next candidate...`);
         }
       } catch (callErr) {
-        console.warn(`Failed to call ${model}:`, callErr);
+        console.warn(`Failed calling ${model}:`, callErr);
       }
     }
 
@@ -165,6 +188,24 @@ export async function POST(req: NextRequest) {
 // Intelligent local fallback matching brand knowledge
 function generateLocalFallbackResponse(query: string): string {
   const q = query.toLowerCase();
+
+  // Natural greeting handling
+  if (
+    q.includes("কেমন আছো") ||
+    q.includes("কেমন আছেন") ||
+    q.includes("হ্যালো") ||
+    q.includes("হাই") ||
+    q.includes("hello") ||
+    q.includes("hi") ||
+    q.includes("সালাম") ||
+    q.includes("salam")
+  ) {
+    return `وعليكم السلام ورحمة الله وبركاته। 
+
+আলহামদুলিল্লাহ, আল্লাহর অশেষ রহমতে আমি ভালো আছি। **সুন্নাহ সোর্স (Sunnah Source)**-এ আপনাকে আন্তরিক স্বাগতম! 
+
+আশা করি আপনিও আল্লাহর রহমতে সুস্থ ও ভালো আছেন। রাসুলুল্লাহ (সা.)-এর সুন্নাহভিত্তিক খাঁটি খাদ্যপণ্য সম্পর্কে জানতে বা অর্ডার করতে আজ আপনাকে কীভাবে সহায়তা করতে পারি?`;
+  }
 
   if (q.includes("মধু") || q.includes("honey") || q.includes("চেনার উপায়") || q.includes("খলিসা")) {
     return `আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ! 🍯
