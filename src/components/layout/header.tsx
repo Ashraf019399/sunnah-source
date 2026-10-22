@@ -657,7 +657,7 @@ export const Header: React.FC = () => {
                 onClick={() => setIsMoreOpen((prev) => !prev)}
                 type="button"
                 className="flex flex-col items-center justify-center min-w-[46px] lg:min-w-[48px] text-charcoal-700 hover:text-brand-700 transition-colors group cursor-pointer"
-                title="আরও লিঙ্ক"
+                title="More"
                 aria-expanded={isMoreOpen}
               >
                 <svg
@@ -680,43 +680,56 @@ export const Header: React.FC = () => {
 
               {/* Dropdown Menu */}
               {isMoreOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-charcoal-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <Link
-                    href="/about"
-                    prefetch={true}
-                    onClick={() => setIsMoreOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
-                  >
-                    <Info className="w-4 h-4 text-brand-600" />
-                    <span>আমাদের সম্পর্কে</span>
-                  </Link>
-                  <Link
-                    href="/faq"
-                    prefetch={true}
-                    onClick={() => setIsMoreOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
-                  >
-                    <HelpCircle className="w-4 h-4 text-brand-600" />
-                    <span>সাধারণ প্রশ্ন (FAQs)</span>
-                  </Link>
-                  <Link
-                    href="/contact"
-                    prefetch={true}
-                    onClick={() => setIsMoreOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors"
-                  >
-                    <Phone className="w-4 h-4 text-brand-600" />
-                    <span>যোগাযোগ</span>
-                  </Link>
-                  <Link
-                    href="/track-order"
-                    prefetch={true}
-                    onClick={() => setIsMoreOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/50 transition-colors border-t border-charcoal-100 mt-1 pt-2"
-                  >
-                    <Truck className="w-4 h-4 text-brand-600" />
-                    <span>অর্ডার ট্র্যাক</span>
-                  </Link>
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-charcoal-100/80 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="py-0.5 space-y-0.5">
+                    <Link
+                      href="/wishlist"
+                      prefetch={true}
+                      onClick={() => setIsMoreOpen(false)}
+                      className="flex items-center gap-3 px-3.5 py-2 text-xs font-semibold text-charcoal-700 hover:text-rose-600 hover:bg-rose-50/70 rounded-xl transition-colors"
+                    >
+                      <Heart className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>Wishlist</span>
+                    </Link>
+                    <Link
+                      href="/faq"
+                      prefetch={true}
+                      onClick={() => setIsMoreOpen(false)}
+                      className="flex items-center gap-3 px-3.5 py-2 text-xs font-semibold text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/70 rounded-xl transition-colors"
+                    >
+                      <HelpCircle className="w-4 h-4 text-brand-600 shrink-0" />
+                      <span>FAQs</span>
+                    </Link>
+                    <Link
+                      href="/about"
+                      prefetch={true}
+                      onClick={() => setIsMoreOpen(false)}
+                      className="flex items-center gap-3 px-3.5 py-2 text-xs font-semibold text-charcoal-700 hover:text-brand-700 hover:bg-brand-50/70 rounded-xl transition-colors"
+                    >
+                      <Info className="w-4 h-4 text-brand-600 shrink-0" />
+                      <span>About Us</span>
+                    </Link>
+                    <div className="pt-1 mt-1 border-t border-stone-100 space-y-0.5">
+                      <a
+                        href="tel:01914612007"
+                        onClick={() => setIsMoreOpen(false)}
+                        className="flex items-center gap-3 px-3.5 py-2 text-xs font-semibold text-charcoal-700 hover:text-emerald-700 hover:bg-emerald-50/70 rounded-xl transition-colors"
+                      >
+                        <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Call Us</span>
+                      </a>
+                      <a
+                        href="https://wa.me/8801914612007"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setIsMoreOpen(false)}
+                        className="flex items-center gap-3 px-3.5 py-2 text-xs font-semibold text-charcoal-700 hover:text-emerald-700 hover:bg-emerald-50/70 rounded-xl transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>WhatsApp Chat</span>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
