@@ -463,7 +463,7 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 bg-[#F3F4F6] hover:bg-[#EEF0F3] focus-within:bg-white focus:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
             <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -882,7 +882,7 @@ export const Header: React.FC = () => {
             ref={mobileSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="relative flex items-center w-full h-10 bg-white hover:bg-stone-50/50 focus-within:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
+            className="relative flex items-center w-full h-10 bg-[#F3F4F6] hover:bg-[#EEF0F3] focus-within:bg-white focus:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
           >
             <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
