@@ -181,24 +181,17 @@ export const Footer: React.FC = () => {
       </div>
 
       {/* 2. Dual-Tone Luxury Sub-Footer: Crisp Full-Width White Strip */}
-      <div className="bg-white border-t border-stone-200 py-4 sm:py-5 pb-20 md:pb-5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col-reverse md:flex-row items-center justify-between gap-4">
-          {/* Left Side: Copyright & Slogan */}
-          <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-stone-600 font-medium text-center sm:text-left">
-            <span>© 2026 SUNNAH SOURCE. All rights reserved.</span>
-            <span className="hidden sm:inline text-stone-300">•</span>
-            <span className="text-stone-500">Pure & Natural Organic Foods</span>
-          </div>
-
-          {/* Right Side: Curated 7 Payment Badges */}
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-2.5 md:pr-28 lg:pr-32">
+      <div className="bg-white border-t border-stone-200 py-5 pb-20 md:pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-4">
+          {/* Tier 1: Payment Badges Row */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
             <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mr-1">
               We Accept:
             </span>
 
             {/* bKash */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none whitespace-nowrap"
               title="bKash"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -212,7 +205,7 @@ export const Footer: React.FC = () => {
 
             {/* Nagad */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none whitespace-nowrap"
               title="Nagad"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -225,7 +218,7 @@ export const Footer: React.FC = () => {
 
             {/* Rocket */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none whitespace-nowrap"
               title="Rocket (DBBL)"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -237,7 +230,7 @@ export const Footer: React.FC = () => {
 
             {/* Islami Bank (IBBL) */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none whitespace-nowrap"
               title="Islami Bank Bangladesh Limited"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -251,7 +244,7 @@ export const Footer: React.FC = () => {
 
             {/* Visa */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center justify-center transition-transform hover:scale-105 select-none whitespace-nowrap"
               title="Visa"
             >
               <span className="font-sans font-black italic text-sm tracking-tighter text-[#1A1F71] leading-none">
@@ -261,7 +254,7 @@ export const Footer: React.FC = () => {
 
             {/* Mastercard */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1 justify-center transition-transform hover:scale-105 select-none"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1 justify-center transition-transform hover:scale-105 select-none whitespace-nowrap"
               title="Mastercard"
             >
               <svg className="w-6 h-4 shrink-0" viewBox="0 0 32 20" fill="none" aria-hidden="true">
@@ -276,7 +269,7 @@ export const Footer: React.FC = () => {
 
             {/* Cash on Delivery (COD) */}
             <div
-              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none text-emerald-800"
+              className="h-7 sm:h-8 px-2.5 py-1 bg-white rounded border border-stone-200 shadow-xs flex items-center gap-1.5 justify-center transition-transform hover:scale-105 select-none text-emerald-800 whitespace-nowrap"
               title="Cash on Delivery (COD)"
             >
               <Truck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -284,6 +277,13 @@ export const Footer: React.FC = () => {
                 Cash on Delivery
               </span>
             </div>
+          </div>
+
+          {/* Tier 2: Copyright Bar */}
+          <div className="w-full border-t border-stone-100 pt-3 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-xs text-stone-500 text-center">
+            <span>© 2026 SUNNAH SOURCE. All rights reserved.</span>
+            <span className="hidden sm:inline text-stone-300">•</span>
+            <span>Pure & Natural Organic Foods</span>
           </div>
         </div>
       </div>
