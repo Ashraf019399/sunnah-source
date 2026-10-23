@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
+import { FloatingSideCart } from "@/components/cart/floating-side-cart";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
 
@@ -119,6 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthRecoveryRedirect />
         {children}
         <FloatingWhatsApp />
+        <FloatingSideCart />
         <LiveSalesNotification />
       </body>
     </html>
