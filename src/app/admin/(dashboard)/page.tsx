@@ -29,6 +29,7 @@ import {
 } from "@/lib/actions/admin-order-actions";
 import { getAdminLowStockAlertsAction } from "@/lib/actions/admin-product-actions";
 import { getStoreTrafficMetrics } from "@/lib/services/traffic-analytics";
+import { TrafficAnalyticsClient } from "@/components/admin/traffic/traffic-analytics-client";
 import { formatBDT, formatBanglaDateTime, toBanglaDigits } from "@/lib/utils";
 import {
   ORDER_STATUS_CONFIG,
@@ -267,134 +268,8 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* 4. Live Traffic & Store Activity Analytics Grid */}
-      <section aria-label="লাইভ ট্রাফিক ও ই-কমার্স অ্যাক্টিভিটি">
-        <div className="bg-white rounded-3xl p-6 sm:p-7 border border-surface-border shadow-subtle space-y-6">
-          {/* Section Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-surface-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-700 border border-brand-100 flex items-center justify-center shrink-0">
-                <Activity className="w-5 h-5 text-brand-700" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-lg font-bold text-charcoal-900">
-                    লাইভ ট্রাফিক ও ই-কমার্স অ্যাক্টিভিটি (Live Traffic & Store Activity)
-                  </h2>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-brand-700 border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>লাইভ সিঙ্ক</span>
-                  </span>
-                </div>
-                <p className="text-xs text-charcoal-500 mt-0.5">
-                  মেটা পিক্সেল ও ই-কমার্স সেলস ফানেল ইভেন্ট ট্র্যাকিং ওভারভিউ
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                href="/admin/settings"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-surface-canvas hover:bg-surface-muted border border-surface-border text-xs font-bold text-charcoal-700 transition-colors"
-              >
-                <Settings className="w-3.5 h-3.5 text-accent-dark" />
-                <span>পিক্সেল ম্যানেজমেন্ট</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* 4 Analytics Grid Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 1. মোট পেজ ভিউ (Total PageViews) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-brand-50/40 border border-brand-200/60 flex flex-col justify-between hover:border-brand-600/50 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-charcoal-700">👁️ মোট পেজ ভিউ</span>
-                <div className="w-8 h-8 rounded-xl bg-white border border-brand-200 text-brand-700 flex items-center justify-center shadow-xs">
-                  <Eye className="w-4 h-4 text-brand-700" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl font-black text-charcoal-900 font-sans tracking-tight">
-                  {toBanglaDigits(trafficMetrics.totalPageViews)}
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-charcoal-500 border-t border-brand-200/50 pt-2">
-                  <span>স্টোরফ্রন্ট ভিজিটরস</span>
-                  <span className="font-bold text-brand-700 bg-white px-2 py-0.5 rounded-full border border-brand-200 shadow-2xs">
-                    PageView
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. কার্ট অ্যাক্টিভিটি (Add to Cart events) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/40 border border-amber-200/60 flex flex-col justify-between hover:border-amber-400/70 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-charcoal-700">🛒 কার্ট অ্যাক্টিভিটি</span>
-                <div className="w-8 h-8 rounded-xl bg-white border border-amber-200 text-amber-700 flex items-center justify-center shadow-xs">
-                  <ShoppingCart className="w-4 h-4 text-accent-dark" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl font-black text-charcoal-900 font-sans tracking-tight">
-                  {toBanglaDigits(trafficMetrics.addToCartCount)}
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-charcoal-500 border-t border-amber-200/50 pt-2">
-                  <span>ব্যাগে পণ্য যুক্তকরণ</span>
-                  <span className="font-bold text-accent-dark bg-white px-2 py-0.5 rounded-full border border-amber-200 shadow-2xs">
-                    AddToCart
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. চেকআউট শুরু (Checkout Initiated) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/40 border border-emerald-200/60 flex flex-col justify-between hover:border-emerald-400/70 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-charcoal-700">🛍️ চেকআউট শুরু</span>
-                <div className="w-8 h-8 rounded-xl bg-white border border-emerald-200 text-emerald-700 flex items-center justify-center shadow-xs">
-                  <ShoppingBag className="w-4 h-4 text-emerald-700" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl font-black text-charcoal-900 font-sans tracking-tight">
-                  {toBanglaDigits(trafficMetrics.initiateCheckoutCount)}
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-charcoal-500 border-t border-emerald-200/50 pt-2">
-                  <span>চেকআউটে প্রবেশ</span>
-                  <span className="font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
-                    InitiateCheckout
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. সফল অর্ডার ও রূপান্তর হার (Total Orders & Conversion Rate) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-brand-900 to-brand-800 border border-brand-800 text-white flex flex-col justify-between shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-100">📦 সফল অর্ডার ও রূপান্তর</span>
-                <div className="w-8 h-8 rounded-xl bg-brand-800/80 border border-brand-700 text-accent-amber flex items-center justify-center">
-                  <PackageCheck className="w-4 h-4 text-accent-amber" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="flex items-baseline gap-2">
-                  <div className="text-2xl font-black text-white font-sans tracking-tight">
-                    {toBanglaDigits(trafficMetrics.conversionRate)}%
-                  </div>
-                  <span className="text-xs text-accent-amber font-bold">কনভার্সন রেট</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-emerald-200/80 border-t border-brand-700/80 pt-2">
-                  <span>{toBanglaDigits(trafficMetrics.totalOrders)}টি নিশ্চিত অর্ডার</span>
-                  <span className="font-bold text-accent-amber bg-brand-950/70 px-2 py-0.5 rounded-full border border-brand-700">
-                    Purchase
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 4. Live Traffic & Store Activity Analytics with Timeframe Filtering & 7-Day Breakdown */}
+      <TrafficAnalyticsClient data={trafficMetrics} />
 
       {/* 5. Two-Column Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
