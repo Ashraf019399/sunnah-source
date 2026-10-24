@@ -6,6 +6,7 @@ import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
+import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 
 const hindSiliguri = localFont({
   src: [
@@ -108,12 +109,17 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const marketingSettings = await getMarketingSettings();
+
   return (
     <html lang="bn">
       <body className={`${hindSiliguri.variable} ${hindSiliguri.className} font-bengali antialiased min-h-screen flex flex-col`}>
         <Suspense fallback={null}>
-          <FacebookPixel />
+          <FacebookPixel
+            pixelId={marketingSettings.pixelId}
+            enabled={marketingSettings.isEnabled}
+          />
         </Suspense>
         <AuthRecoveryRedirect />
         {children}
@@ -123,3 +129,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

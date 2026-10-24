@@ -5,6 +5,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { SettingsViewData, IntegrationServiceItem } from "@/types/settings.types";
 import { SettingsManager } from "@/components/admin/settings/settings-manager";
 import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
+import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,10 @@ export default async function AdminSettingsPage() {
   ];
 
   // 3. Consolidated View Data
-  const deliveryRules = await getAdminDeliverySettings();
+  const [deliveryRules, marketing] = await Promise.all([
+    getAdminDeliverySettings(),
+    getMarketingSettings(),
+  ]);
 
   const viewData: SettingsViewData = {
     storeProfile: {
@@ -181,6 +185,7 @@ export default async function AdminSettingsPage() {
       authProvider: "Supabase Auth (সার্ভার সেশন কুকি)",
       resetPasswordPath: "/admin/reset-password",
     },
+    marketing,
   };
 
   return (

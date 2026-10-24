@@ -78,10 +78,33 @@ export interface AdminSecurityProfile {
   resetPasswordPath: string;
 }
 
+export interface MarketingPixelSettings {
+  pixelId: string;
+  isEnabled: boolean;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export const DEFAULT_MARKETING_SETTINGS: MarketingPixelSettings = {
+  pixelId: "2675229749603202",
+  isEnabled: true,
+  updatedAt: null,
+  updatedBy: null,
+};
+
+export interface MarketingSettingsMutationResult {
+  success: boolean;
+  message: string;
+  data?: MarketingPixelSettings;
+  fieldError?: string;
+}
+
 export interface SettingsViewData {
   storeProfile: StoreProfile;
   deliveryRules: DeliveryRuleConfig;
   integrations: IntegrationServiceItem[];
   notificationTemplates: NotificationTemplateItem[];
   adminSecurity: AdminSecurityProfile;
+  marketing: MarketingPixelSettings;
 }
+

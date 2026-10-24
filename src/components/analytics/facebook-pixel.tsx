@@ -16,8 +16,18 @@ function FacebookPixelPageViewTracker() {
   return null;
 }
 
-export function FacebookPixel() {
-  if (!FB_PIXEL_ID) {
+interface FacebookPixelProps {
+  pixelId?: string;
+  enabled?: boolean;
+}
+
+export function FacebookPixel({
+  pixelId = FB_PIXEL_ID,
+  enabled = true,
+}: FacebookPixelProps) {
+  const activeId = pixelId || FB_PIXEL_ID;
+
+  if (!enabled || !activeId) {
     return null;
   }
 
@@ -39,7 +49,7 @@ export function FacebookPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${FB_PIXEL_ID}');
+            fbq('init', '${activeId}');
             fbq('track', 'PageView');
           `,
         }}
@@ -49,7 +59,7 @@ export function FacebookPixel() {
           height="1"
           width="1"
           style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${activeId}&ev=PageView&noscript=1`}
           alt=""
         />
       </noscript>

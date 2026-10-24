@@ -31,20 +31,97 @@ import {
   Loader2,
   RotateCcw,
   AlertCircle,
+  Target,
+  Radio,
+  Activity,
+  Clock,
 } from "lucide-react";
-import { SettingsViewData, DeliveryRuleConfig } from "@/types/settings.types";
-import { formatBDT, toBanglaDigits } from "@/lib/utils";
+import {
+  SettingsViewData,
+  DeliveryRuleConfig,
+  MarketingPixelSettings,
+} from "@/types/settings.types";
+import { formatBDT, toBanglaDigits, formatBanglaDateTime } from "@/lib/utils";
 import { updateAdminDeliverySettingsAction } from "@/lib/actions/admin-settings-actions";
+import { updateAdminMarketingSettingsAction } from "@/lib/actions/admin-marketing-actions";
 
 interface SettingsManagerProps {
   data: SettingsViewData;
 }
 
-type TabType = "store" | "delivery" | "integrations" | "templates" | "security";
+type TabType = "store" | "marketing" | "delivery" | "integrations" | "templates" | "security";
 
 export function SettingsManager({ data }: SettingsManagerProps) {
   const [activeTab, setActiveTab] = useState<TabType>("store");
   const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null);
+
+  // Marketing & Facebook Pixel State
+  const [marketing, setMarketing] = useState<MarketingPixelSettings>(
+    data.marketing || { pixelId: "2675229749603202", isEnabled: true }
+  );
+  const [pixelIdInput, setPixelIdInput] = useState<string>(
+    data.marketing?.pixelId || "2675229749603202"
+  );
+  const [pixelEnabled, setPixelEnabled] = useState<boolean>(
+    typeof data.marketing?.isEnabled === "boolean" ? data.marketing.isEnabled : true
+  );
+  const [isSavingMarketing, startSavingMarketingTransition] = useTransition();
+  const [marketingFeedback, setMarketingFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [pixelError, setPixelError] = useState<string | null>(null);
+
+  const handleResetMarketing = () => {
+    setPixelIdInput(marketing.pixelId);
+    setPixelEnabled(marketing.isEnabled);
+    setMarketingFeedback(null);
+    setPixelError(null);
+  };
+
+  const handleSaveMarketing = (e: React.FormEvent) => {
+    e.preventDefault();
+    setMarketingFeedback(null);
+    setPixelError(null);
+
+    const cleanId = pixelIdInput.trim();
+    if (!cleanId) {
+      setPixelError("ফেসবুক পিক্সেল আইডি প্রদান করুন।");
+      return;
+    }
+    if (!/^\d{8,24}$/.test(cleanId)) {
+      setPixelError("সঠিক ফরম্যাটে পিক্সেল আইডি প্রদান করুন (৮-২৪ সংখ্যা)।");
+      return;
+    }
+
+    startSavingMarketingTransition(async () => {
+      try {
+        const res = await updateAdminMarketingSettingsAction({
+          pixelId: cleanId,
+          isEnabled: pixelEnabled,
+        });
+
+        if (res.success && res.data) {
+          setMarketing(res.data);
+          setMarketingFeedback({ type: "success", message: res.message });
+        } else {
+          setMarketingFeedback({
+            type: "error",
+            message: res.message || "সংরক্ষণ করতে সমস্যা হয়েছে।",
+          });
+          if (res.fieldError) {
+            setPixelError(res.fieldError);
+          }
+        }
+      } catch (err: any) {
+        setMarketingFeedback({
+          type: "error",
+          message:
+            err?.message || "সার্ভার এরর ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+        });
+      }
+    });
+  };
 
   // Delivery Rules State
   const [rules, setRules] = useState<DeliveryRuleConfig>(data.deliveryRules);
@@ -127,6 +204,7 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
   const tabs = [
     { id: "store" as TabType, labelBn: "স্টোর প্রোফাইল", icon: Store },
+    { id: "marketing" as TabType, labelBn: "মার্কেটিং ও পিক্সেল", icon: Target },
     { id: "delivery" as TabType, labelBn: "ডেলিভারি নীতি", icon: Truck },
     { id: "integrations" as TabType, labelBn: "সিস্টেম ও API হেলথ", icon: Server },
     { id: "templates" as TabType, labelBn: "নোটিফিকেশন প্রিভিউ", icon: MessageSquare },
@@ -301,6 +379,284 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                 <span className="font-bold block mb-0.5">তথ্য উৎস:</span>
                 এই তথ্যগুলো ফুটারে ও চেকআউটে কেন্দ্রীয়ভাবে প্রদর্শিত হয়।
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Marketing & Facebook Pixel (Dedicated Card) */}
+      {activeTab === "marketing" && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Toast / Feedback Banner */}
+          {marketingFeedback && (
+            <div
+              className={`p-4 sm:p-5 rounded-2xl border shadow-subtle flex items-start gap-3.5 transition-all ${
+                marketingFeedback.type === "success"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                  : "bg-rose-50 border-rose-200 text-rose-950"
+              }`}
+            >
+              {marketingFeedback.type === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-brand-700 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-bold">{marketingFeedback.message}</p>
+                {marketingFeedback.type === "success" && (
+                  <p className="text-xs text-emerald-800 mt-0.5">
+                    স্টোরফ্রন্টে পিক্সেল সেটিংস তাৎক্ষণিকভাবে কার্যকর হয়েছে। রিলোড বা কোড পরিবর্তন ছাড়াই লাইভ ট্র্যাক হচ্ছে।
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMarketingFeedback(null)}
+                className="text-xs font-bold underline opacity-70 hover:opacity-100 shrink-0"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          )}
+
+          {/* Main Marketing Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-surface-border shadow-subtle space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-surface-border gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-brand-50 text-brand-700 border border-brand-100 flex items-center justify-center shrink-0">
+                  <Target className="w-6 h-6 text-brand-700" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-charcoal-900">
+                    মার্কেটিং ও ফেসবুক পিক্সেল (Marketing & Facebook Pixel)
+                  </h2>
+                  <p className="text-xs text-charcoal-500">
+                    মেটা (Meta / Facebook) পিক্সেল ট্র্যাকিং আইডি ও ইভেন্ট মনিটরিং কনফিগারেশন
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                    pixelEnabled
+                      ? "bg-emerald-50 text-brand-700 border-emerald-200"
+                      : "bg-slate-100 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      pixelEnabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                    }`}
+                  />
+                  <span>{pixelEnabled ? "পিক্সেল ট্র্যাকিং সক্রিয়" : "পিক্সেল ট্র্যাকিং নিষ্ক্রিয়"}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveMarketing} className="space-y-6">
+              {/* Field 1: Facebook Pixel ID Input */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="facebook-pixel-id-input"
+                  className="block text-sm font-bold text-charcoal-900"
+                >
+                  Facebook Pixel ID (পিক্সেল আইডি)
+                </label>
+                <div className="relative">
+                  <input
+                    id="facebook-pixel-id-input"
+                    type="text"
+                    value={pixelIdInput}
+                    onChange={(e) => {
+                      setPixelIdInput(e.target.value);
+                      if (pixelError) setPixelError(null);
+                    }}
+                    placeholder="2675229749603202"
+                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-mono tracking-wider transition-all focus:outline-none focus:ring-2 ${
+                      pixelError
+                        ? "border-rose-400 focus:ring-rose-200 bg-rose-50/30"
+                        : "border-surface-border focus:border-brand-600 focus:ring-brand-100 bg-white"
+                    }`}
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-charcoal-400 pointer-events-none">
+                    {pixelIdInput.trim().length} সংখ্যা
+                  </div>
+                </div>
+                {pixelError ? (
+                  <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{pixelError}</span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-charcoal-500">
+                    আপনার Meta Events Manager থেকে সংগৃহীত অফিসিয়াল ১৬-সংখ্যার পিক্সেল আইডি। ডিফল্ট: <code>2675229749603202</code>
+                  </p>
+                )}
+              </div>
+
+              {/* Field 2: Enable/Disable Toggle Switch */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface-canvas/60 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <span className="text-sm font-bold text-charcoal-900 block">
+                    Enable/Disable Meta Pixel Tracking (পিক্সেল ট্র্যাকিং সুইচ)
+                  </span>
+                  <p className="text-xs text-charcoal-500 max-w-xl leading-relaxed">
+                    সক্রিয় থাকলে স্টোরফ্রন্টে ভিজিটরদের PageView, AddToCart, InitiateCheckout ও Purchase ইভেন্ট স্বয়ংক্রিয়ভাবে মেটা প্ল্যাটফর্মে প্রেরিত হবে।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-bold text-charcoal-700">
+                    {pixelEnabled ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={pixelEnabled}
+                    onClick={() => setPixelEnabled(!pixelEnabled)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
+                      pixelEnabled ? "bg-brand-700" : "bg-slate-300"
+                    }`}
+                  >
+                    <span className="sr-only">মেটা পিক্সেল ট্র্যাকিং সক্রিয় করুন</span>
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        pixelEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Last update metadata */}
+              {marketing.updatedAt && (
+                <div className="text-[11px] text-charcoal-400 flex items-center gap-1.5 pt-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>
+                    সর্বশেষ আপডেট: {formatBanglaDateTime(marketing.updatedAt)} ({marketing.updatedBy || "অ্যাডমিন"})
+                  </span>
+                </div>
+              )}
+
+              {/* Form Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSavingMarketing}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                >
+                  {isSavingMarketing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>সংরক্ষণ করা হচ্ছে...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-accent-amber" />
+                      <span>সেভ করুন (Save Changes)</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetMarketing}
+                  disabled={isSavingMarketing}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-canvas hover:bg-surface-muted text-charcoal-700 text-xs sm:text-sm font-bold border border-surface-border transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4 text-charcoal-400" />
+                  <span>রিসেট</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Standard Meta Events Verification Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-surface-border shadow-subtle space-y-5">
+            <div className="flex items-center gap-3 pb-4 border-b border-surface-border">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-accent-dark flex items-center justify-center shrink-0">
+                <Activity className="w-5 h-5 text-accent-amber" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-charcoal-900">
+                  স্ট্যান্ডার্ড ই-কমার্স ইভেন্ট ট্র্যাকিং ওভারভিউ
+                </h3>
+                <p className="text-xs text-charcoal-500">
+                  সুন্নাহ সোর্স স্টোরে প্রি-কনফিগার করা মেটা পিক্সেল ইভেন্টস
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-surface-canvas/50 border border-surface-border flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-brand-700" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-xs text-charcoal-900">PageView</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">সক্রিয়</span>
+                  </div>
+                  <p className="text-xs text-charcoal-600">
+                    গ্রাহক সাইটের হোমপেজ, শপ, ক্যাটাগরি বা প্রোডাক্ট পেজে ব্রাউজ করার সাথে সাথে স্বয়ংক্রিয়ভাবে ট্রিগার হয়।
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-surface-canvas/50 border border-surface-border flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-brand-700" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-xs text-charcoal-900">AddToCart</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">সক্রিয়</span>
+                  </div>
+                  <p className="text-xs text-charcoal-600">
+                    প্রোডাক্ট কার্ড, ডিটেইলস পেজ, উইশলিস্ট বা কম্বো থেকে কার্টে আইটেম যুক্ত করার সাথে সাথে পণ্যের নাম, আইডি ও BDT মূল্যসহ ট্র্যাক হয়।
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-surface-canvas/50 border border-surface-border flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-brand-700" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-xs text-charcoal-900">InitiateCheckout</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">সক্রিয়</span>
+                  </div>
+                  <p className="text-xs text-charcoal-600">
+                    গ্রাহক চেকআউট পেজে প্রবেশ করলে কার্টের মোট আইটেম সংখ্যা এবং অর্ডারের সাবটোটাল মূল্যসহ প্রেরিত হয়।
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-surface-canvas/50 border border-surface-border flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-brand-700" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-xs text-charcoal-900">Purchase</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">সক্রিয়</span>
+                  </div>
+                  <p className="text-xs text-charcoal-600">
+                    গ্রাহক অর্ডার নিশ্চিত করার সাথে সাথে সম্পূর্ণ অর্ডারের গ্র্যান্ড টোটাল, কারেন্সি BDT, আইটেম সংখ্যা ও অর্ডার নম্বরসহ ট্র্যাক হয়।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-950 flex items-center gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                <strong>টেস্টিং টিপ:</strong> ব্রাউজারে Chrome <em>Meta Pixel Helper</em> এক্সটেনশন দিয়ে লাইভ storefront-এ ইভেন্ট ফায়ারিং চেক করতে পারেন।
+              </span>
             </div>
           </div>
         </div>
