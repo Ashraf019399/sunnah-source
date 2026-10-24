@@ -8,6 +8,11 @@ import {
   fbInitiateCheckout,
   fbPurchase,
 } from "../src/lib/services/facebook-pixel.ts";
+import {
+  FB_PIXEL_ID,
+  pageview,
+  event as fbEvent,
+} from "../src/lib/fpixel.ts";
 
 describe("Facebook Pixel Service Tracking", () => {
   let trackedEvents = [];
@@ -126,6 +131,23 @@ describe("Facebook Pixel Service Tracking", () => {
       fbAddToCart({ id: "1", name: "Test", price: 100 });
       fbInitiateCheckout([], 0);
       fbPurchase({ orderId: "1", total: 100, numItems: 1 });
+      pageview();
+      fbEvent("CustomEvent", { key: "value" });
     });
+  });
+
+  it("fpixel helper functions work correctly", () => {
+    assert.equal(FB_PIXEL_ID, "2675229749603202");
+
+    pageview();
+    assert.equal(trackedEvents.length, 1);
+    assert.equal(trackedEvents[0].action, "track");
+    assert.equal(trackedEvents[0].eventName, "PageView");
+
+    fbEvent("AddToCart", { content_name: "Honey", value: 950, currency: "BDT" });
+    assert.equal(trackedEvents.length, 2);
+    assert.equal(trackedEvents[1].action, "track");
+    assert.equal(trackedEvents[1].eventName, "AddToCart");
+    assert.deepEqual(trackedEvents[1].payload, { content_name: "Honey", value: 950, currency: "BDT" });
   });
 });

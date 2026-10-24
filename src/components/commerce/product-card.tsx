@@ -80,6 +80,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     if (!cartItem) return;
 
     useCartStore.getState().addItem(cartItem);
+    fbAddToCart({
+      id: product.id,
+      name: product.titleBn || product.titleEn,
+      price: currentPrice,
+      quantity: 1,
+    });
     useCartStore.getState().openDrawer();
   };
 

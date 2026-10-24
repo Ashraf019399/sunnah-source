@@ -3,21 +3,21 @@
 import React, { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { FACEBOOK_PIXEL_ID, fbPageView } from "@/lib/services/facebook-pixel";
+import { FB_PIXEL_ID, pageview } from "@/lib/fpixel";
 
 function FacebookPixelPageViewTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    fbPageView();
+    pageview();
   }, [pathname, searchParams]);
 
   return null;
 }
 
 export function FacebookPixel() {
-  if (!FACEBOOK_PIXEL_ID) {
+  if (!FB_PIXEL_ID) {
     return null;
   }
 
@@ -39,7 +39,7 @@ export function FacebookPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${FACEBOOK_PIXEL_ID}');
+            fbq('init', '${FB_PIXEL_ID}');
             fbq('track', 'PageView');
           `,
         }}
@@ -49,10 +49,12 @@ export function FacebookPixel() {
           height="1"
           width="1"
           style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${FACEBOOK_PIXEL_ID}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
           alt=""
         />
       </noscript>
     </>
   );
 }
+
+export default FacebookPixel;

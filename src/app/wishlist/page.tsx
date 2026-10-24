@@ -22,6 +22,7 @@ import { useWishlistStore } from "@/lib/stores/use-wishlist-store";
 import { useCartStore } from "@/store/use-cart-store";
 import { Product, CartItem } from "@/types/commerce.types";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
+import { fbAddToCart } from "@/lib/services/facebook-pixel";
 
 const CATEGORY_NAMES: Record<string, string> = {
   honey: "প্রাকৃতিক মধু",
@@ -80,6 +81,12 @@ export default function WishlistPage() {
 
     if (typeof addItem === "function") {
       addItem(cartItem);
+      fbAddToCart({
+        id: product.id,
+        name: product.titleBn || product.titleEn,
+        price,
+        quantity: 1,
+      });
     }
     if (typeof openDrawer === "function") {
       openDrawer();
@@ -118,6 +125,12 @@ export default function WishlistPage() {
 
         if (typeof addItem === "function") {
           addItem(cartItem);
+          fbAddToCart({
+            id: product.id,
+            name: product.titleBn || product.titleEn,
+            price,
+            quantity: 1,
+          });
           addedCount++;
         }
       }
