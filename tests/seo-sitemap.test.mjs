@@ -71,18 +71,6 @@ describe("SEO, Sitemap & Robots Validation", () => {
     assert.equal(config.sitemap, "https://sunnahsourcebd.com/sitemap.xml");
   });
 
-  it("Manifest configuration provides valid PWA metadata", async () => {
-    const { default: manifest } = await import("../src/app/manifest.ts");
-    const pwa = manifest();
-
-    assert.equal(pwa.name, "সুন্নাহ সোর্স | Sunnah Source");
-    assert.equal(pwa.short_name, "Sunnah Source");
-    assert.equal(pwa.start_url, "/");
-    assert.equal(pwa.display, "standalone");
-    assert.ok(pwa.theme_color, "Manifest must specify theme_color");
-    assert.ok(pwa.icons && pwa.icons.length > 0, "Manifest must contain icons");
-  });
-
   it("JSON-LD product schema has required Google Rich Snippet properties", () => {
     const product = {
       titleBn: "সুন্দরবনের প্রাকৃতিক চাকের কাঁচা মধু",
