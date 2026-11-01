@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ALL_PRODUCTS } from "@/lib/data/products";
-import { CATEGORIES_DATA } from "@/lib/data/categories";
+import { CATEGORIES_DATA, getCategoryDisplayImage } from "@/lib/data/categories";
 import { ProductCard } from "@/components/commerce/product-card";
 import { Product } from "@/types/commerce.types";
 import { ShieldCheck, Truck, Clock, Award, ArrowRight } from "lucide-react";
@@ -150,15 +150,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-5">
             {CATEGORIES_DATA.map((cat) => {
-              const categoryImages: Record<string, string> = {
-                honey: "/images/products/sundarbans-raw-honey.png",
-                "ghee-oil": "/images/products/golden-ghee.png",
-                dates: "/images/products/premium-ajwa-dates.png",
-                "organic-seeds": "/images/products/organic-seeds-banner.png",
-                combos: "/images/products/sunnah-health-booster-combo.png",
-                "dry-fruits": "/images/products/dry-fruits-banner.png",
-              };
-              const imageSrc = categoryImages[cat.slug] || cat.imageUrl;
+              const imageSrc = getCategoryDisplayImage(cat.slug, cat.imageUrl);
 
               return (
                 <Link

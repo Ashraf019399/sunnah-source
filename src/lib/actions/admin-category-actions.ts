@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkIsAdmin } from "@/lib/auth/admin-guard";
-import { CATEGORIES_DATA, type Category } from "@/lib/data/categories";
+import { CATEGORIES_DATA, getCategoryDisplayImage, type Category } from "@/lib/data/categories";
 import { revalidatePath } from "next/cache";
 
 export interface AdminCategoryResult {
@@ -127,21 +127,27 @@ export async function getAdminCategories(): Promise<AdminCategoryResult> {
             );
           } else if (Array.isArray(dbCategories) && dbCategories.length > 0) {
             const mapped: Category[] = dbCategories.map((row: any) => {
-              let img = row.image_url ?? row.imageUrl ?? "";
-              if (
-                row.slug === "honey" &&
-                (!img || img.includes("photo-1587049352847-4a222e784d38"))
-              ) {
-                img = "/images/hero-honey.png";
+              const rawImg = row.image_url ?? row.imageUrl ?? "";
+              const img = getCategoryDisplayImage(row.slug, rawImg);
+
+              let nameBn = row.name_bn ?? row.nameBn ?? "";
+              if (row.slug === "combos" && (nameBn.includes("সান্নাহ") || !nameBn)) {
+                nameBn = "সুন্নাহ কম্বো ও গিফট বক্স";
               }
+
+              let sourcingOriginBn = row.sourcing_origin_bn ?? row.sourcingOriginBn;
+              if (sourcingOriginBn && sourcingOriginBn.includes("সান্নাহ")) {
+                sourcingOriginBn = sourcingOriginBn.replace("সান্নাহ", "সুন্নাহ");
+              }
+
               return {
                 id: row.id ?? row.slug,
                 slug: row.slug,
                 nameEn: row.name_en ?? row.nameEn ?? "",
-                nameBn: row.name_bn ?? row.nameBn ?? "",
+                nameBn,
                 taglineBn: row.tagline_bn ?? row.taglineBn ?? "",
                 descriptionBn: row.description_bn ?? row.descriptionBn ?? "",
-                sourcingOriginBn: row.sourcing_origin_bn ?? row.sourcingOriginBn,
+                sourcingOriginBn,
                 purityPromiseBn: row.purity_promise_bn ?? row.purityPromiseBn,
                 imageUrl: img,
                 displayOrder: row.display_order ?? row.displayOrder ?? 0,
@@ -156,7 +162,13 @@ export async function getAdminCategories(): Promise<AdminCategoryResult> {
       }
     }
 
-    const sorted = [...CATEGORIES_DATA].sort((a, b) => a.displayOrder - b.displayOrder);
+    const sorted = [...CATEGORIES_DATA]
+      .map((cat) => ({
+        ...cat,
+        imageUrl: getCategoryDisplayImage(cat.slug, cat.imageUrl),
+        nameBn: cat.slug === "combos" ? "সুন্নাহ কম্বো ও গিফট বক্স" : cat.nameBn,
+      }))
+      .sort((a, b) => a.displayOrder - b.displayOrder);
     return { success: true, data: sorted };
   } catch (err: any) {
     console.error("[getAdminCategories] Server error:", err);
@@ -183,16 +195,28 @@ export async function addAdminCategory(
       };
     }
 
+    let cleanNameBn = payload.nameBn?.trim();
+    if (payload.slug === "combos" && cleanNameBn && cleanNameBn.includes("সান্নাহ")) {
+      cleanNameBn = cleanNameBn.replace("সান্নাহ", "সুন্নাহ");
+    }
+
+    let cleanSourcingBn = payload.sourcingOriginBn?.trim() || null;
+    if (cleanSourcingBn && cleanSourcingBn.includes("সান্নাহ")) {
+      cleanSourcingBn = cleanSourcingBn.replace("সান্নাহ", "সুন্নাহ");
+    }
+
+    const resolvedImageUrl = getCategoryDisplayImage(payload.slug, payload.imageUrl);
+
     const { error } = await adminClient.from("categories").insert([
       {
         slug: payload.slug,
         name_en: payload.nameEn,
-        name_bn: payload.nameBn,
+        name_bn: cleanNameBn,
         tagline_bn: payload.taglineBn,
         description_bn: payload.descriptionBn,
-        sourcing_origin_bn: payload.sourcingOriginBn ?? null,
+        sourcing_origin_bn: cleanSourcingBn,
         purity_promise_bn: payload.purityPromiseBn ?? null,
-        image_url: payload.imageUrl,
+        image_url: resolvedImageUrl,
         display_order: payload.displayOrder,
         is_active: payload.isActive,
       },
@@ -234,12 +258,26 @@ export async function updateAdminCategory(
 
     const updatePayload: Record<string, any> = {};
     if (payload.nameEn !== undefined) updatePayload.name_en = payload.nameEn;
-    if (payload.nameBn !== undefined) updatePayload.name_bn = payload.nameBn;
+    if (payload.nameBn !== undefined) {
+      let cleanBn = payload.nameBn.trim();
+      if (slug === "combos" && cleanBn.includes("সান্নাহ")) {
+        cleanBn = cleanBn.replace("সান্নাহ", "সুন্নাহ");
+      }
+      updatePayload.name_bn = cleanBn;
+    }
     if (payload.taglineBn !== undefined) updatePayload.tagline_bn = payload.taglineBn;
     if (payload.descriptionBn !== undefined) updatePayload.description_bn = payload.descriptionBn;
-    if (payload.sourcingOriginBn !== undefined) updatePayload.sourcing_origin_bn = payload.sourcingOriginBn;
+    if (payload.sourcingOriginBn !== undefined) {
+      let cleanSource = payload.sourcingOriginBn.trim();
+      if (cleanSource.includes("সান্নাহ")) {
+        cleanSource = cleanSource.replace("সান্নাহ", "সুন্নাহ");
+      }
+      updatePayload.sourcing_origin_bn = cleanSource;
+    }
     if (payload.purityPromiseBn !== undefined) updatePayload.purity_promise_bn = payload.purityPromiseBn;
-    if (payload.imageUrl !== undefined) updatePayload.image_url = payload.imageUrl;
+    if (payload.imageUrl !== undefined) {
+      updatePayload.image_url = getCategoryDisplayImage(slug, payload.imageUrl);
+    }
     if (payload.displayOrder !== undefined) updatePayload.display_order = payload.displayOrder;
     if (payload.isActive !== undefined) updatePayload.is_active = payload.isActive;
 

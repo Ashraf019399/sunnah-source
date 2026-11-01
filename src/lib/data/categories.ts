@@ -12,6 +12,42 @@ export interface Category {
   isActive: boolean;
 }
 
+/**
+ * Authentic primary product mockup asset mapping for all Sunnah Source categories.
+ */
+export const CATEGORY_PRIMARY_PRODUCT_IMAGES: Record<string, string> = {
+  honey: "/images/products/sundarbans-raw-honey.png",
+  "ghee-oil": "/images/products/golden-ghee.png",
+  dates: "/images/products/premium-ajwa-dates.png",
+  "organic-seeds": "/images/products/chia-seeds.png",
+  combos: "/images/products/sunnah-health-booster-combo.png",
+  "dry-fruits": "/images/products/cashew-nuts.png",
+};
+
+/**
+ * Resolves the authentic primary product mockup asset for any category.
+ * If currentImageUrl is missing, empty, or set to an old demo hero banner / Unsplash placeholder,
+ * returns the authentic primary product mockup matching that category slug.
+ */
+export function getCategoryDisplayImage(slug: string, currentImageUrl?: string | null): string {
+  const primary = CATEGORY_PRIMARY_PRODUCT_IMAGES[slug] || "/images/products/sundarbans-raw-honey.png";
+  if (!currentImageUrl) return primary;
+
+  const url = currentImageUrl.trim();
+  if (
+    !url ||
+    url.includes("unsplash.com") ||
+    url.includes("hero-honey.png") ||
+    url.includes("banner-") ||
+    url.includes("promo-") ||
+    url.includes("-banner.png")
+  ) {
+    return primary;
+  }
+
+  return url;
+}
+
 export const CATEGORIES_DATA: Category[] = [
   {
     id: "cat-1",
@@ -22,7 +58,7 @@ export const CATEGORIES_DATA: Category[] = [
     descriptionBn: "আমাদের মধু কোনো প্রকার হিটিং বা কৃত্রিম সুগার সিরাপের প্রক্রিয়াজাতকরণ ছাড়াই সরাসরি সুন্দরবন ও বিভিন্ন অঞ্চলের মৌয়ালদের থেকে সংগৃহীত।",
     sourcingOriginBn: "সুন্দরবন ম্যানগ্রোভ বন, সাতক্ষীরা ও শরীয়তপুর",
     purityPromiseBn: "হাইড্রোমিটার ও ল্যাব টেস্টে আর্দ্রতা ও সুক্রোজের প্রাকৃতিক মাত্রা উত্তীর্ণ।",
-    imageUrl: "/images/hero-honey.png",
+    imageUrl: "/images/products/sundarbans-raw-honey.png",
     displayOrder: 1,
     isActive: true,
   },
@@ -35,7 +71,7 @@ export const CATEGORIES_DATA: Category[] = [
     descriptionBn: "দেশি গরুর দুধের মাখন থেকে তৈরি সুবাসিত বিলোনা ঘি এবং কাঠের ঘানিতে কম তাপমাত্রায় ভাঙানো ঝাঁঝালো সরিষা ও কালোজিরার তেল।",
     sourcingOriginBn: "পাবনা ও সিরাজগঞ্জের খামার এবং নাটোরের দেশি সরিষা",
     purityPromiseBn: "প্রাকৃতিক ঝাঁঝ ও কাঠের ঘানির খাঁটি ঘ্রাণ নিশ্চিত। কোনো কেমিক্যাল রিফাইনিং নেই।",
-    imageUrl: "https://images.unsplash.com/photo-1631379578550-7038263db699?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/products/golden-ghee.png",
     displayOrder: 2,
     isActive: true,
   },
@@ -48,7 +84,7 @@ export const CATEGORIES_DATA: Category[] = [
     descriptionBn: "রাসুলুল্লাহ (সা.)-এর প্রিয় খাদ্য আজওয়াসহ মদিনার বিখ্যাত মেদজুল, মাশরুক ও আম্বার খেজুর। প্রাকৃতিক মিষ্টি ও পুষ্টিতে ভরপুর।",
     sourcingOriginBn: "মদিনা শরীফ (সৌদি আরব) ও জর্ডান ভ্যালি",
     purityPromiseBn: "স্বাভাবিক আর্দ্রতা ও শতভাগ পোকামুক্ত নিয়ন্ত্রিত প্যাকেজিং।",
-    imageUrl: "https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/products/premium-ajwa-dates.png",
     displayOrder: 3,
     isActive: true,
   },
@@ -61,7 +97,7 @@ export const CATEGORIES_DATA: Category[] = [
     descriptionBn: "ওমেগা-৩ ও ফাইবার সমৃদ্ধ আমদানিকৃত অর্গানিক চিয়া সিড এবং নাটোরের বাছাইকৃত ধুলোবালিমুক্ত প্রিমিয়াম কালোজিরা।",
     sourcingOriginBn: "মেক্সিকো (চিয়া সিড) ও নাটোর, বাংলাদেশ (কালোজিরা)",
     purityPromiseBn: "আন্তর্জাতিক মানের পিউরিটি টেস্ট ও এ-গ্রেড ক্লিনিং উত্তীর্ণ।",
-    imageUrl: "/images/products/organic-seeds-banner.png",
+    imageUrl: "/images/products/chia-seeds.png",
     displayOrder: 4,
     isActive: true,
   },
@@ -87,7 +123,7 @@ export const CATEGORIES_DATA: Category[] = [
     descriptionBn: "বাছাইকৃত ক্রাঞ্চি কাজু বাদাম, রোস্টেড পেস্তা, কাঠবাদাম ও প্রিমিয়াম ড্রাই ফ্রুটস। স্বাস্থ্যকর স্ন্যাকিং ও শক্তির প্রাকৃতিক উৎস।",
     sourcingOriginBn: "আমদানিকৃত প্রিমিয়াম গ্রেড বাদাম ও ড্রাই ফ্রুটস কালেকশন",
     purityPromiseBn: "প্রাকৃতিক পুষ্টি, ক্রাঞ্চি স্বাদ ও শতভাগ প্রিমিয়াম গ্রেড।",
-    imageUrl: "/images/products/dry-fruits-banner.png",
+    imageUrl: "/images/products/cashew-nuts.png",
     displayOrder: 6,
     isActive: true,
   },

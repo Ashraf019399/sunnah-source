@@ -19,7 +19,7 @@ import {
   Info,
   ImageOff,
 } from "lucide-react";
-import type { Category } from "@/lib/data/categories";
+import { type Category, getCategoryDisplayImage } from "@/lib/data/categories";
 import {
   addAdminCategory,
   updateAdminCategory,
@@ -114,6 +114,8 @@ function CategoryFormModal({
   const [isPending, startTransition] = useTransition();
   const [imgError, setImgError] = useState(false);
 
+  const displayPreviewUrl = getCategoryDisplayImage(form.slug, form.imageUrl);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -133,15 +135,24 @@ function CategoryFormModal({
 
     startTransition(async () => {
       try {
+        let cleanNameBn = form.nameBn.trim();
+        if (form.slug.trim().toLowerCase() === "combos" && cleanNameBn.includes("সান্নাহ")) {
+          cleanNameBn = cleanNameBn.replace("সান্নাহ", "সুন্নাহ");
+        }
+        let cleanSourcingBn = form.sourcingOriginBn.trim() || undefined;
+        if (cleanSourcingBn && cleanSourcingBn.includes("সান্নাহ")) {
+          cleanSourcingBn = cleanSourcingBn.replace("সান্নাহ", "সুন্নাহ");
+        }
+
         const payload = {
           slug: form.slug.trim().toLowerCase().replace(/\s+/g, "-"),
           nameEn: form.nameEn.trim(),
-          nameBn: form.nameBn.trim(),
+          nameBn: cleanNameBn,
           taglineBn: form.taglineBn.trim(),
           descriptionBn: form.descriptionBn.trim(),
-          sourcingOriginBn: form.sourcingOriginBn.trim() || undefined,
+          sourcingOriginBn: cleanSourcingBn,
           purityPromiseBn: form.purityPromiseBn.trim() || undefined,
-          imageUrl: form.imageUrl.trim(),
+          imageUrl: form.imageUrl.trim() || displayPreviewUrl,
           displayOrder: form.displayOrder,
           isActive: form.isActive,
         };
@@ -320,9 +331,15 @@ function CategoryFormModal({
 
           {/* Image URL + Preview */}
           <div>
-            <label className="block text-[11px] font-bold text-charcoal-700 mb-1">
-              ছবির URL
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-charcoal-700">
+                ছবির URL (Display Asset)
+              </label>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span>✅</span>
+                <span>প্রধান পণ্যের ছবি থেকে স্বয়ংক্রিয়ভাবে সিঙ্ক করা</span>
+              </span>
+            </div>
             <input
               name="imageUrl"
               value={form.imageUrl}
@@ -330,24 +347,38 @@ function CategoryFormModal({
                 handleChange(e);
                 setImgError(false);
               }}
-              placeholder="https://..."
+              placeholder="যেমন: /images/products/sundarbans-raw-honey.png"
               className="w-full text-xs px-3 py-2 rounded-xl border border-surface-border bg-white text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
             />
-            {form.imageUrl && (
-              <div className="mt-2 w-20 h-14 rounded-xl overflow-hidden border border-surface-border bg-surface-canvas flex items-center justify-center">
-                {imgError ? (
-                  <ImageOff className="w-5 h-5 text-charcoal-400" />
-                ) : (
-                  <Image
-                    src={form.imageUrl}
-                    alt="প্রিভিউ"
-                    width={80}
-                    height={56}
-                    className="w-full h-full object-cover"
-                    onError={() => setImgError(true)}
-                    unoptimized
-                  />
-                )}
+            {displayPreviewUrl && (
+              <div className="mt-2.5 p-3 rounded-2xl bg-surface-canvas/60 border border-surface-border flex items-center gap-3.5">
+                <div className="w-16 h-16 rounded-xl overflow-hidden border border-surface-border bg-white flex items-center justify-center shrink-0 p-1 shadow-xs">
+                  {imgError ? (
+                    <ImageOff className="w-6 h-6 text-charcoal-300" />
+                  ) : (
+                    <Image
+                      src={displayPreviewUrl}
+                      alt="প্রিভিউ"
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-contain"
+                      onError={() => setImgError(true)}
+                      unoptimized
+                    />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">
+                    <span>✅</span>
+                    <span>প্রধান পণ্যের ছবি থেকে স্বয়ংক্রিয়ভাবে সিঙ্ক করা</span>
+                  </div>
+                  <p className="text-[11px] text-charcoal-600 font-mono truncate">
+                    {displayPreviewUrl}
+                  </p>
+                  <p className="text-[10px] text-charcoal-400 mt-0.5">
+                    স্টোরফ্রন্ট ও প্রোডাক্ট কার্ডে এই ক্যাটাগরির মূল অথেনটিক প্রোডাক্ট মকআপ ছবি সরাসরি ব্যবহৃত হবে।
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -475,16 +506,18 @@ interface CategoryRowProps {
 
 function CategoryRow({ category, index, total, onEdit, onDelete }: CategoryRowProps) {
   const [imgError, setImgError] = useState(false);
-  const [imgSrc, setImgSrc] = useState(
-    category.imageUrl || (category.slug === "honey" ? "/images/hero-honey.png" : "")
-  );
+  const authenticImage = getCategoryDisplayImage(category.slug, category.imageUrl);
+  const [imgSrc, setImgSrc] = useState(authenticImage);
 
   React.useEffect(() => {
-    setImgSrc(
-      category.imageUrl || (category.slug === "honey" ? "/images/hero-honey.png" : "")
-    );
+    setImgSrc(getCategoryDisplayImage(category.slug, category.imageUrl));
     setImgError(false);
   }, [category.imageUrl, category.slug]);
+
+  const displayNameBn =
+    category.slug === "combos" && category.nameBn.includes("সান্নাহ")
+      ? "সুন্নাহ কম্বো ও গিফট বক্স"
+      : category.nameBn;
 
   return (
     <tr className="border-b border-surface-border/60 hover:bg-surface-canvas/50 transition-colors group">
@@ -499,17 +532,18 @@ function CategoryRow({ category, index, total, onEdit, onDelete }: CategoryRowPr
 
       {/* Image */}
       <td className="px-3 py-3 w-16">
-        <div className="w-12 h-10 rounded-xl overflow-hidden border border-surface-border bg-surface-canvas flex items-center justify-center">
+        <div className="w-12 h-10 rounded-xl overflow-hidden border border-surface-border bg-white flex items-center justify-center p-0.5 shadow-2xs">
           {imgSrc && !imgError ? (
             <Image
               src={imgSrc}
-              alt={category.nameBn}
+              alt={displayNameBn}
               width={48}
               height={40}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               onError={() => {
-                if (category.slug === "honey" && imgSrc !== "/images/hero-honey.png") {
-                  setImgSrc("/images/hero-honey.png");
+                const fallback = getCategoryDisplayImage(category.slug);
+                if (imgSrc !== fallback) {
+                  setImgSrc(fallback);
                 } else {
                   setImgError(true);
                 }
@@ -525,7 +559,7 @@ function CategoryRow({ category, index, total, onEdit, onDelete }: CategoryRowPr
       {/* Names */}
       <td className="px-3 py-3 min-w-0">
         <div className="min-w-0">
-          <div className="text-xs font-bold text-charcoal-900 truncate">{category.nameBn}</div>
+          <div className="text-xs font-bold text-charcoal-900 truncate">{displayNameBn}</div>
           <div className="text-[11px] text-charcoal-500 truncate font-sans">{category.nameEn}</div>
           {category.taglineBn && (
             <div className="text-[10px] text-charcoal-400 truncate mt-0.5">{category.taglineBn}</div>
@@ -645,18 +679,28 @@ export function CategoriesManager({ initialCategories, isUsingLiveDb }: Categori
     });
   };
 
-  const toFormData = (cat: Category): CategoryFormData => ({
-    slug: cat.slug,
-    nameEn: cat.nameEn,
-    nameBn: cat.nameBn,
-    taglineBn: cat.taglineBn,
-    descriptionBn: cat.descriptionBn,
-    sourcingOriginBn: cat.sourcingOriginBn ?? "",
-    purityPromiseBn: cat.purityPromiseBn ?? "",
-    imageUrl: cat.imageUrl,
-    displayOrder: cat.displayOrder,
-    isActive: cat.isActive,
-  });
+  const toFormData = (cat: Category): CategoryFormData => {
+    let nameBn = cat.nameBn;
+    if (cat.slug === "combos" && nameBn.includes("সান্নাহ")) {
+      nameBn = "সুন্নাহ কম্বো ও গিফট বক্স";
+    }
+    let sourcingOriginBn = cat.sourcingOriginBn ?? "";
+    if (sourcingOriginBn.includes("সান্নাহ")) {
+      sourcingOriginBn = sourcingOriginBn.replace("সান্নাহ", "সুন্নাহ");
+    }
+    return {
+      slug: cat.slug,
+      nameEn: cat.nameEn,
+      nameBn,
+      taglineBn: cat.taglineBn,
+      descriptionBn: cat.descriptionBn,
+      sourcingOriginBn,
+      purityPromiseBn: cat.purityPromiseBn ?? "",
+      imageUrl: getCategoryDisplayImage(cat.slug, cat.imageUrl),
+      displayOrder: cat.displayOrder,
+      isActive: cat.isActive,
+    };
+  };
 
   const sorted = [...categories].sort((a, b) => a.displayOrder - b.displayOrder);
 
