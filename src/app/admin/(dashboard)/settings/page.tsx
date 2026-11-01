@@ -6,6 +6,7 @@ import { SettingsViewData, IntegrationServiceItem } from "@/types/settings.types
 import { SettingsManager } from "@/components/admin/settings/settings-manager";
 import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
+import { getCourierSettings } from "@/lib/actions/admin-courier-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,9 @@ export default async function AdminSettingsPage() {
     dbNotes = err?.message || "সার্ভার রেসপন্স দেয়নি।";
   }
 
-  // 2. Integration Services Health (Strict: Not claiming verified unless live tested)
+  // 2. Integration Services Health & Courier Settings
+  const courierSettings = await getCourierSettings();
+
   const integrations: IntegrationServiceItem[] = [
     {
       id: "supabase-db",
@@ -75,15 +78,15 @@ export default async function AdminSettingsPage() {
       id: "steadfast-courier",
       name: "Steadfast Courier API",
       category: "courier",
-      status: process.env.STEADFAST_API_KEY ? "configured_unverified" : "not_configured",
-      statusLabelBn: process.env.STEADFAST_API_KEY
-        ? "কী প্রস্তুত (হ্যান্ডশেক অপ্রমাণিত)"
+      status: courierSettings.isConfigured ? "connected" : "not_configured",
+      statusLabelBn: courierSettings.isConfigured
+        ? "কনফিগারকৃত (Ready for Dispatch)"
         : "কনফিগার করা হয়নি",
       descriptionBn: "সমগ্র বাংলাদেশে হোম ডেলিভারি পার্সেল তৈরি ও স্বয়ংক্রিয় ট্র্যাকিং এপিআই।",
-      environmentKeyPresent: Boolean(process.env.STEADFAST_API_KEY),
-      notesBn: process.env.STEADFAST_API_KEY
-        ? "এনভায়রনমেন্ট ভ্যারিয়েবল আছে কিন্তু লাইভ পার্সেল বুকিং হ্যান্ডশেক টেস্ট করা হয়নি।"
-        : "STEADFAST_API_KEY অনুপস্থিত। ম্যানুয়াল ডেলিভারি ট্র্যাকিং প্রযোজ্য।",
+      environmentKeyPresent: courierSettings.isConfigured,
+      notesBn: courierSettings.isConfigured
+        ? "Steadfast API Key ও Secret Key সংরক্ষিত রয়েছে। সরাসরি বুকিং করা যাবে।"
+        : "Steadfast API Key অনুপস্থিত। 'কুরিয়ার ও স্টিডফাস্ট' ট্যাব থেকে কনফিগার করুন।",
     },
     {
       id: "greenweb-sms",
@@ -186,6 +189,7 @@ export default async function AdminSettingsPage() {
       resetPasswordPath: "/admin/reset-password",
     },
     marketing,
+    courier: courierSettings,
   };
 
   return (

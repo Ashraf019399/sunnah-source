@@ -37,6 +37,8 @@ export interface AdminOrder {
   courier_name?: string | null;
   tracking_code?: string | null;
   courier_tracking_id?: string | number | null;
+  consignment_id?: string | number | null;
+  admin_notes?: string | null;
   created_at: string;
   updated_at?: string;
   items_count?: number;

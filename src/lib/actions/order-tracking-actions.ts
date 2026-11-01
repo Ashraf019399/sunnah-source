@@ -243,7 +243,7 @@ export async function trackOrderPublicAction(
       courierPartner: order.courier_partner || (order as any).courier_name || null,
       courierTrackingCode: order.courier_tracking_code || (order as any).tracking_code || null,
       courierTrackingUrl: (order.courier_tracking_code || (order as any).tracking_code)
-        ? `https://steadfast.com.bd/tracking/${encodeURIComponent(order.courier_tracking_code || (order as any).tracking_code)}`
+        ? `https://steadfast.com.bd/t/${encodeURIComponent(order.courier_tracking_code || (order as any).tracking_code)}`
         : null,
     };
 

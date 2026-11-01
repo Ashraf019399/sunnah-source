@@ -1,0 +1,9 @@
+{
+  "provider": "steadfast",
+  "apiKey": "",
+  "secretKey": "",
+  "baseUrl": "https://portal.steadfast.com.bd/api/v1",
+  "updatedAt": null,
+  "updatedBy": null
+}
+

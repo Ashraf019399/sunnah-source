@@ -150,10 +150,26 @@ export async function getAdminOrders(
           }
           for (const ord of orders) {
             ord.items_count = countMap[ord.id] ?? 0;
+            if (!ord.consignment_id && ord.admin_notes) {
+              const cidMatch = ord.admin_notes.match(/Steadfast Consignment ID:\s*([0-9a-zA-Z_-]+)/i);
+              if (cidMatch) {
+                ord.consignment_id = cidMatch[1];
+              }
+            }
           }
         }
       } catch (err) {
         console.warn("[getAdminOrders] Failed to attach items_count:", err);
+      }
+    }
+
+    // Ensure consignment_id is populated even if items query was skipped
+    for (const ord of orders) {
+      if (!ord.consignment_id && ord.admin_notes) {
+        const cidMatch = ord.admin_notes.match(/Steadfast Consignment ID:\s*([0-9a-zA-Z_-]+)/i);
+        if (cidMatch) {
+          ord.consignment_id = cidMatch[1];
+        }
       }
     }
 
@@ -238,10 +254,19 @@ export async function getAdminOrderById(
       };
     });
 
+    let resolvedConsignmentId = order.consignment_id || null;
+    if (!resolvedConsignmentId && order.admin_notes) {
+      const cidMatch = order.admin_notes.match(/Steadfast Consignment ID:\s*([0-9a-zA-Z_-]+)/i);
+      if (cidMatch) {
+        resolvedConsignmentId = cidMatch[1];
+      }
+    }
+
     return {
       success: true,
       data: {
         ...order,
+        consignment_id: resolvedConsignmentId,
         items: itemsWithImages,
       },
     };

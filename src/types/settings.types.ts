@@ -99,6 +99,36 @@ export interface MarketingSettingsMutationResult {
   fieldError?: string;
 }
 
+export interface CourierSettings {
+  provider: "steadfast";
+  apiKey: string;
+  secretKey: string;
+  baseUrl: string;
+  isConfigured: boolean;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export const DEFAULT_COURIER_SETTINGS: CourierSettings = {
+  provider: "steadfast",
+  apiKey: "",
+  secretKey: "",
+  baseUrl: "https://portal.steadfast.com.bd/api/v1",
+  isConfigured: false,
+  updatedAt: null,
+  updatedBy: null,
+};
+
+export interface CourierSettingsMutationResult {
+  success: boolean;
+  message: string;
+  data?: CourierSettings;
+  fieldErrors?: {
+    apiKey?: string;
+    secretKey?: string;
+  };
+}
+
 export interface SettingsViewData {
   storeProfile: StoreProfile;
   deliveryRules: DeliveryRuleConfig;
@@ -106,5 +136,6 @@ export interface SettingsViewData {
   notificationTemplates: NotificationTemplateItem[];
   adminSecurity: AdminSecurityProfile;
   marketing: MarketingPixelSettings;
+  courier?: CourierSettings;
 }
 

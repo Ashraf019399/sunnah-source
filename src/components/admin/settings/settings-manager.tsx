@@ -35,21 +35,30 @@ import {
   Radio,
   Activity,
   Clock,
+  Eye,
+  EyeOff,
+  Wallet,
 } from "lucide-react";
 import {
   SettingsViewData,
   DeliveryRuleConfig,
   MarketingPixelSettings,
+  CourierSettings,
+  DEFAULT_COURIER_SETTINGS,
 } from "@/types/settings.types";
 import { formatBDT, toBanglaDigits, formatBanglaDateTime } from "@/lib/utils";
 import { updateAdminDeliverySettingsAction } from "@/lib/actions/admin-settings-actions";
 import { updateAdminMarketingSettingsAction } from "@/lib/actions/admin-marketing-actions";
+import {
+  saveCourierSettingsAction,
+  testCourierConnectionAction,
+} from "@/lib/actions/admin-courier-actions";
 
 interface SettingsManagerProps {
   data: SettingsViewData;
 }
 
-type TabType = "store" | "marketing" | "delivery" | "integrations" | "templates" | "security";
+type TabType = "store" | "courier" | "marketing" | "delivery" | "integrations" | "templates" | "security";
 
 export function SettingsManager({ data }: SettingsManagerProps) {
   const [activeTab, setActiveTab] = useState<TabType>("store");
@@ -118,6 +127,143 @@ export function SettingsManager({ data }: SettingsManagerProps) {
           type: "error",
           message:
             err?.message || "সার্ভার এরর ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+        });
+      }
+    });
+  };
+
+  // Courier & Steadfast State
+  const [courier, setCourier] = useState<CourierSettings>(
+    data.courier || DEFAULT_COURIER_SETTINGS
+  );
+  const [apiKeyInput, setApiKeyInput] = useState<string>(data.courier?.apiKey || "");
+  const [secretKeyInput, setSecretKeyInput] = useState<string>(data.courier?.secretKey || "");
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+  const [showSecretKey, setShowSecretKey] = useState<boolean>(false);
+
+  const [isSavingCourier, startSavingCourierTransition] = useTransition();
+  const [courierFeedback, setCourierFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [courierFieldErrors, setCourierFieldErrors] = useState<{
+    apiKey?: string;
+    secretKey?: string;
+  }>({});
+
+  const [isTestingConnection, startTestingConnectionTransition] = useTransition();
+  const [connectionStatus, setConnectionStatus] = useState<{
+    tested: boolean;
+    success: boolean;
+    balance?: number;
+    message: string;
+  } | null>(null);
+
+  const handleResetCourier = () => {
+    setApiKeyInput(courier.apiKey);
+    setSecretKeyInput(courier.secretKey);
+    setCourierFeedback(null);
+    setCourierFieldErrors({});
+    setConnectionStatus(null);
+  };
+
+  const handleSaveCourier = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCourierFeedback(null);
+    setCourierFieldErrors({});
+
+    const cleanApiKey = apiKeyInput.trim();
+    const cleanSecretKey = secretKeyInput.trim();
+
+    const errs: { apiKey?: string; secretKey?: string } = {};
+    if (!cleanApiKey) {
+      errs.apiKey = "স্টিডফাস্ট API Key প্রদান করুন।";
+    }
+    if (!cleanSecretKey) {
+      errs.secretKey = "স্টিডফাস্ট Secret Key প্রদান করুন।";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setCourierFieldErrors(errs);
+      return;
+    }
+
+    startSavingCourierTransition(async () => {
+      try {
+        const res = await saveCourierSettingsAction({
+          apiKey: cleanApiKey,
+          secretKey: cleanSecretKey,
+        });
+
+        if (res.success && res.data) {
+          setCourier(res.data);
+          setCourierFeedback({ type: "success", message: res.message });
+        } else {
+          setCourierFeedback({
+            type: "error",
+            message: res.message || "সংরক্ষণ করতে সমস্যা হয়েছে।",
+          });
+          if (res.fieldErrors) {
+            setCourierFieldErrors(res.fieldErrors);
+          }
+        }
+      } catch (err: any) {
+        setCourierFeedback({
+          type: "error",
+          message:
+            err?.message || "সার্ভার এরর ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+        });
+      }
+    });
+  };
+
+  const handleTestConnection = () => {
+    setCourierFeedback(null);
+    const cleanApiKey = apiKeyInput.trim();
+    const cleanSecretKey = secretKeyInput.trim();
+
+    if (!cleanApiKey || !cleanSecretKey) {
+      setCourierFeedback({
+        type: "error",
+        message: "কানেকশন টেস্ট করার জন্য API Key এবং Secret Key উভয় ফিল্ডেই মান প্রদান করুন।",
+      });
+      return;
+    }
+
+    startTestingConnectionTransition(async () => {
+      try {
+        const res = await testCourierConnectionAction({
+          apiKey: cleanApiKey,
+          secretKey: cleanSecretKey,
+        });
+
+        setConnectionStatus({
+          tested: true,
+          success: res.success,
+          balance: res.balance,
+          message: res.message,
+        });
+
+        if (res.success) {
+          setCourierFeedback({
+            type: "success",
+            message: res.message,
+          });
+        } else {
+          setCourierFeedback({
+            type: "error",
+            message: res.message,
+          });
+        }
+      } catch (err: any) {
+        setConnectionStatus({
+          tested: true,
+          success: false,
+          message: err?.message || "কানেকশন টেস্ট ব্যর্থ হয়েছে।",
+        });
+        setCourierFeedback({
+          type: "error",
+          message: err?.message || "সার্ভার এরর ঘটেছে।",
         });
       }
     });
@@ -204,8 +350,9 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
   const tabs = [
     { id: "store" as TabType, labelBn: "স্টোর প্রোফাইল", icon: Store },
+    { id: "courier" as TabType, labelBn: "কুরিয়ার ও স্টিডফাস্ট", icon: Truck },
     { id: "marketing" as TabType, labelBn: "মার্কেটিং ও পিক্সেল", icon: Target },
-    { id: "delivery" as TabType, labelBn: "ডেলিভারি নীতি", icon: Truck },
+    { id: "delivery" as TabType, labelBn: "ডেলিভারি নীতি", icon: MapPin },
     { id: "integrations" as TabType, labelBn: "সিস্টেম ও API হেলথ", icon: Server },
     { id: "templates" as TabType, labelBn: "নোটিফিকেশন প্রিভিউ", icon: MessageSquare },
     { id: "security" as TabType, labelBn: "অ্যাডমিন ও নিরাপত্তা", icon: ShieldCheck },
@@ -378,6 +525,336 @@ export function SettingsManager({ data }: SettingsManagerProps) {
               <div className="p-3.5 rounded-2xl bg-brand-50 border border-brand-200/80 text-brand-900 text-xs">
                 <span className="font-bold block mb-0.5">তথ্য উৎস:</span>
                 এই তথ্যগুলো ফুটারে ও চেকআউটে কেন্দ্রীয়ভাবে প্রদর্শিত হয়।
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Courier & Steadfast Integration */}
+      {activeTab === "courier" && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Toast / Feedback Banner */}
+          {courierFeedback && (
+            <div
+              className={`p-4 sm:p-5 rounded-2xl border shadow-subtle flex items-start gap-3.5 transition-all ${
+                courierFeedback.type === "success"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                  : "bg-rose-50 border-rose-200 text-rose-950"
+              }`}
+            >
+              {courierFeedback.type === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-bold">{courierFeedback.message}</p>
+                {courierFeedback.type === "success" && (
+                  <p className="text-xs text-emerald-800 mt-0.5">
+                    অর্ডার তালিকা থেকে এখন সরাসরি ১-ক্লিকে স্টিডফাস্টে পার্সেল বুকিং করতে পারবেন।
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setCourierFeedback(null)}
+                className="text-xs font-bold underline opacity-70 hover:opacity-100 shrink-0"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          )}
+
+          {/* Main Courier Configuration Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-surface-border shadow-subtle space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-surface-border gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shrink-0">
+                  <Truck className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-charcoal-900">
+                    কুরিয়ার ও স্টিডফাস্ট (Courier & Steadfast Settings)
+                  </h2>
+                  <p className="text-xs text-charcoal-500">
+                    অটোমেটেড পার্সেল বুকিং, ট্র্যাকিং কোড জেনারেশন ও লাইভ ডেলিভারি ওয়ালেট ম্যানেজমেন্ট
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                    courier.isConfigured
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-slate-100 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      courier.isConfigured ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                    }`}
+                  />
+                  <span>
+                    {courier.isConfigured ? "সক্রিয় (Connected)" : "কনফিগার করা হয়নি"}
+                  </span>
+                </span>
+                <a
+                  href="https://portal.steadfast.com.bd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-surface-canvas hover:bg-slate-100 border border-surface-border text-charcoal-700 transition-colors"
+                >
+                  <span>মার্চেন্ট পোর্টাল</span>
+                  <ExternalLink className="w-3 h-3 text-charcoal-400" />
+                </a>
+              </div>
+            </div>
+
+            {/* Live Wallet Balance Highlight (When tested) */}
+            {connectionStatus?.tested && (
+              <div
+                className={`p-4 sm:p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all ${
+                  connectionStatus.success
+                    ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-950"
+                    : "bg-rose-50 border-rose-200 text-rose-900"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      connectionStatus.success
+                        ? "bg-emerald-600 text-white"
+                        : "bg-rose-600 text-white"
+                    }`}
+                  >
+                    {connectionStatus.success ? (
+                      <Wallet className="w-5 h-5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-charcoal-600">
+                      {connectionStatus.success
+                        ? "স্টিডফাস্ট লাইভ ডেলিভারি ওয়ালেট ব্যালেন্স"
+                        : "কানেকশন টেস্ট স্ট্যাটাস"}
+                    </div>
+                    <div className="text-sm font-bold text-charcoal-900 mt-0.5">
+                      {connectionStatus.message}
+                    </div>
+                  </div>
+                </div>
+
+                {connectionStatus.success && (
+                  <div className="text-right shrink-0">
+                    <span className="text-[11px] font-bold text-emerald-700 block uppercase tracking-wider">
+                      বর্তমান ব্যালেন্স
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-emerald-800 font-sans">
+                      {formatBDT(connectionStatus.balance ?? 0)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Courier API Key Form */}
+            <form onSubmit={handleSaveCourier} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* API Key */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="steadfast-api-key"
+                    className="block text-xs font-bold text-charcoal-800"
+                  >
+                    স্টিডফাস্ট এপিআই কি (Steadfast API Key) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="steadfast-api-key"
+                      type={showApiKey ? "text" : "password"}
+                      value={apiKeyInput}
+                      onChange={(e) => setApiKeyInput(e.target.value)}
+                      placeholder="যেমন: abcdef1234567890..."
+                      className={`w-full font-mono text-xs sm:text-sm px-3.5 py-2.5 pr-10 rounded-xl border bg-white focus:outline-none focus:ring-2 transition-all ${
+                        courierFieldErrors.apiKey
+                          ? "border-rose-400 focus:ring-rose-200"
+                          : "border-surface-border focus:border-brand-700 focus:ring-brand-100"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-charcoal-400 hover:text-charcoal-700 transition-colors"
+                      title={showApiKey ? "হাইড করুন" : "দেখুন"}
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  {courierFieldErrors.apiKey ? (
+                    <p className="text-xs text-rose-600 font-semibold mt-1">
+                      {courierFieldErrors.apiKey}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-charcoal-400">
+                      Steadfast Merchant Dashboard &gt; API Settings থেকে সংগৃহীত কি
+                    </p>
+                  )}
+                </div>
+
+                {/* Secret Key */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="steadfast-secret-key"
+                    className="block text-xs font-bold text-charcoal-800"
+                  >
+                    স্টিডফাস্ট সিক্রেট কি (Steadfast Secret Key) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="steadfast-secret-key"
+                      type={showSecretKey ? "text" : "password"}
+                      value={secretKeyInput}
+                      onChange={(e) => setSecretKeyInput(e.target.value)}
+                      placeholder="যেমন: sec_9876543210..."
+                      className={`w-full font-mono text-xs sm:text-sm px-3.5 py-2.5 pr-10 rounded-xl border bg-white focus:outline-none focus:ring-2 transition-all ${
+                        courierFieldErrors.secretKey
+                          ? "border-rose-400 focus:ring-rose-200"
+                          : "border-surface-border focus:border-brand-700 focus:ring-brand-100"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecretKey(!showSecretKey)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-charcoal-400 hover:text-charcoal-700 transition-colors"
+                      title={showSecretKey ? "হাইড করুন" : "দেখুন"}
+                    >
+                      {showSecretKey ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  {courierFieldErrors.secretKey ? (
+                    <p className="text-xs text-rose-600 font-semibold mt-1">
+                      {courierFieldErrors.secretKey}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-charcoal-400">
+                      Steadfast সিক্রেট কি যা পার্সেল তৈরি ও স্ট্যাটাস রিকুয়েস্ট অথেনটিকেশনে ব্যবহৃত হয়
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Endpoint Base URL info */}
+              <div className="p-3.5 rounded-2xl bg-surface-canvas/60 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-charcoal-700">
+                  <Server className="w-4 h-4 text-charcoal-400 shrink-0" />
+                  <span>অফিসিয়াল API বেস ইউআরএল:</span>
+                  <code className="font-mono bg-white px-2 py-0.5 rounded border border-surface-border text-brand-900 font-bold">
+                    https://portal.steadfast.com.bd/api/v1
+                  </code>
+                </div>
+                {courier.updatedAt && (
+                  <span className="text-[11px] text-charcoal-400">
+                    সর্বশেষ আপডেট: {formatBanglaDateTime(courier.updatedAt)}
+                  </span>
+                )}
+              </div>
+
+              {/* Actions Button Group */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-surface-border">
+                {/* Test Connection Button */}
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={isTestingConnection || !apiKeyInput || !secretKeyInput}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {isTestingConnection ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>কানেকশন টেস্ট হচ্ছে...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="w-4 h-4 text-violet-200" />
+                      <span>কানেকশন টেস্ট করুন (Test Connection)</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetCourier}
+                    disabled={isSavingCourier || isTestingConnection}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-canvas hover:bg-slate-100 border border-surface-border text-charcoal-700 text-xs sm:text-sm font-bold transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>রিসেট</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSavingCourier || isTestingConnection}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isSavingCourier ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>সংরক্ষণ হচ্ছে...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 text-accent-amber" />
+                        <span>সেভ করুন (Save Changes)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Instructions Guide */}
+            <div className="pt-4 border-t border-surface-border grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs text-charcoal-700">
+              <div className="p-3.5 rounded-2xl bg-surface-canvas/40 border border-surface-border space-y-1">
+                <span className="font-bold text-charcoal-900 block flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  ১. মার্চেন্ট ক্রেডেনশিয়াল
+                </span>
+                <p className="text-[11px] text-charcoal-500 leading-relaxed">
+                  Steadfast পোর্টালের API সেকশন থেকে আপনার ইউনিক API Key এবং Secret Key সংগ্রহ করুন।
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-surface-canvas/40 border border-surface-border space-y-1">
+                <span className="font-bold text-charcoal-900 block flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  ২. ১-ক্লিক পার্সেল বুকিং
+                </span>
+                <p className="text-[11px] text-charcoal-500 leading-relaxed">
+                  অর্ডার তালিকা থেকে যেকোনো অর্ডারের পাশে &quot;স্টিডফাস্টে বুক করুন&quot; বাটনে ক্লিক করলেই পার্সেল তৈরি হয়ে ট্র্যাকিং কোড বসে যাবে।
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-surface-canvas/40 border border-surface-border space-y-1">
+                <span className="font-bold text-charcoal-900 block flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  ৩. স্বয়ংক্রিয় ট্র্যাকিং লিংক
+                </span>
+                <p className="text-[11px] text-charcoal-500 leading-relaxed">
+                  বুকিং সফল হলে সরাসরি https://steadfast.com.bd/t/[code] লিংকের মাধ্যমে গ্রাহক ও অ্যাডমিন লাইভ অবস্থান দেখতে পারবেন।
+                </p>
               </div>
             </div>
           </div>

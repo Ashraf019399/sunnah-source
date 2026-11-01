@@ -314,9 +314,17 @@ export default async function AdminOrderDetailsPage({
                     #{order.courier_tracking_code}
                   </span>
                 </div>
+                {order.consignment_id && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-charcoal-600">কনসাইনমেন্ট আইডি:</span>
+                    <span className="font-mono font-bold text-emerald-950">
+                      #{order.consignment_id}
+                    </span>
+                  </div>
+                )}
                 <div className="pt-2 border-t border-emerald-200/70">
                   <a
-                    href={`https://steadfast.com.bd/tracking/${order.courier_tracking_code}`}
+                    href={`https://steadfast.com.bd/t/${order.courier_tracking_code}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 hover:underline"
@@ -332,7 +340,7 @@ export default async function AdminOrderDetailsPage({
                   অর্ডারটি এখনও কোনো কুরিয়ার সার্ভিসে বুকিং করা হয়নি।
                 </p>
                 <p className="text-[11px] text-charcoal-500">
-                  উপরে &quot;Steadfast&quot; বাটনে ক্লিক করে সরাসরি ১-ক্লিকে পার্সেল বুকিং করতে পারবেন।
+                  উপরে &quot;স্টিডফাস্টে বুক করুন&quot; বাটনে ক্লিক করে সরাসরি ১-ক্লিকে পার্সেল বুকিং করতে পারবেন।
                 </p>
               </div>
             )}
