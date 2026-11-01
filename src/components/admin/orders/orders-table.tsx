@@ -19,6 +19,7 @@ import {
 } from "@/types/orders.types";
 import { formatBDT, formatBanglaDateTime } from "@/lib/utils";
 import { SteadfastBookingModal } from "@/components/admin/orders/steadfast-booking-modal";
+import { OrderInvoiceModalButton } from "@/components/admin/orders/order-invoice-printable";
 
 interface OrdersTableProps {
   orders: AdminOrder[];
@@ -157,6 +158,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                     {/* Actions */}
                     <td className="py-4 px-5 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
+                        <OrderInvoiceModalButton order={order} variant="compact" />
                         <SteadfastBookingModal order={order} variant="compact" />
                         <Link
                           href={`/admin/orders/${order.id}`}
@@ -257,6 +259,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <OrderInvoiceModalButton order={order} variant="compact" />
                   <SteadfastBookingModal order={order} variant="compact" />
                   <Link
                     href={`/admin/orders/${order.id}`}

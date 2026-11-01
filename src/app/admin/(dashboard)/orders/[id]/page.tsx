@@ -140,7 +140,7 @@ export default async function AdminOrderDetailsPage({
 
         <div className="flex items-center gap-3">
           <SteadfastBookingModal order={order} />
-          <PrintInvoiceButton orderId={order.id} />
+          <PrintInvoiceButton orderId={order.id} order={order} />
           <div className="text-right">
             <div className="text-xs text-charcoal-500 font-bold uppercase tracking-wider">
               সর্বমোট মূল্য

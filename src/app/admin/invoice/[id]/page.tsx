@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getAdminOrderById, getAuthenticatedAdminClient } from "@/lib/actions/admin-order-actions";
-import { OrderInvoice } from "@/components/admin/orders/order-invoice";
+import { OrderInvoicePrintable } from "@/components/admin/orders/order-invoice-printable";
 
 export const dynamic = "force-dynamic";
 
@@ -42,5 +42,5 @@ export default async function AdminInvoicePage({ params }: InvoicePageProps) {
 
   const order = result.data;
 
-  return <OrderInvoice order={order} autoPrint={true} />;
+  return <OrderInvoicePrintable order={order} autoPrint={true} />;
 }
