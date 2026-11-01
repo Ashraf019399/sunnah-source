@@ -7,7 +7,11 @@ import {
   STEADFAST_SECONDARY_BASE_URL,
   STEADFAST_USER_AGENT,
 } from "../src/lib/services/steadfast.ts";
-import { DEFAULT_COURIER_SETTINGS } from "../src/types/settings.types.ts";
+import {
+  DEFAULT_COURIER_SETTINGS,
+  MASKED_SECRET,
+  isMaskedSecret,
+} from "../src/types/settings.types.ts";
 
 test("Steadfast Courier Integration Suite", async (t) => {
   await t.test("1. Dual Base URLs & Cloudflare headers adhere to official specifications", () => {
@@ -72,5 +76,16 @@ test("Steadfast Courier Integration Suite", async (t) => {
     });
     assert.equal(result.success, false);
     assert.ok(result.message.includes("আইডি আবশ্যক"));
+  });
+
+  await t.test("6. Masked secret key detection prevents overwriting stored keys with dots", () => {
+    assert.equal(isMaskedSecret(MASKED_SECRET), true);
+    assert.equal(isMaskedSecret("••••••••••••••••"), true);
+    assert.equal(isMaskedSecret("••••"), true);
+    assert.equal(isMaskedSecret("********"), true);
+    assert.equal(isMaskedSecret("real_secret_key_12345"), false);
+    assert.equal(isMaskedSecret(""), false);
+    assert.equal(isMaskedSecret(null), false);
+    assert.equal(isMaskedSecret(undefined), false);
   });
 });

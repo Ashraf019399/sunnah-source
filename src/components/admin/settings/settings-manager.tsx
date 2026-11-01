@@ -45,6 +45,7 @@ import {
   MarketingPixelSettings,
   CourierSettings,
   DEFAULT_COURIER_SETTINGS,
+  isMaskedSecret,
 } from "@/types/settings.types";
 import { formatBDT, toBanglaDigits, formatBanglaDateTime } from "@/lib/utils";
 import { updateAdminDeliverySettingsAction } from "@/lib/actions/admin-settings-actions";
@@ -198,6 +199,8 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
         if (res.success && res.data) {
           setCourier(res.data);
+          setApiKeyInput(res.data.apiKey);
+          setSecretKeyInput(res.data.secretKey);
           setCourierFeedback({ type: "success", message: res.message });
         } else {
           setCourierFeedback({
@@ -247,6 +250,8 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
           if (saveRes.success && saveRes.data) {
             setCourier(saveRes.data);
+            setApiKeyInput(saveRes.data.apiKey);
+            setSecretKeyInput(saveRes.data.secretKey);
           }
 
           setConnectionStatus({
@@ -606,18 +611,21 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
                     courier.isConfigured
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200 shadow-xs"
                       : "bg-slate-100 text-slate-600 border-slate-200"
                   }`}
                 >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      courier.isConfigured ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
-                    }`}
-                  />
-                  <span>
-                    {courier.isConfigured ? "সক্রিয় (Connected)" : "কনফিগার করা হয়নি"}
-                  </span>
+                  {courier.isConfigured ? (
+                    <>
+                      <span>🟢</span>
+                      <span>কনফিগার করা হয়েছে (সক্রিয়)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-slate-400" />
+                      <span>কনফিগার করা হয়নি</span>
+                    </>
+                  )}
                 </span>
                 <a
                   href="https://portal.steadfast.com.bd"
@@ -631,11 +639,11 @@ export function SettingsManager({ data }: SettingsManagerProps) {
               </div>
             </div>
 
-            {/* Live Wallet Balance Highlight (When tested) */}
-            {connectionStatus?.tested && (
+            {/* Live Wallet Balance Highlight & Connection Indicator */}
+            {(connectionStatus?.tested || courier.isConfigured) && (
               <div
                 className={`p-4 sm:p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all ${
-                  connectionStatus.success
+                  (connectionStatus ? connectionStatus.success : courier.isConfigured)
                     ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 border-emerald-300 text-emerald-950 shadow-xs"
                     : "bg-rose-50 border-rose-200 text-rose-900"
                 }`}
@@ -643,12 +651,12 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      connectionStatus.success
+                      (connectionStatus ? connectionStatus.success : courier.isConfigured)
                         ? "bg-emerald-600 text-white shadow-xs"
                         : "bg-rose-600 text-white"
                     }`}
                   >
-                    {connectionStatus.success ? (
+                    {(connectionStatus ? connectionStatus.success : courier.isConfigured) ? (
                       <CheckCircle2 className="w-5 h-5" />
                     ) : (
                       <AlertTriangle className="w-5 h-5" />
@@ -656,25 +664,29 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-emerald-800">
-                      {connectionStatus.success
-                        ? "স্টিডফাস্ট এপিআই কানেকশন সক্রিয় ও কি সংরক্ষিত"
+                      {(connectionStatus ? connectionStatus.success : courier.isConfigured)
+                        ? "স্টিডফাস্ট এপিআই কানেকশন সক্রিয় ও ডাটাবেজে সংরক্ষিত"
                         : "কানেকশন টেস্ট স্ট্যাটাস"}
                     </div>
                     <div className="text-sm font-bold text-charcoal-900 mt-0.5">
-                      {connectionStatus.success
-                        ? `সংযোগ সফল! বর্তমান ডেলিভারি ব্যালেন্স: ${connectionStatus.formattedBalance || formatBDT(connectionStatus.balance ?? 0)}`
-                        : connectionStatus.message}
+                      {connectionStatus
+                        ? connectionStatus.success
+                          ? `সংযোগ সফল! বর্তমান ডেলিভারি ব্যালেন্স: ${connectionStatus.formattedBalance || formatBDT(connectionStatus.balance ?? 0)}`
+                          : connectionStatus.message
+                        : `সংযোগ সক্রিয়! বর্তমান ডেলিভারি ব্যালেন্স: ${courier.formattedBalance || (courier.currentBalance !== undefined ? formatBDT(courier.currentBalance) : "৳০")}`}
                     </div>
                   </div>
                 </div>
 
-                {connectionStatus.success && (
+                {(connectionStatus ? connectionStatus.success : courier.isConfigured) && (
                   <div className="text-right shrink-0">
                     <span className="text-[11px] font-bold text-emerald-700 block uppercase tracking-wider">
                       বর্তমান ডেলিভারি ব্যালেন্স
                     </span>
                     <span className="text-xl sm:text-2xl font-black text-emerald-800 font-sans">
-                      {connectionStatus.formattedBalance || formatBDT(connectionStatus.balance ?? 0)}
+                      {connectionStatus
+                        ? connectionStatus.formattedBalance || formatBDT(connectionStatus.balance ?? 0)
+                        : courier.formattedBalance || (courier.currentBalance !== undefined ? formatBDT(courier.currentBalance) : "৳০")}
                     </span>
                   </div>
                 )}
@@ -766,6 +778,10 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                   {courierFieldErrors.secretKey ? (
                     <p className="text-xs text-rose-600 font-semibold mt-1">
                       {courierFieldErrors.secretKey}
+                    </p>
+                  ) : isMaskedSecret(secretKeyInput) ? (
+                    <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-1">
+                      <span>🔒</span> সিক্রেট কি ডাটাবেজে সুরক্ষিতভাবে সংরক্ষিত রয়েছে (পরিবর্তন করতে চাইলে নতুন কি পেস্ট করুন)।
                     </p>
                   ) : (
                     <p className="text-[11px] text-charcoal-400">

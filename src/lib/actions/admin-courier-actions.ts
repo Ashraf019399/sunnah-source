@@ -9,7 +9,6 @@ import {
   testSteadfastConnection,
   createSteadfastOrder,
   getSteadfastDeliveryStatus,
-  isSteadfastConfigured,
   getSteadfastTrackingUrl,
   STEADFAST_BASE_URL,
 } from "@/lib/services/steadfast";
@@ -17,6 +16,8 @@ import {
   CourierSettings,
   DEFAULT_COURIER_SETTINGS,
   CourierSettingsMutationResult,
+  MASKED_SECRET,
+  isMaskedSecret,
 } from "@/types/settings.types";
 
 const SETTINGS_FILE_PATH = path.join(
@@ -41,45 +42,129 @@ export interface CourierBookingResult {
 
 /**
  * Retrieves the current Steadfast Courier settings.
- * Persisted in src/lib/data/courier-settings.json with .env.local fallback.
+ * Checks:
+ * 1. Supabase `store_settings` (row `id = 'courier_steadfast'`)
+ * 2. File `courier-settings.json`
+ * 3. Environment variables (.env.local fallback)
+ *
+ * If `options.unmasked` is false (default for client actions), the secret key is masked.
  */
-export async function getCourierSettings(): Promise<CourierSettings> {
-  let fileData: Partial<CourierSettings> = {};
+export async function getCourierSettings(options?: {
+  unmasked?: boolean;
+  checkLiveBalance?: boolean;
+}): Promise<CourierSettings> {
+  let dbApiKey = "";
+  let dbSecretKey = "";
+  let dbConfigured = false;
+  let dbUpdatedAt: string | null = null;
+  let dbUpdatedBy: string | null = null;
 
+  // 1. Check Supabase store_settings database store
+  try {
+    const adminClient = await createAdminClient();
+    const { data: row, error } = await adminClient
+      .from("store_settings")
+      .select("*")
+      .eq("id", "courier_steadfast")
+      .maybeSingle();
+
+    if (!error && row) {
+      if (row.updated_by) {
+        try {
+          const meta = JSON.parse(row.updated_by);
+          if (meta.steadfast_api_key || meta.apiKey) {
+            dbApiKey = String(meta.steadfast_api_key || meta.apiKey || "").trim();
+            dbSecretKey = String(meta.steadfast_secret_key || meta.secretKey || "").trim();
+            dbConfigured = Boolean(meta.steadfast_configured ?? (dbApiKey && dbSecretKey));
+            dbUpdatedAt = meta.updated_at || row.updated_at || null;
+            dbUpdatedBy = meta.updated_by || "Admin";
+          }
+        } catch {
+          // updated_by wasn't JSON
+        }
+      }
+      if ((row as any).steadfast_api_key) {
+        dbApiKey = String((row as any).steadfast_api_key || "").trim();
+        dbSecretKey = String((row as any).steadfast_secret_key || "").trim();
+        dbConfigured = Boolean(
+          (row as any).steadfast_configured ?? (dbApiKey && dbSecretKey)
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("[getCourierSettings] Supabase query notice:", err);
+  }
+
+  // 2. Check local JSON file persistence
+  let fileData: Partial<CourierSettings> = {};
   try {
     const raw = await fs.readFile(SETTINGS_FILE_PATH, "utf-8");
     fileData = JSON.parse(raw);
   } catch {
-    // If file doesn't exist, will fallback to env
+    // File doesn't exist
   }
 
-  const apiKey = String(
-    fileData.apiKey || process.env.STEADFAST_API_KEY || DEFAULT_COURIER_SETTINGS.apiKey
-  ).trim();
+  const fileApiKey = String(fileData.apiKey || "").trim();
+  const fileSecretKey = String(fileData.secretKey || "").trim();
 
-  const secretKey = String(
-    fileData.secretKey || process.env.STEADFAST_SECRET_KEY || DEFAULT_COURIER_SETTINGS.secretKey
-  ).trim();
+  // 3. Environment variables fallback (.env.local)
+  const envApiKey = String(process.env.STEADFAST_API_KEY || "").trim();
+  const envSecretKey = String(process.env.STEADFAST_SECRET_KEY || "").trim();
+
+  // Resolve final keys with priority: Supabase -> File -> Env
+  const finalApiKey = dbApiKey || fileApiKey || envApiKey || DEFAULT_COURIER_SETTINGS.apiKey;
+  const finalSecretKey = dbSecretKey || fileSecretKey || envSecretKey || DEFAULT_COURIER_SETTINGS.secretKey;
+  const isConfigured = Boolean(finalApiKey && finalSecretKey);
 
   const baseUrl = String(
     fileData.baseUrl || process.env.STEADFAST_BASE_URL || STEADFAST_BASE_URL
   ).replace(/\/+$/, "");
 
-  const isConfigured = Boolean(apiKey && secretKey);
+  let currentBalance: number | undefined;
+  let formattedBalance: string | undefined;
+
+  // Optional live balance check on server retrieval
+  if (options?.checkLiveBalance && isConfigured) {
+    try {
+      const balRes = await testSteadfastConnection(finalApiKey, finalSecretKey);
+      if (balRes.success) {
+        currentBalance = balRes.current_balance;
+        formattedBalance = balRes.formattedBalance;
+      }
+    } catch {
+      // Non-blocking for settings view
+    }
+  }
+
+  const maskedOrUnmaskedSecret = options?.unmasked
+    ? finalSecretKey
+    : isConfigured
+    ? MASKED_SECRET
+    : "";
 
   return {
     provider: "steadfast",
-    apiKey,
-    secretKey,
+    apiKey: finalApiKey,
+    secretKey: maskedOrUnmaskedSecret,
     baseUrl,
     isConfigured,
-    updatedAt: fileData.updatedAt || null,
-    updatedBy: fileData.updatedBy || null,
+    currentBalance,
+    formattedBalance,
+    updatedAt: dbUpdatedAt || fileData.updatedAt || null,
+    updatedBy: dbUpdatedBy || fileData.updatedBy || null,
   };
 }
 
 /**
- * Server Action: Saves courier settings securely to courier-settings.json.
+ * Server Action: Safely retrieves courier settings for client components with masked secret.
+ */
+export async function getCourierSettingsAction(): Promise<CourierSettings> {
+  return getCourierSettings({ unmasked: false, checkLiveBalance: true });
+}
+
+/**
+ * Server Action: Saves courier settings securely into Supabase store_settings and JSON.
+ * Preserves existing secret key if a masked string is submitted.
  * Strictly guarded by Admin authentication.
  */
 export async function saveCourierSettingsAction(formData: {
@@ -110,15 +195,26 @@ export async function saveCourierSettingsAction(formData: {
       };
     }
 
-    // 3. Validate credentials
+    // 3. Validate credentials & handle masked secretKey preservation
     const cleanApiKey = (formData.apiKey || "").trim();
-    const cleanSecretKey = (formData.secretKey || "").trim();
+    const inputSecretKey = (formData.secretKey || "").trim();
 
     const fieldErrors: { apiKey?: string; secretKey?: string } = {};
     if (!cleanApiKey) {
       fieldErrors.apiKey = "Steadfast API Key প্রদান করুন।";
     }
-    if (!cleanSecretKey) {
+
+    let finalSecretKey = inputSecretKey;
+
+    if (isMaskedSecret(inputSecretKey)) {
+      // User submitted masked string — preserve the existing saved secretKey
+      const existingSettings = await getCourierSettings({ unmasked: true });
+      if (existingSettings.secretKey && !isMaskedSecret(existingSettings.secretKey)) {
+        finalSecretKey = existingSettings.secretKey;
+      } else {
+        fieldErrors.secretKey = "Steadfast Secret Key প্রদান করুন।";
+      }
+    } else if (!inputSecretKey) {
       fieldErrors.secretKey = "Steadfast Secret Key প্রদান করুন।";
     }
 
@@ -130,34 +226,78 @@ export async function saveCourierSettingsAction(formData: {
       };
     }
 
-    // 4. Persist to JSON file
+    const now = new Date().toISOString();
+    const adminEmail = user.email || "Admin";
+
+    // 4. Persist to Supabase store_settings table
+    try {
+      const adminClient = await createAdminClient();
+      const metadataPayload = {
+        steadfast_api_key: cleanApiKey,
+        steadfast_secret_key: finalSecretKey,
+        steadfast_configured: true,
+        updated_at: now,
+        updated_by: adminEmail,
+      };
+
+      const { error: dbError } = await adminClient.from("store_settings").upsert(
+        {
+          id: "courier_steadfast",
+          inside_dhaka_delivery_fee: 0,
+          outside_dhaka_delivery_fee: 0,
+          free_delivery_threshold: 0,
+          updated_at: now,
+          updated_by: JSON.stringify(metadataPayload),
+        },
+        { onConflict: "id" }
+      );
+
+      if (dbError) {
+        console.warn("[saveCourierSettingsAction] Supabase upsert notice:", dbError.message);
+      }
+    } catch (dbErr) {
+      console.warn("[saveCourierSettingsAction] Database save error:", dbErr);
+    }
+
+    // 5. Persist to JSON file for filesystem parity
     const newSettings: CourierSettings = {
       provider: "steadfast",
       apiKey: cleanApiKey,
-      secretKey: cleanSecretKey,
+      secretKey: finalSecretKey,
       baseUrl: STEADFAST_BASE_URL,
       isConfigured: true,
-      updatedAt: new Date().toISOString(),
-      updatedBy: user.email || "admin",
+      updatedAt: now,
+      updatedBy: adminEmail,
     };
 
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(SETTINGS_FILE_PATH), { recursive: true });
-    await fs.writeFile(
-      SETTINGS_FILE_PATH,
-      JSON.stringify(newSettings, null, 2),
-      "utf-8"
-    );
+    try {
+      await fs.mkdir(path.dirname(SETTINGS_FILE_PATH), { recursive: true });
+      await fs.writeFile(
+        SETTINGS_FILE_PATH,
+        JSON.stringify(newSettings, null, 2),
+        "utf-8"
+      );
+    } catch (fsErr) {
+      console.warn("[saveCourierSettingsAction] File write error:", fsErr);
+    }
 
-    // 5. Revalidate cache
+    // 6. Revalidate cache
     revalidatePath("/admin/settings");
     revalidatePath("/admin/orders");
     revalidatePath("/admin");
 
     return {
       success: true,
-      message: "কুরিয়ার সেটিংস সফলভাবে সংরক্ষিত হয়েছে।",
-      data: newSettings,
+      message: "কুরিয়ার সেটিংস সফলভাবে ডাটাবেজে সংরক্ষিত হয়েছে।",
+      data: {
+        provider: "steadfast",
+        apiKey: cleanApiKey,
+        secretKey: MASKED_SECRET,
+        baseUrl: STEADFAST_BASE_URL,
+        isConfigured: true,
+        updatedAt: now,
+        updatedBy: adminEmail,
+      },
     };
   } catch (err: any) {
     console.error("[saveCourierSettingsAction] Error:", err);
@@ -204,14 +344,14 @@ export async function testCourierConnectionAction(credentials?: {
       };
     }
 
-    // 2. Call live API with trimmed keys
+    // 2. Call live API with trimmed keys (resolving masked secret if needed)
     let apiKey = (credentials?.apiKey || "").trim();
     let secretKey = (credentials?.secretKey || "").trim();
 
-    if (!apiKey || !secretKey) {
-      const saved = await getCourierSettings();
-      apiKey = (saved.apiKey || "").trim();
-      secretKey = (saved.secretKey || "").trim();
+    if (!apiKey || !secretKey || isMaskedSecret(secretKey)) {
+      const saved = await getCourierSettings({ unmasked: true });
+      if (!apiKey) apiKey = (saved.apiKey || "").trim();
+      if (!secretKey || isMaskedSecret(secretKey)) secretKey = (saved.secretKey || "").trim();
     }
 
     if (!apiKey || !secretKey) {
@@ -221,10 +361,7 @@ export async function testCourierConnectionAction(credentials?: {
       };
     }
 
-    const result = await testSteadfastConnection(
-      apiKey,
-      secretKey
-    );
+    const result = await testSteadfastConnection(apiKey, secretKey);
 
     return {
       success: result.success,
@@ -347,7 +484,7 @@ export async function dispatchOrderToSteadfastAction(
     const note = [shipping.notes, zoneLabel].filter(Boolean).join(" | ");
 
     // 6. Execute Steadfast API dispatch
-    const courierSettings = await getCourierSettings();
+    const courierSettings = await getCourierSettings({ unmasked: true });
     const cleanApiKey = (courierSettings.apiKey || "").trim();
     const cleanSecretKey = (courierSettings.secretKey || "").trim();
 
@@ -453,7 +590,7 @@ export async function bookOrderToSteadfast(
 }
 
 /**
- * Checks whether Steadfast is configured in saved settings or environment.
+ * Checks whether Steadfast is configured in database, settings, or environment.
  */
 export async function checkSteadfastConfigAction(): Promise<{
   isConfigured: boolean;

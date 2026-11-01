@@ -105,6 +105,8 @@ export interface CourierSettings {
   secretKey: string;
   baseUrl: string;
   isConfigured: boolean;
+  currentBalance?: number;
+  formattedBalance?: string;
   updatedAt?: string | null;
   updatedBy?: string | null;
 }
@@ -118,6 +120,21 @@ export const DEFAULT_COURIER_SETTINGS: CourierSettings = {
   updatedAt: null,
   updatedBy: null,
 };
+
+export const MASKED_SECRET = "••••••••••••••••";
+
+/**
+ * Checks if a secret key input string represents a masked placeholder.
+ */
+export function isMaskedSecret(key?: string | null): boolean {
+  if (!key) return false;
+  const clean = key.trim();
+  return (
+    clean.includes("••••") ||
+    clean === MASKED_SECRET ||
+    /^[•*.\s]{4,}$/.test(clean)
+  );
+}
 
 export interface CourierSettingsMutationResult {
   success: boolean;

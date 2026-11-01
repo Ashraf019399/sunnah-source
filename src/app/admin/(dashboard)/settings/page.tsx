@@ -41,7 +41,7 @@ export default async function AdminSettingsPage() {
   }
 
   // 2. Integration Services Health & Courier Settings
-  const courierSettings = await getCourierSettings();
+  const courierSettings = await getCourierSettings({ checkLiveBalance: true });
 
   const integrations: IntegrationServiceItem[] = [
     {
@@ -80,12 +80,12 @@ export default async function AdminSettingsPage() {
       category: "courier",
       status: courierSettings.isConfigured ? "connected" : "not_configured",
       statusLabelBn: courierSettings.isConfigured
-        ? "কনফিগারকৃত (Ready for Dispatch)"
+        ? "🟢 কনফিগার করা হয়েছে (সক্রিয়)"
         : "কনফিগার করা হয়নি",
       descriptionBn: "সমগ্র বাংলাদেশে হোম ডেলিভারি পার্সেল তৈরি ও স্বয়ংক্রিয় ট্র্যাকিং এপিআই।",
       environmentKeyPresent: courierSettings.isConfigured,
       notesBn: courierSettings.isConfigured
-        ? "Steadfast API Key ও Secret Key সংরক্ষিত রয়েছে। সরাসরি বুকিং করা যাবে।"
+        ? `Steadfast API সক্রিয় রয়েছে। ${courierSettings.formattedBalance ? `বর্তমান ডেলিভারি ব্যালেন্স: ${courierSettings.formattedBalance}` : "সরাসরি পার্সেল বুকিং রেডি।"}`
         : "Steadfast API Key অনুপস্থিত। 'কুরিয়ার ও স্টিডফাস্ট' ট্যাব থেকে কনফিগার করুন।",
     },
     {
