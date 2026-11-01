@@ -179,6 +179,7 @@ export async function testCourierConnectionAction(credentials?: {
   success: boolean;
   message: string;
   balance?: number;
+  formattedBalance?: string;
 }> {
   try {
     // 1. Authenticate user
@@ -199,18 +200,25 @@ export async function testCourierConnectionAction(credentials?: {
     if (!isAdmin) {
       return {
         success: false,
-        message: "অননুমোদিত প্রবেশাধিকার।",
+        message: "অননুমোদিত প্রবেশাধিকার। শুধুমাত্র অ্যাডমিনরা টেস্ট করতে পারেন।",
       };
     }
 
-    // 2. Call live API
-    let apiKey = credentials?.apiKey?.trim();
-    let secretKey = credentials?.secretKey?.trim();
+    // 2. Call live API with trimmed keys
+    let apiKey = (credentials?.apiKey || "").trim();
+    let secretKey = (credentials?.secretKey || "").trim();
 
     if (!apiKey || !secretKey) {
       const saved = await getCourierSettings();
-      apiKey = saved.apiKey;
-      secretKey = saved.secretKey;
+      apiKey = (saved.apiKey || "").trim();
+      secretKey = (saved.secretKey || "").trim();
+    }
+
+    if (!apiKey || !secretKey) {
+      return {
+        success: false,
+        message: "Steadfast API Key এবং Secret Key প্রদান করা আবশ্যক।",
+      };
     }
 
     const result = await testSteadfastConnection(
@@ -222,6 +230,7 @@ export async function testCourierConnectionAction(credentials?: {
       success: result.success,
       message: result.message,
       balance: result.current_balance ?? result.balance,
+      formattedBalance: result.formattedBalance,
     };
   } catch (err: any) {
     console.error("[testCourierConnectionAction] Error:", err);
@@ -339,10 +348,13 @@ export async function dispatchOrderToSteadfastAction(
 
     // 6. Execute Steadfast API dispatch
     const courierSettings = await getCourierSettings();
-    if (!courierSettings.apiKey || !courierSettings.secretKey) {
+    const cleanApiKey = (courierSettings.apiKey || "").trim();
+    const cleanSecretKey = (courierSettings.secretKey || "").trim();
+
+    if (!cleanApiKey || !cleanSecretKey) {
       return {
         success: false,
-        message: "Steadfast API Key বা Secret Key কনফিগার করা হয়নি। অনুগ্রহ করে সেটিংস থেকে কনফিগার করুন।",
+        message: "Steadfast API Key বা Secret Key কনফিগার করা হয়নি। সেটিংস থেকে সঠিক কি প্রদান করুন।",
       };
     }
 
@@ -356,8 +368,8 @@ export async function dispatchOrderToSteadfastAction(
         note,
       },
       {
-        apiKey: courierSettings.apiKey,
-        secretKey: courierSettings.secretKey,
+        apiKey: cleanApiKey,
+        secretKey: cleanSecretKey,
       }
     );
 

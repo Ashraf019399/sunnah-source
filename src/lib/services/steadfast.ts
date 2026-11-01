@@ -1,9 +1,10 @@
 /**
  * Steadfast Courier API Integration Service
  * 
- * Official Steadfast Courier Documentation:
- * Base URL: https://portal.steadfast.com.bd/api/v1
- * Headers: Api-Key, Secret-Key, Content-Type: application/json
+ * Official Steadfast Courier Documentation & Fallback Endpoints:
+ * Primary: https://portal.packzy.com/api/v1
+ * Secondary: https://portal.steadfast.com.bd/api/v1
+ * Headers: Api-Key, Secret-Key, Content-Type, Accept, User-Agent
  * 
  * Endpoints:
  * - GET /get_balance
@@ -11,7 +12,17 @@
  * - GET /status_by_cid/{consignment_id}
  */
 
-export const STEADFAST_BASE_URL = "https://portal.steadfast.com.bd/api/v1";
+function toBanglaDigits(num: number | string): string {
+  const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  return String(num).replace(/[0-9]/g, (digit) => banglaDigits[parseInt(digit, 10)]);
+}
+
+export const STEADFAST_PRIMARY_BASE_URL = "https://portal.packzy.com/api/v1";
+export const STEADFAST_SECONDARY_BASE_URL = "https://portal.steadfast.com.bd/api/v1";
+export const STEADFAST_BASE_URL = STEADFAST_PRIMARY_BASE_URL;
+
+export const STEADFAST_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 SunnahSource/1.0";
 
 export interface SteadfastCredentials {
   apiKey: string;
@@ -46,6 +57,7 @@ export interface SteadfastBalanceResult {
   success: boolean;
   current_balance?: number;
   balance?: number;
+  formattedBalance?: string;
   message: string;
   rawResponse?: any;
 }
@@ -68,6 +80,22 @@ export interface SteadfastStatusResult {
   delivery_status?: string;
   message: string;
   rawResponse?: any;
+}
+
+export interface SteadfastRequestOptions {
+  path: string;
+  method?: "GET" | "POST";
+  body?: Record<string, any>;
+  apiKey: string;
+  secretKey: string;
+}
+
+export interface SteadfastApiResponse<T = any> {
+  ok: boolean;
+  status: number;
+  data: T;
+  endpointUsed: string;
+  errorMessage?: string;
 }
 
 /**
@@ -109,6 +137,122 @@ export function getSteadfastTrackingUrl(trackingCode: string): string {
 }
 
 /**
+ * Executes a Steadfast API request with dual-endpoint fallback (Packzy -> Steadfast.bd)
+ * and Cloudflare-compliant browser headers + 10s timeout handling.
+ */
+export async function fetchSteadfastWithFallback<T = any>(
+  options: SteadfastRequestOptions
+): Promise<SteadfastApiResponse<T>> {
+  const cleanApiKey = (options.apiKey || "").trim();
+  const cleanSecretKey = (options.secretKey || "").trim();
+
+  // Dual endpoints list in priority order
+  const endpoints = [
+    STEADFAST_PRIMARY_BASE_URL,
+    STEADFAST_SECONDARY_BASE_URL,
+  ];
+
+  // If a custom override is in process.env, prioritize it first
+  if (process.env.STEADFAST_BASE_URL) {
+    const custom = process.env.STEADFAST_BASE_URL.replace(/\/+$/, "");
+    if (!endpoints.includes(custom)) {
+      endpoints.unshift(custom);
+    }
+  }
+
+  let lastError = "Steadfast সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।";
+  let lastStatus = 500;
+  let lastData: any = null;
+
+  for (let i = 0; i < endpoints.length; i++) {
+    const baseUrl = endpoints[i];
+    const pathNormalized = options.path.startsWith("/") ? options.path : `/${options.path}`;
+    const url = `${baseUrl}${pathNormalized}`;
+    const isLast = i === endpoints.length - 1;
+
+    try {
+      const response = await fetch(url, {
+        method: options.method || "GET",
+        headers: {
+          "Api-Key": cleanApiKey,
+          "Secret-Key": cleanSecretKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "User-Agent": STEADFAST_USER_AGENT,
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      });
+
+      const responseText = await response.text();
+      let parsedData: any = {};
+      try {
+        parsedData = JSON.parse(responseText);
+      } catch {
+        parsedData = { message: responseText };
+      }
+
+      const isHtmlResponse =
+        typeof responseText === "string" &&
+        (responseText.trim().startsWith("<!DOCTYPE") ||
+          responseText.trim().startsWith("<html"));
+
+      // Check success: HTTP 200/201 and Steadfast returns status 200/201
+      const isSuccess =
+        (response.ok || parsedData.status === 200 || parsedData.status === 201) &&
+        !isHtmlResponse;
+
+      if (isSuccess) {
+        return {
+          ok: true,
+          status: response.status,
+          data: parsedData,
+          endpointUsed: baseUrl,
+        };
+      }
+
+      lastStatus = response.status;
+      lastData = parsedData;
+      lastError =
+        parsedData.message ||
+        parsedData.error ||
+        (isHtmlResponse
+          ? "ক্লাউডফ্লেয়ার ফায়ারওয়াল প্রতিক্রিয়া প্রতিরোধ করেছে (Cloudflare Challenge)।"
+          : `HTTP ${response.status} ত্রুটি`);
+
+      // If primary failed, seamlessly try the secondary endpoint before returning an error
+      if (!isLast) {
+        console.warn(
+          `[Steadfast API] Primary endpoint ${baseUrl} failed (${response.status}: ${lastError}). Trying fallback endpoint ${endpoints[i + 1]}...`
+        );
+        continue;
+      }
+    } catch (err: any) {
+      lastError =
+        err.name === "TimeoutError" || err.message?.includes("aborted")
+          ? "Steadfast সার্ভার সংযোগ টাইমআউট (১০ সেকেন্ড)।"
+          : `Steadfast সার্ভারে সংযোগ ব্যর্থ: ${err.message || "Network Error"}`;
+
+      if (!isLast) {
+        console.warn(
+          `[Steadfast API] Endpoint ${baseUrl} network error (${lastError}). Trying fallback endpoint ${endpoints[i + 1]}...`
+        );
+        continue;
+      }
+    }
+  }
+
+  return {
+    ok: false,
+    status: lastStatus,
+    data: lastData,
+    endpointUsed: endpoints[endpoints.length - 1],
+    errorMessage: lastError,
+  };
+}
+
+/**
  * Tests connection to Steadfast Courier by calling GET /get_balance
  * to verify credentials and return current delivery wallet balance.
  */
@@ -117,77 +261,52 @@ export async function testSteadfastConnection(
   secretKey?: string
 ): Promise<SteadfastBalanceResult> {
   const creds = resolveSteadfastCredentials(apiKey, secretKey);
+  const cleanKey = creds.apiKey.trim();
+  const cleanSecret = creds.secretKey.trim();
 
-  if (!creds.apiKey || !creds.secretKey) {
+  if (!cleanKey || !cleanSecret) {
     return {
       success: false,
       message: "Steadfast API Key এবং Secret Key কনফিগার করা নেই। অনুগ্রহ করে সেটিংস থেকে প্রদান করুন।",
     };
   }
 
-  const endpoint = `${creds.baseUrl || STEADFAST_BASE_URL}/get_balance`;
+  const res = await fetchSteadfastWithFallback({
+    path: "/get_balance",
+    method: "GET",
+    apiKey: cleanKey,
+    secretKey: cleanSecret,
+  });
 
-  try {
-    const response = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": creds.apiKey,
-        "Secret-Key": creds.secretKey,
-      },
-      cache: "no-store",
-    });
+  if (res.ok) {
+    const data = res.data;
+    const balanceVal =
+      data.current_balance !== undefined
+        ? Number(data.current_balance)
+        : data.balance !== undefined
+        ? Number(data.balance)
+        : data.data?.current_balance !== undefined
+        ? Number(data.data.current_balance)
+        : 0;
 
-    const responseText = await response.text();
-    let data: any = {};
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      data = { message: responseText };
-    }
-
-    // Steadfast typically returns:
-    // { "status": 200, "current_balance": 1250 } or { "current_balance": ... }
-    const isOkStatus = data.status === 200 || response.ok;
-
-    if (isOkStatus) {
-      const balanceVal =
-        data.current_balance !== undefined
-          ? Number(data.current_balance)
-          : data.balance !== undefined
-          ? Number(data.balance)
-          : data.data?.current_balance !== undefined
-          ? Number(data.data.current_balance)
-          : 0;
-
-      const safeBalance = isNaN(balanceVal) ? 0 : balanceVal;
-
-      return {
-        success: true,
-        current_balance: safeBalance,
-        balance: safeBalance,
-        message: data.message || `কানেকশন সফল! বর্তমান ওয়ালেট ব্যালেন্স: ৳${safeBalance.toLocaleString("bn-BD")}`,
-        rawResponse: data,
-      };
-    }
-
-    const errorMsg =
-      data.message ||
-      data.error ||
-      `Steadfast সার্ভার প্রতিক্রিয়া প্রদান করেনি (HTTP ${response.status})`;
+    const safeBalance = isNaN(balanceVal) ? 0 : balanceVal;
+    const formatted = "৳" + toBanglaDigits(Math.round(safeBalance).toLocaleString("en-IN"));
 
     return {
-      success: false,
-      message: errorMsg,
+      success: true,
+      current_balance: safeBalance,
+      balance: safeBalance,
+      formattedBalance: formatted,
+      message: `সংযোগ সফল! বর্তমান ডেলিভারি ব্যালেন্স: ${formatted}`,
       rawResponse: data,
     };
-  } catch (err: any) {
-    console.error("[testSteadfastConnection] Network error:", err);
-    return {
-      success: false,
-      message: `Steadfast সার্ভারে সংযোগ ব্যর্থ হয়েছে: ${err.message || "Network Error"}`,
-    };
   }
+
+  return {
+    success: false,
+    message: res.errorMessage || "Steadfast সার্ভার থেকে ব্যালেন্স লোড করা যায়নি।",
+    rawResponse: res.data,
+  };
 }
 
 /**
@@ -202,8 +321,10 @@ export async function createSteadfastOrder(
     credentials?.apiKey,
     credentials?.secretKey
   );
+  const cleanKey = creds.apiKey.trim();
+  const cleanSecret = creds.secretKey.trim();
 
-  if (!creds.apiKey || !creds.secretKey) {
+  if (!cleanKey || !cleanSecret) {
     return {
       success: false,
       message: "Steadfast API Key বা Secret Key কনফিগার করা হয়নি।",
@@ -218,43 +339,28 @@ export async function createSteadfastOrder(
     };
   }
 
-  const endpoint = `${creds.baseUrl || STEADFAST_BASE_URL}/create_order`;
-
   const requestBody = {
-    invoice: payload.invoice,
+    invoice: payload.invoice.trim(),
     recipient_name: (payload.recipient_name || "সম্মানিত গ্রাহক").trim(),
-    recipient_phone: (payload.recipient_phone || "").trim(),
-    recipient_address: (payload.recipient_address || "").trim(),
+    recipient_phone: payload.recipient_phone.trim(),
+    recipient_address: payload.recipient_address.trim(),
     cod_amount: Math.max(0, Math.round(Number(payload.cod_amount) || 0)),
     note: payload.note || "Sunnah Source Parcel",
   };
 
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": creds.apiKey,
-        "Secret-Key": creds.secretKey,
-      },
-      body: JSON.stringify(requestBody),
-      cache: "no-store",
-    });
+  const res = await fetchSteadfastWithFallback({
+    path: "/create_order",
+    method: "POST",
+    apiKey: cleanKey,
+    secretKey: cleanSecret,
+    body: requestBody,
+  });
 
-    const responseText = await response.text();
-    let data: any = {};
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      data = { message: responseText };
-    }
-
-    // Steadfast typically returns:
-    // { "status": 200, "message": "...", "consignment": { "consignment_id": 12345, "tracking_code": "...", "status": "in_review" } }
-    const isOkStatus = data.status === 200 || data.status === 201 || response.ok;
+  if (res.ok) {
+    const data = res.data;
     const consignment = data.consignment || data.data;
 
-    if (isOkStatus && consignment && (consignment.tracking_code || consignment.consignment_id)) {
+    if (consignment && (consignment.tracking_code || consignment.consignment_id)) {
       const trackingCode = String(consignment.tracking_code || consignment.consignment_id);
       const consignmentId = consignment.consignment_id || trackingCode;
       const status = String(consignment.status || "in_review");
@@ -285,25 +391,13 @@ export async function createSteadfastOrder(
         rawResponse: data,
       };
     }
-
-    const errorMessage =
-      data.message ||
-      data.error ||
-      (typeof data.errors === "object" ? JSON.stringify(data.errors) : null) ||
-      `Steadfast API ত্রুটি (HTTP ${response.status})`;
-
-    return {
-      success: false,
-      message: errorMessage,
-      rawResponse: data,
-    };
-  } catch (err: any) {
-    console.error("[createSteadfastOrder] Network error:", err);
-    return {
-      success: false,
-      message: `Steadfast সার্ভারের সাথে যোগাযোগ করা যায়নি: ${err.message || "Network Error"}`,
-    };
   }
+
+  return {
+    success: false,
+    message: res.errorMessage || "Steadfast এ বুকিং ব্যর্থ হয়েছে।",
+    rawResponse: res.data,
+  };
 }
 
 /**
@@ -326,60 +420,40 @@ export async function getSteadfastDeliveryStatus(
     credentials?.apiKey,
     credentials?.secretKey
   );
+  const cleanKey = creds.apiKey.trim();
+  const cleanSecret = creds.secretKey.trim();
 
-  if (!creds.apiKey || !creds.secretKey) {
+  if (!cleanKey || !cleanSecret) {
     return {
       success: false,
       message: "Steadfast API Key বা Secret Key কনফিগার করা হয়নি।",
     };
   }
 
-  const endpoint = `${creds.baseUrl || STEADFAST_BASE_URL}/status_by_cid/${encodeURIComponent(cleanId)}`;
+  const res = await fetchSteadfastWithFallback({
+    path: `/status_by_cid/${encodeURIComponent(cleanId)}`,
+    method: "GET",
+    apiKey: cleanKey,
+    secretKey: cleanSecret,
+  });
 
-  try {
-    const response = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": creds.apiKey,
-        "Secret-Key": creds.secretKey,
-      },
-      cache: "no-store",
-    });
-
-    const responseText = await response.text();
-    let data: any = {};
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      data = { message: responseText };
-    }
-
-    const isOkStatus = data.status === 200 || response.ok;
-
-    if (isOkStatus) {
-      const deliveryStatus =
-        data.delivery_status || data.status_name || data.status || "unknown";
-
-      return {
-        success: true,
-        status: String(deliveryStatus),
-        delivery_status: String(deliveryStatus),
-        message: data.message || `ডেলিভারি স্ট্যাটাস: ${deliveryStatus}`,
-        rawResponse: data,
-      };
-    }
+  if (res.ok) {
+    const data = res.data;
+    const deliveryStatus =
+      data.delivery_status || data.status_name || data.status || "unknown";
 
     return {
-      success: false,
-      message: data.message || `স্ট্যাটাস পাওয়া যায়নি (HTTP ${response.status})`,
+      success: true,
+      status: String(deliveryStatus),
+      delivery_status: String(deliveryStatus),
+      message: data.message || `ডেলিভারি স্ট্যাটাস: ${deliveryStatus}`,
       rawResponse: data,
     };
-  } catch (err: any) {
-    console.error("[getSteadfastDeliveryStatus] Network error:", err);
-    return {
-      success: false,
-      message: `Steadfast সার্ভারের সাথে যোগাযোগ করা যায়নি: ${err.message || "Network Error"}`,
-    };
   }
+
+  return {
+    success: false,
+    message: res.errorMessage || "স্ট্যাটাস পাওয়া যায়নি।",
+    rawResponse: res.data,
+  };
 }

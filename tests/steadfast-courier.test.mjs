@@ -3,14 +3,19 @@ import assert from "node:assert/strict";
 import {
   getSteadfastTrackingUrl,
   STEADFAST_BASE_URL,
+  STEADFAST_PRIMARY_BASE_URL,
+  STEADFAST_SECONDARY_BASE_URL,
+  STEADFAST_USER_AGENT,
 } from "../src/lib/services/steadfast.ts";
 import { DEFAULT_COURIER_SETTINGS } from "../src/types/settings.types.ts";
 
 test("Steadfast Courier Integration Suite", async (t) => {
-  await t.test("1. Base URL & Defaults adhere to official Steadfast specifications", () => {
-    assert.equal(STEADFAST_BASE_URL, "https://portal.steadfast.com.bd/api/v1");
+  await t.test("1. Dual Base URLs & Cloudflare headers adhere to official specifications", () => {
+    assert.equal(STEADFAST_PRIMARY_BASE_URL, "https://portal.packzy.com/api/v1");
+    assert.equal(STEADFAST_SECONDARY_BASE_URL, "https://portal.steadfast.com.bd/api/v1");
+    assert.equal(STEADFAST_BASE_URL, "https://portal.packzy.com/api/v1");
+    assert.ok(STEADFAST_USER_AGENT.includes("SunnahSource/1.0"));
     assert.equal(DEFAULT_COURIER_SETTINGS.provider, "steadfast");
-    assert.equal(DEFAULT_COURIER_SETTINGS.baseUrl, "https://portal.steadfast.com.bd/api/v1");
     assert.equal(DEFAULT_COURIER_SETTINGS.isConfigured, false);
   });
 
@@ -69,4 +74,3 @@ test("Steadfast Courier Integration Suite", async (t) => {
     assert.ok(result.message.includes("আইডি আবশ্যক"));
   });
 });
-

@@ -156,6 +156,7 @@ export function SettingsManager({ data }: SettingsManagerProps) {
     tested: boolean;
     success: boolean;
     balance?: number;
+    formattedBalance?: string;
     message: string;
   } | null>(null);
 
@@ -237,19 +238,36 @@ export function SettingsManager({ data }: SettingsManagerProps) {
           secretKey: cleanSecretKey,
         });
 
-        setConnectionStatus({
-          tested: true,
-          success: res.success,
-          balance: res.balance,
-          message: res.message,
-        });
-
         if (res.success) {
-          setCourierFeedback({
-            type: "success",
+          // Auto-save the validated keys
+          const saveRes = await saveCourierSettingsAction({
+            apiKey: cleanApiKey,
+            secretKey: cleanSecretKey,
+          });
+
+          if (saveRes.success && saveRes.data) {
+            setCourier(saveRes.data);
+          }
+
+          setConnectionStatus({
+            tested: true,
+            success: true,
+            balance: res.balance,
+            formattedBalance: res.formattedBalance,
             message: res.message,
           });
+
+          setCourierFeedback({
+            type: "success",
+            message: `${res.message} (ক্রেডেনশিয়াল স্বয়ংক্রিয়ভাবে সংরক্ষিত হয়েছে)`,
+          });
         } else {
+          setConnectionStatus({
+            tested: true,
+            success: false,
+            message: res.message,
+          });
+
           setCourierFeedback({
             type: "error",
             message: res.message,
@@ -618,7 +636,7 @@ export function SettingsManager({ data }: SettingsManagerProps) {
               <div
                 className={`p-4 sm:p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all ${
                   connectionStatus.success
-                    ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-950"
+                    ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 border-emerald-300 text-emerald-950 shadow-xs"
                     : "bg-rose-50 border-rose-200 text-rose-900"
                 }`}
               >
@@ -626,24 +644,26 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                       connectionStatus.success
-                        ? "bg-emerald-600 text-white"
+                        ? "bg-emerald-600 text-white shadow-xs"
                         : "bg-rose-600 text-white"
                     }`}
                   >
                     {connectionStatus.success ? (
-                      <Wallet className="w-5 h-5" />
+                      <CheckCircle2 className="w-5 h-5" />
                     ) : (
                       <AlertTriangle className="w-5 h-5" />
                     )}
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-charcoal-600">
+                    <div className="text-xs font-semibold text-emerald-800">
                       {connectionStatus.success
-                        ? "স্টিডফাস্ট লাইভ ডেলিভারি ওয়ালেট ব্যালেন্স"
+                        ? "স্টিডফাস্ট এপিআই কানেকশন সক্রিয় ও কি সংরক্ষিত"
                         : "কানেকশন টেস্ট স্ট্যাটাস"}
                     </div>
                     <div className="text-sm font-bold text-charcoal-900 mt-0.5">
-                      {connectionStatus.message}
+                      {connectionStatus.success
+                        ? `সংযোগ সফল! বর্তমান ডেলিভারি ব্যালেন্স: ${connectionStatus.formattedBalance || formatBDT(connectionStatus.balance ?? 0)}`
+                        : connectionStatus.message}
                     </div>
                   </div>
                 </div>
@@ -651,10 +671,10 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                 {connectionStatus.success && (
                   <div className="text-right shrink-0">
                     <span className="text-[11px] font-bold text-emerald-700 block uppercase tracking-wider">
-                      বর্তমান ব্যালেন্স
+                      বর্তমান ডেলিভারি ব্যালেন্স
                     </span>
                     <span className="text-xl sm:text-2xl font-black text-emerald-800 font-sans">
-                      {formatBDT(connectionStatus.balance ?? 0)}
+                      {connectionStatus.formattedBalance || formatBDT(connectionStatus.balance ?? 0)}
                     </span>
                   </div>
                 )}
