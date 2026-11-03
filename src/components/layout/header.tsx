@@ -30,6 +30,7 @@ import { ALL_PRODUCTS } from "@/lib/data/products";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
+import { MobileNavDrawer } from "./mobile-nav-drawer";
 
 interface NavItem {
   label: string;
@@ -103,11 +104,11 @@ export const Header: React.FC = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<CustomerUser | null>(null);
-  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
+
   const [mounted, setMounted] = useState(false);
 
   const desktopSearchRef = useRef<HTMLFormElement>(null);
-  const mobileSearchRef = useRef<HTMLFormElement>(null);
+
   const moreMenuRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
@@ -245,8 +246,8 @@ export const Header: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       const inDesktop = desktopSearchRef.current?.contains(target);
-      const inMobile = mobileSearchRef.current?.contains(target);
-      if (!inDesktop && !inMobile) {
+
+      if (!inDesktop) {
         setIsSearchOpen(false);
       }
       if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
@@ -427,27 +428,23 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-1.5 text-charcoal-700 hover:text-brand-700 rounded-lg transition-colors"
-              aria-label={isMobileMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
+              aria-label="মেনু খুলুন"
             >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <svg
-                  className="w-6 h-6"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="11" y1="18" x2="21" y2="18" />
-                </svg>
-              )}
+              <svg
+                className="w-6 h-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="11" y1="18" x2="21" y2="18" />
+              </svg>
             </button>
             <Link
               href="/"
@@ -912,283 +909,14 @@ export const Header: React.FC = () => {
         </div>
       </nav>
 
-      {/* 3. Mobile Collapsible Navigation Menu with Category Accordion */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-surface-border bg-white px-4 py-4 space-y-3 font-bengali">
-          <form
-            ref={mobileSearchRef}
-            role="search"
-            onSubmit={handleSearch}
-            className="relative flex items-center w-full h-10 bg-[#F3F4F6] hover:bg-[#EEF0F3] focus-within:bg-white focus:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
-          >
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setIsSearchOpen(true);
-              }}
-              onFocus={() => setIsSearchOpen(true)}
-              placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-charcoal-900 placeholder:text-stone-400 pl-10 pr-10 rounded-full"
-              aria-label="মোবাইল সার্চ"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
-                aria-label="মুছে ফেলুন"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {renderSearchDropdown()}
-          </form>
-          <nav aria-label="Mobile Navigation" className="flex flex-col space-y-1 text-sm font-semibold text-charcoal-700 pt-2">
-            <Link
-              href="/shop?filter=offer"
-              prefetch={true}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="py-2.5 px-2 text-sm font-bold text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg flex items-center justify-between border-b border-surface-border/60"
-            >
-              <span className="flex items-center gap-1.5">
-                <span>🔥</span>
-                <span>অফার জোন</span>
-              </span>
-              <span className="text-[11px] text-amber-600 font-sans font-semibold">
-                Offer Zone
-              </span>
-            </Link>
-            {NAV_ITEMS.map((item) => {
-              const category = item.categorySlug
-                ? CATEGORIES_DATA.find((c) => c.slug === item.categorySlug)
-                : null;
-              const categoryProducts = item.categorySlug
-                ? ALL_PRODUCTS.filter(
-                  (p) =>
-                    p.categorySlug === item.categorySlug ||
-                    (item.categorySlug === "combos" && p.isCombo)
-                )
-                : [];
-              const isExpanded = expandedMobileCategory === item.categorySlug;
-
-              if (item.hasMegaMenu && category && categoryProducts.length > 0) {
-                return (
-                  <div key={item.label} className="border-b border-surface-border/60 pb-1">
-                    <div className="flex items-center justify-between">
-                      <Link
-                        href={item.href}
-                        prefetch={true}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="py-2 px-2 text-sm font-bold text-charcoal-800 hover:text-brand-700 flex items-center gap-2 flex-1"
-                      >
-                        <span>{category.nameBn}</span>
-                        <span className="text-[11px] text-charcoal-400 font-sans font-normal">
-                          ({item.label})
-                        </span>
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedMobileCategory(isExpanded ? null : item.categorySlug!)
-                        }
-                        className="p-2 text-charcoal-500 hover:text-brand-700 transition-colors"
-                        aria-label="ক্যাটাগরি পণ্য দেখুন"
-                      >
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180 text-brand-700" : ""
-                            }`}
-                        />
-                      </button>
-                    </div>
-
-                    {isExpanded && (
-                      <div className="pl-2 pr-1 py-2 space-y-2 bg-surface-canvas/50 rounded-xl mb-2">
-                        {categoryProducts.slice(0, 3).map((prod) => {
-                          const v = prod.variants.find((x) => x.isDefault) || prod.variants[0];
-                          const price = v ? v.salePrice ?? v.regularPrice : 0;
-                          const img = prod.images?.[0] || "/images/hero-honey.png";
-                          return (
-                            <Link
-                              key={prod.id}
-                              href={`/product/${prod.slug}`}
-                              prefetch={true}
-                              onClick={() => setIsMobileMenuOpen(false)}
-                              className="flex items-center gap-2.5 p-1.5 rounded-lg bg-white border border-surface-border/70 hover:border-brand-300"
-                            >
-                              <div className="w-10 h-10 rounded-md overflow-hidden bg-white border border-surface-border/60 shrink-0">
-                                <Image
-                                  src={img}
-                                  alt={prod.titleBn}
-                                  width={40}
-                                  height={40}
-                                  className="w-full h-full object-contain p-0.5"
-                                  unoptimized={img.startsWith("/")}
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-charcoal-800 line-clamp-1">
-                                  {prod.titleBn}
-                                </p>
-                                <span className="text-xs font-bold text-brand-700 font-mono">
-                                  ৳{price}
-                                </span>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                        <Link
-                          href={item.href}
-                          prefetch={true}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-brand-700 hover:underline pt-1"
-                        >
-                          <span>সব দেখুন ({category.nameBn})</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  prefetch={true}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="py-2 px-2 rounded-lg hover:bg-brand-50 hover:text-brand-700 transition-colors text-sm font-bold text-charcoal-800"
-                >
-                  {item.labelBn || item.label}
-                </Link>
-              );
-            })}
-            <div className="pt-3 mt-1 border-t border-surface-border flex flex-col gap-2">
-              <Link
-                href="/wishlist"
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between py-1 text-xs font-bold text-charcoal-800 hover:text-rose-600 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Heart className="w-4 h-4 text-rose-500" />
-                  <span>আমার পছন্দের তালিকা</span>
-                </div>
-                {displayWishlistCount > 0 && (
-                  <span className="bg-rose-100 text-rose-700 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {displayWishlistCount}টি
-                  </span>
-                )}
-              </Link>
-              <Link
-                href="/account"
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 py-1 text-xs font-bold text-brand-800 hover:text-brand-900 transition-colors"
-              >
-                <LayoutDashboard className="w-4 h-4 text-brand-700" />
-                <span>আমার ড্যাশবোর্ড</span>
-              </Link>
-              <Link
-                href="/account/orders"
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
-              >
-                <Package className="w-4 h-4 text-brand-700" />
-                <span>আমার অর্ডারসমূহ</span>
-              </Link>
-              <Link
-                href="/about"
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
-              >
-                <Info className="w-4 h-4 text-brand-700" />
-                <span>About Us</span>
-              </Link>
-              <Link
-                href="/faq"
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
-              >
-                <HelpCircle className="w-4 h-4 text-brand-700" />
-                <span>Faqs</span>
-              </Link>
-              <Link
-                href="/contact"
-                prefetch={true}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 py-1 text-xs font-bold text-charcoal-800 hover:text-brand-700 transition-colors"
-              >
-                <Phone className="w-4 h-4 text-brand-700" />
-                <span>যোগাযোগ</span>
-              </Link>
-              {currentUser ? (
-                <div className="pt-2 mt-1 border-t border-surface-border/60 space-y-2">
-                  <div className="flex items-center justify-between text-xs bg-stone-50 p-2.5 rounded-xl border border-stone-200/60">
-                    <div className="min-w-0 flex-1 pr-2">
-                      <span className="text-[10px] text-charcoal-400 block font-sans">লগইন করা অ্যাকাউন্ট</span>
-                      <span className="font-bold text-brand-800 truncate block font-mono text-xs">
-                        {currentUser.name || currentUser.phone || currentUser.email}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold py-1 px-2 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>লগআউট</span>
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-normal text-charcoal-500 px-1">
-                    <Link
-                      href="/account"
-                      prefetch={true}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="hover:text-brand-700 font-semibold text-brand-800"
-                    >
-                      আমার ড্যাশবোর্ড →
-                    </Link>
-                    <Link
-                      href="/track-order"
-                      prefetch={true}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="hover:text-brand-700"
-                    >
-                      Track Order
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between text-xs font-normal text-charcoal-500 pt-2 mt-1 border-t border-surface-border/50">
-                  <Link
-                    href="/track-order"
-                    prefetch={true}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="hover:text-brand-700"
-                  >
-                    Track Order
-                  </Link>
-                  <Link
-                    href="/login"
-                    prefetch={true}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="hover:text-brand-700 font-semibold text-brand-800"
-                  >
-                    সাইন ইন / রেজিস্টার →
-                  </Link>
-                </div>
-              )}
-            </div>
-          </nav>
-        </div>
-      )}
+      {/* 3. Mobile Navigation Drawer (Luxury Slide-over Left Drawer) */}
+      <MobileNavDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        wishlistCount={displayWishlistCount}
+      />
     </header>
   );
 };
