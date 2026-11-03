@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, User, ChevronRight, LogOut } from "lucide-react";
+import { X, User, ChevronRight, LogOut, Search } from "lucide-react";
+import { useMobileSearchStore } from "@/store/use-mobile-search-store";
 import { cn } from "@/lib/utils";
 
 export interface MobileNavDrawerProps {
@@ -68,6 +69,7 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const prevPathnameRef = useRef(pathname);
+  const openSearch = useMobileSearchStore((state) => state.openSearch);
 
   // Avoid hydration mismatch between SSR and client mounting
   useEffect(() => {
@@ -185,6 +187,22 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
 
         {/* Scrollable Body: Main Categories & Quick Links */}
         <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+          {/* 2. Seamless Search Field Trigger */}
+          <div className="px-4 pt-2 pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                openSearch();
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-stone-100/90 hover:bg-brand-50/80 active:bg-brand-100/60 rounded-xl border border-stone-200/90 hover:border-brand-300 text-charcoal-400 hover:text-brand-800 transition-all text-left text-xs font-medium cursor-pointer shadow-xs group"
+              aria-label="পণ্য খুঁজুন"
+            >
+              <Search className="w-4 h-4 text-brand-700 group-hover:scale-110 transition-transform shrink-0" />
+              <span className="truncate">খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন...</span>
+            </button>
+          </div>
+
           {/* Category Section Label */}
           <div className="px-5 pt-2 pb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal-400 font-sans">

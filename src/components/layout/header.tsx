@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
+import { useMobileMenuStore } from "@/store/use-mobile-menu-store";
+import { useMobileSearchStore } from "@/store/use-mobile-search-store";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { formatBDT, toBanglaDigits } from "@/lib/utils";
@@ -100,7 +102,11 @@ export const Header: React.FC = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobileMenuOpen = useMobileMenuStore((state) => state.isOpen);
+  const openMobileMenu = useMobileMenuStore((state) => state.openMenu);
+  const closeMobileMenu = useMobileMenuStore((state) => state.closeMenu);
+  const openMobileSearch = useMobileSearchStore((state) => state.openSearch);
+  const setIsMobileMenuOpen = (val: boolean) => (val ? openMobileMenu() : closeMobileMenu());
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<CustomerUser | null>(null);
@@ -741,8 +747,17 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Right: Quick Cart */}
-          <div className="flex md:hidden items-center shrink-0">
+          {/* Mobile Right: Quick Actions (Search Icon beside Cart) */}
+          <div className="flex md:hidden items-center gap-0.5 shrink-0">
+            {/* Mobile Search Button */}
+            <button
+              type="button"
+              onClick={() => openMobileSearch()}
+              className="flex items-center justify-center p-2 text-charcoal-700 hover:text-brand-700 active:scale-95 transition-all cursor-pointer"
+              aria-label="পণ্য খুঁজুন"
+            >
+              <Search className="w-5 h-5" />
+            </button>
             <button
               onClick={openDrawer}
               type="button"
