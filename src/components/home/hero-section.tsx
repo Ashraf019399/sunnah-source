@@ -39,7 +39,7 @@ const MAIN_BANNERS: BannerSlide[] = [
   },
 ];
 
-const TWIN_PROMOS = [
+export const TWIN_PROMOS = [
   {
     id: "promo-combo",
     image: "/images/banners/promo-combo.jpg",
@@ -297,8 +297,8 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Right Column: Twin Pure Graphic Promo Cards (Takes lg:col-span-4 - 33% width) */}
-        <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3.5 sm:gap-4 lg:gap-4 h-full justify-between">
+        {/* Right Column: Twin Pure Graphic Promo Cards (Takes lg:col-span-4 - 33% width, preserved on desktop >= lg) */}
+        <div className="hidden lg:flex lg:col-span-4 flex-col gap-3.5 sm:gap-4 lg:gap-4 h-full justify-between">
           {TWIN_PROMOS.map((promo) => (
             <Link
               key={promo.id}

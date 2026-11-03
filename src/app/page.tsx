@@ -12,6 +12,8 @@ import { Product } from "@/types/commerce.types";
 import { ShieldCheck, Truck, Clock, Award, ArrowRight } from "lucide-react";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { HeroSection } from "@/components/home/hero-section";
+import { FeaturedCategoriesBubbleStrip } from "@/components/home/featured-categories-bubble-strip";
+import { MobilePromoBanners } from "@/components/home/mobile-promo-banners";
 
 // Top 8 Sunnah Source Best Selling products
 const BEST_SELLER_SLUGS = [
@@ -40,59 +42,79 @@ export default function HomePage() {
       });
     }
   }
+
   return (
     <div className="min-h-screen flex flex-col bg-surface-canvas font-bengali">
       {/* মূল হেডার ও সার্চ বার */}
       <Header />
 
       {/* ৩. স্টোরফ্রন্ট বডি */}
-      <main className="flex-1 space-y-12 pb-16 lg:pb-12">
-        {/* হিরো ব্যানার সেকশন — Sunnah Royal Split */}
+      <main className="flex-1 space-y-8 sm:space-y-10 lg:space-y-12 pb-16 lg:pb-12">
+        {/* ১. হিরো ব্যানার সেকশন — Sunnah Royal Split (ডেস্কটপে স্লাইডার ও ব্যানার পাশাপাশি, মোবাইলে শুধু মেইন স্লাইডার) */}
         <HeroSection />
 
-        {/* ৪টি ট্রাস্ট ফিচার ব্যাজ */}
+        {/* ২. মোবাইল "জনপ্রিয় ক্যাটাগরি" বাবল স্ট্রিপ (Featured Categories Bubble Strip) */}
+        <FeaturedCategoriesBubbleStrip />
+
+        {/* ৩. ৪টি ট্রাস্ট ফিচার ব্যাজ (কমপ্যাক্ট ২x২ গ্রিড) */}
         <section className="container mx-auto max-w-7xl px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 px-6 sm:px-8 lg:px-12 py-5 bg-white rounded-2xl border border-surface-border shadow-subtle text-xs">
-            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
-              <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
-                <ShieldCheck className="w-5 h-5" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 px-4 py-3.5 sm:px-8 sm:py-5 lg:px-12 bg-white rounded-2xl border border-surface-border shadow-subtle text-xs">
+            <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-3.5 w-full">
+              <div className="p-2 sm:p-2.5 bg-brand-50 text-brand-700 rounded-xl shrink-0">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">100% Pure & Natural</strong>
-                <span className="text-charcoal-500">Lab Tested & Certified</span>
+                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                  100% Pure & Natural
+                </strong>
+                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                  Lab Tested & Certified
+                </span>
               </div>
             </div>
-            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
-              <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
-                <Truck className="w-5 h-5" />
+            <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-3.5 w-full">
+              <div className="p-2 sm:p-2.5 bg-brand-50 text-brand-700 rounded-xl shrink-0">
+                <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">Nationwide Delivery</strong>
-                <span className="text-charcoal-500">Cash on Delivery Available</span>
+                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                  Nationwide Delivery
+                </strong>
+                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                  Cash on Delivery Available
+                </span>
               </div>
             </div>
-            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
-              <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
-                <Clock className="w-5 h-5" />
+            <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-3.5 w-full">
+              <div className="p-2 sm:p-2.5 bg-brand-50 text-brand-700 rounded-xl shrink-0">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">Fast Delivery</strong>
-                <span className="text-charcoal-500">Within 24-48 Hours</span>
+                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                  Fast Delivery
+                </strong>
+                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                  Within 24-48 Hours
+                </span>
               </div>
             </div>
-            <div className="flex items-center justify-start sm:justify-center gap-3.5 w-full">
-              <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl">
-                <Award className="w-5 h-5" />
+            <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-3.5 w-full">
+              <div className="p-2 sm:p-2.5 bg-brand-50 text-brand-700 rounded-xl shrink-0">
+                <Award className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900">7 Days Return</strong>
-                <span className="text-charcoal-500">Hassle-Free Guarantee</span>
+                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                  7 Days Return
+                </strong>
+                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                  Hassle-Free Guarantee
+                </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Naturo & Ghorer Bazar Inspired "Best Selling Products" Showcase */}
+        {/* ৪. Naturo & Ghorer Bazar Inspired "Best Selling Products" Showcase (পণ্য, মূল্য ও সরাসরি বাই নাও বাটন) */}
         <section className="container mx-auto max-w-7xl px-4">
           {/* Header Section */}
           <div className="text-center max-w-xl mx-auto">
@@ -125,7 +147,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ক্যাটাগরি তালিকা */}
+        {/* ৫. সেকেন্ডারি প্রমোশনাল ব্যানার (অফার ব্যানার - মোবাইলে বেস্ট সেলিং সেকশনের নিচে) */}
+        <MobilePromoBanners />
+
+        {/* ৬. ক্যাটাগরি তালিকা */}
         <section className="container mx-auto max-w-7xl px-4 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-surface-border">
             <div>

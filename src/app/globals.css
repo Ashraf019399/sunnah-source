@@ -4,3 +4,12 @@
 :root { --background: #FBF9F5; --foreground: #181A18; }
 body { background: var(--background); color: var(--foreground); overflow-x: hidden; }
 :focus-visible { outline: 2px solid #1B4D2E !important; outline-offset: 3px !important; }
+
+/* Custom scrollbar hiding utilities for horizontal strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
