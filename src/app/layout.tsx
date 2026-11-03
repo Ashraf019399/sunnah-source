@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
+import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
@@ -124,6 +125,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AuthRecoveryRedirect />
         {children}
         <FloatingWhatsApp />
+        <ScrollToTop />
         <LiveSalesNotification />
       </body>
     </html>
