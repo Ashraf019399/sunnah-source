@@ -7,8 +7,6 @@ import { useRouter } from "next/navigation";
 import {
   ChevronRight,
   Heart,
-  Truck,
-  ShieldCheck,
   ArrowRight,
   Info,
 } from "lucide-react";
@@ -262,28 +260,6 @@ export function ProductDetailsContent({
                 ))}
               </div>
             )}
-
-            {/* Quick Trust Signals Below Gallery */}
-            <div className="p-4 bg-white rounded-2xl border border-surface-border shadow-subtle grid grid-cols-2 gap-3 text-xs text-charcoal-700">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-brand-50 text-brand-700 rounded-xl shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <strong className="block text-charcoal-900 leading-tight">১০০% নির্ভেজাল</strong>
-                  <span className="text-[11px] text-charcoal-500">ল্যাব সার্টিফাইড</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-brand-50 text-brand-700 rounded-xl shrink-0">
-                  <Truck className="w-4 h-4" />
-                </div>
-                <div>
-                  <strong className="block text-charcoal-900 leading-tight">সারাদেশে হোম ডেলিভারি</strong>
-                  <span className="text-[11px] text-charcoal-500">ক্যাশ অন ডেলিভারি</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right Column: Upgraded Product Info & Variant Selectors (7 cols on lg) */}
