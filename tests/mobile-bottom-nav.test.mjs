@@ -63,28 +63,28 @@ test("Senior-Architect-Grade Mobile Bottom Navigation Suite", async (t) => {
     // Protrusions check: floating circle must be removed completely
     assert.ok(!content.includes("-mt-5"), "Must completely remove '-mt-5' elevated floating circle");
 
-    // Action 1: Home (হোম) -> "/"
-    assert.ok(content.includes("হোম"), "Must have 'হোম' label");
+    // Action 1: Home -> "/"
+    assert.ok(content.includes("Home"), "Must have 'Home' label");
     assert.ok(content.includes('href="/"'), "Home must link to '/'");
 
-    // Action 2: Products (পণ্যসমূহ) -> "/shop"
-    assert.ok(content.includes("পণ্যসমূহ"), "Must have 'পণ্যসমূহ' label");
+    // Action 2: Products -> "/shop"
+    assert.ok(content.includes("Products"), "Must have 'Products' label");
     assert.ok(content.includes('href="/shop"'), "Products must link to '/shop'");
 
-    // Action 3: Cart (কার্ট) -> openDrawer with clean amber badge
-    assert.ok(content.includes("কার্ট"), "Must have 'কার্ট' label");
+    // Action 3: Cart -> openDrawer with clean amber badge
+    assert.ok(content.includes("Cart"), "Must have 'Cart' label");
     assert.ok(content.includes("openDrawer"), "Cart must trigger openDrawer");
     assert.ok(
       content.includes("bg-accent-amber") || content.includes("bg-amber-"),
       "Cart badge must use vibrant amber styling"
     );
 
-    // Action 4: Category (ক্যাটাগরি) -> Opens Mobile Nav Drawer
-    assert.ok(content.includes("ক্যাটাগরি"), "Must have 'ক্যাটাগরি' label");
-    assert.ok(content.includes("openMenu"), "Category must trigger openMenu");
+    // Action 4: Menu -> Opens Mobile Nav Drawer
+    assert.ok(content.includes("Menu"), "Must have 'Menu' label");
+    assert.ok(content.includes("openMenu"), "Menu must trigger openMenu");
 
-    // Action 5: Account (অ্যাকাউন্ট) -> "/account"
-    assert.ok(content.includes("অ্যাকাউন্ট"), "Must have 'অ্যাকাউন্ট' label");
+    // Action 5: Account -> "/account"
+    assert.ok(content.includes("Account"), "Must have 'Account' label");
     assert.ok(content.includes('href="/account"'), "Account must link to '/account'");
   });
 

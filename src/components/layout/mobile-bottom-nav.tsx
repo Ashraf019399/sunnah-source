@@ -39,7 +39,7 @@ export const MobileBottomNav: React.FC = () => {
     pathname === "/shop" ||
     pathname?.startsWith("/shop") ||
     pathname?.startsWith("/product");
-  const isCategoryActive =
+  const isMenuActive =
     pathname?.startsWith("/category") || pathname === "/combos";
   const isAccountActive =
     pathname === "/account" ||
@@ -50,11 +50,11 @@ export const MobileBottomNav: React.FC = () => {
     <>
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-t border-stone-200/70 shadow-[0_-2px_12px_rgba(0,0,0,0.03)] font-bengali pb-safe pb-[env(safe-area-inset-bottom,0px)]"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-t border-stone-200/70 shadow-[0_-2px_12px_rgba(0,0,0,0.03)] pb-safe pb-[env(safe-area-inset-bottom,0px)]"
       >
         {/* 5 Evenly Spaced, Flush and Flat Navigation Items */}
         <div className="grid grid-cols-5 h-14 max-w-md mx-auto items-center px-1 pt-1.5 pb-1">
-          {/* 1. হোম (Home) -> "/" */}
+          {/* 1. Home -> "/" */}
           <Link
             href="/"
             prefetch={true}
@@ -64,7 +64,7 @@ export const MobileBottomNav: React.FC = () => {
                 ? "text-brand-900 font-bold"
                 : "text-stone-500 hover:text-stone-700"
             )}
-            aria-label="হোম"
+            aria-label="Home"
           >
             <Home
               strokeWidth={1.8}
@@ -83,11 +83,11 @@ export const MobileBottomNav: React.FC = () => {
                   : "text-stone-500 hover:text-stone-700"
               )}
             >
-              হোম
+              Home
             </span>
           </Link>
 
-          {/* 2. পণ্যসমূহ (Products) -> "/shop" */}
+          {/* 2. Products -> "/shop" */}
           <Link
             href="/shop"
             prefetch={true}
@@ -97,7 +97,7 @@ export const MobileBottomNav: React.FC = () => {
                 ? "text-brand-900 font-bold"
                 : "text-stone-500 hover:text-stone-700"
             )}
-            aria-label="পণ্যসমূহ"
+            aria-label="Products"
           >
             <Grid
               strokeWidth={1.8}
@@ -116,16 +116,16 @@ export const MobileBottomNav: React.FC = () => {
                   : "text-stone-500 hover:text-stone-700"
               )}
             >
-              পণ্যসমূহ
+              Products
             </span>
           </Link>
 
-          {/* 3. কার্ট (Cart) -> Opens Cart Drawer */}
+          {/* 3. Cart -> Opens Cart Drawer */}
           <button
             type="button"
             onClick={openDrawer}
             className="group flex flex-col items-center justify-center flex-1 h-full relative text-stone-500 hover:text-stone-700 transition-colors active:scale-95 cursor-pointer"
-            aria-label="কার্ট খুলুন"
+            aria-label="Cart"
           >
             <div className="relative">
               <ShoppingBag
@@ -139,27 +139,27 @@ export const MobileBottomNav: React.FC = () => {
               )}
             </div>
             <span className="text-[10px] tracking-tight font-medium mt-0.5 leading-none text-stone-500 group-hover:text-stone-700">
-              কার্ট
+              Cart
             </span>
           </button>
 
-          {/* 4. ক্যাটাগরি (Category) -> Opens Mobile Nav Drawer */}
+          {/* 4. Menu -> Opens Mobile Nav Drawer */}
           <button
             type="button"
             onClick={openMenu}
             className={cn(
               "group flex flex-col items-center justify-center flex-1 h-full transition-colors relative cursor-pointer active:scale-95",
-              isCategoryActive
+              isMenuActive
                 ? "text-brand-900 font-bold"
                 : "text-stone-500 hover:text-stone-700"
             )}
-            aria-label="ক্যাটাগরি"
+            aria-label="Menu"
           >
             <Layers
               strokeWidth={1.8}
               className={cn(
                 "w-5 h-5 transition-transform duration-200 group-hover:scale-110",
-                isCategoryActive
+                isMenuActive
                   ? "text-brand-900"
                   : "text-stone-500 group-hover:text-stone-700"
               )}
@@ -167,16 +167,16 @@ export const MobileBottomNav: React.FC = () => {
             <span
               className={cn(
                 "text-[10px] tracking-tight font-medium mt-0.5 leading-none transition-colors",
-                isCategoryActive
+                isMenuActive
                   ? "text-brand-900 font-bold"
                   : "text-stone-500 hover:text-stone-700"
               )}
             >
-              ক্যাটাগরি
+              Menu
             </span>
           </button>
 
-          {/* 5. অ্যাকাউন্ট (Account) -> "/account" */}
+          {/* 5. Account -> "/account" */}
           <Link
             href="/account"
             prefetch={true}
@@ -186,7 +186,7 @@ export const MobileBottomNav: React.FC = () => {
                 ? "text-brand-900 font-bold"
                 : "text-stone-500 hover:text-stone-700"
             )}
-            aria-label="অ্যাকাউন্ট"
+            aria-label="Account"
           >
             <User
               strokeWidth={1.8}
@@ -205,7 +205,7 @@ export const MobileBottomNav: React.FC = () => {
                   : "text-stone-500 hover:text-stone-700"
               )}
             >
-              অ্যাকাউন্ট
+              Account
             </span>
           </Link>
         </div>
