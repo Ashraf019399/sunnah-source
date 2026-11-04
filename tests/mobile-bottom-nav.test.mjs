@@ -39,53 +39,37 @@ test("Senior-Architect-Grade Mobile Bottom Navigation Suite", async (t) => {
     assert.ok(content.startsWith('"use client"') || content.startsWith("'use client'"), "Must be a client component");
   });
 
-  await t.test("2. Background and top accent border styling meet frosted porcelain and emerald hairline specification", () => {
+  await t.test("2. Background and border styling meet clean frosted porcelain specification", () => {
     const content = fs.readFileSync(bottomNavPath, "utf-8");
 
-    // Frosted porcelain background
+    // Pure clean white / frosted background
     assert.ok(
       content.includes("bg-white/95 backdrop-blur-md"),
       "Must use ultra-clean frosted porcelain 'bg-white/95 backdrop-blur-md'"
     );
 
-    // 2px Sunnah Source emerald gradient hairline
+    // Border and shadow
     assert.ok(
-      content.includes("from-brand-800 via-emerald-600 to-brand-800"),
-      "Must include emerald gradient hairline 'from-brand-800 via-emerald-600 to-brand-800'"
-    );
-    assert.ok(
-      content.includes("h-[2px]") || content.includes("h-0.5"),
-      "Hairline must be 2px high"
-    );
-
-    // Subtle ambient shadow
-    assert.ok(
-      content.includes("shadow-") || content.includes("shadow-["),
-      "Must incorporate subtle ambient shadow"
+      content.includes("border-t border-stone-200 shadow-sm"),
+      "Must include clean subtle border and shadow 'border-t border-stone-200 shadow-sm'"
     );
   });
 
-  await t.test("3. Ergonomic 5-Action Thumb-Zone Layout is implemented with exact requirements", () => {
+  await t.test("3. Clean & Flat 5-Action Layout is implemented with exact requirements", () => {
     const content = fs.readFileSync(bottomNavPath, "utf-8");
 
-    // Action 1: Home (হোম)
+    // Protrusions check: floating circle must be removed completely
+    assert.ok(!content.includes("-mt-5"), "Must completely remove '-mt-5' elevated floating circle");
+
+    // Action 1: Home (হোম) -> "/"
     assert.ok(content.includes("হোম"), "Must have 'হোম' label");
     assert.ok(content.includes('href="/"'), "Home must link to '/'");
 
-    // Action 2: Menu (মেনু)
-    assert.ok(content.includes("মেনু"), "Must have 'মেনু' label");
-    assert.ok(content.includes("openMenu"), "Menu must trigger openMenu");
+    // Action 2: Products (পণ্যসমূহ) -> "/shop"
+    assert.ok(content.includes("পণ্যসমূহ"), "Must have 'পণ্যসমূহ' label");
+    assert.ok(content.includes('href="/shop"'), "Products must link to '/shop'");
 
-    // Action 3: Center Elevated Search Button
-    assert.ok(content.includes("-mt-5"), "Must have '-mt-5' elevated negative margin");
-    assert.ok(content.includes("w-12 h-12"), "Must be w-12 h-12 circular medallion");
-    assert.ok(content.includes("from-brand-800 to-brand-600"), "Must use Sunnah Source gradient from-brand-800 to-brand-600");
-    assert.ok(content.includes("ring-4 ring-white"), "Must feature crisp 4px white ring 'ring-4 ring-white'");
-    assert.ok(content.includes("shadow-lg"), "Must have shadow-lg elevation");
-    assert.ok(content.includes("active:scale-95 transition-transform"), "Must have active:scale-95 transition-transform micro-interaction");
-    assert.ok(content.includes("openSearch"), "Search medallion must trigger openSearch");
-
-    // Action 4: Cart (কার্ট)
+    // Action 3: Cart (কার্ট) -> openDrawer with clean amber badge
     assert.ok(content.includes("কার্ট"), "Must have 'কার্ট' label");
     assert.ok(content.includes("openDrawer"), "Cart must trigger openDrawer");
     assert.ok(
@@ -93,22 +77,21 @@ test("Senior-Architect-Grade Mobile Bottom Navigation Suite", async (t) => {
       "Cart badge must use vibrant amber styling"
     );
 
-    // Action 5: Account (অ্যাকাউন্ট)
+    // Action 4: Category (ক্যাটাগরি) -> Opens Mobile Nav Drawer
+    assert.ok(content.includes("ক্যাটাগরি"), "Must have 'ক্যাটাগরি' label");
+    assert.ok(content.includes("openMenu"), "Category must trigger openMenu");
+
+    // Action 5: Account (অ্যাকাউন্ট) -> "/account"
     assert.ok(content.includes("অ্যাকাউন্ট"), "Must have 'অ্যাকাউন্ট' label");
     assert.ok(content.includes('href="/account"'), "Account must link to '/account'");
   });
 
-  await t.test("4. Active Tab Indicator uses deep emerald icon and 4px gold dot", () => {
+  await t.test("4. Active route styling uses brand emerald text and icon", () => {
     const content = fs.readFileSync(bottomNavPath, "utf-8");
 
     assert.ok(
-      content.includes("text-brand-800 font-bold") || content.includes("text-brand-800"),
-      "Active tab icon and text must use deep emerald text-brand-800"
-    );
-    assert.ok(
-      content.includes("w-1 h-1 rounded-full bg-accent-amber") ||
-      content.includes("w-1 h-1 rounded-full bg-amber-"),
-      "Active indicator must use a soft 4px gold dot underneath active route"
+      content.includes("text-brand-800 font-semibold"),
+      "Active route styling must use 'text-brand-800 font-semibold'"
     );
   });
 
@@ -174,4 +157,3 @@ test("Senior-Architect-Grade Mobile Bottom Navigation Suite", async (t) => {
     );
   });
 });
-
