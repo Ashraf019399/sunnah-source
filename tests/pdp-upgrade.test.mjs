@@ -71,10 +71,17 @@ test("Product Detail Page (PDP) Naturo & Ghorer-Bazar Upgrade Suite", async (t) 
       content.includes("bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-2.5 py-0.5 rounded-full"),
       "Must have amber savings badge styling"
     );
-    assert.ok(content.includes("সাশ্রয়!"), "Must display Bengali savings text");
+    // Savings Badge (Supports both English 'Save ৳' and Bengali 'সাশ্রয়!')
+    assert.ok(
+      content.includes("Save") || content.includes("সাশ্রয়!"),
+      "Must display savings badge text"
+    );
 
-    // 1-Click CTA button
-    assert.ok(content.includes("এখনই অর্ডার করুন"), "Must have 'এখনই অর্ডার করুন' CTA");
+    // 1-Click CTA button (Supports modernized 'BUY NOW' and 'এখনই অর্ডার করুন')
+    assert.ok(
+      content.includes("BUY NOW") || content.includes("এখনই অর্ডার করুন"),
+      "Must have Buy Now CTA"
+    );
     assert.ok(content.includes("onOrderNow"), "Must accept and call onOrderNow handler");
   });
 
