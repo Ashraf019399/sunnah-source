@@ -1,12 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
-  Heart,
-  Share2,
-  Check,
-  Star,
-  CheckCircle2,
   Minus,
   Plus,
   ShoppingBag,
@@ -95,11 +90,7 @@ export function ProductInfo({
   onAddToCart,
   onOrderNow,
   isOutOfStock,
-  isWishlisted = false,
-  onToggleWishlist,
 }: ProductInfoProps) {
-  const [copiedLink, setCopiedLink] = useState(false);
-
   // Price calculations in English currency format
   const regularPrice = selectedVariant?.regularPrice ?? 0;
   const salePrice = selectedVariant?.salePrice;
@@ -108,20 +99,6 @@ export function ProductInfo({
   );
   const currentPrice = hasDiscount && salePrice !== undefined ? salePrice : regularPrice;
   const savings = hasDiscount ? regularPrice - currentPrice : 0;
-
-  const isLowStock = Boolean(
-    selectedVariant &&
-      selectedVariant.stockQuantity > 0 &&
-      selectedVariant.stockQuantity <= selectedVariant.lowStockThreshold
-  );
-
-  const handleShare = () => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    }
-  };
 
   const handleDecreaseQty = () => {
     if (quantity > 1) {
@@ -163,103 +140,25 @@ export function ProductInfo({
 
   return (
     <div className="bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-sm space-y-6 sm:space-y-7">
-      {/* 1. Header: Stock Status Badge & Subtle Controls */}
-      <div className="flex items-center justify-between gap-3">
-        {/* Stock Status Badge */}
-        <div>
-          {isOutOfStock ? (
-            <span className="bg-rose-50 text-rose-700 border border-rose-200/80 text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-              <span>Out of Stock</span>
-            </span>
-          ) : isLowStock ? (
-            <span className="bg-amber-50 text-amber-800 border border-amber-200/80 text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-              <span>Only {selectedVariant.stockQuantity} left</span>
-            </span>
-          ) : (
-            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>In Stock</span>
-            </span>
-          )}
-        </div>
-
-        {/* Wishlist & Share Buttons */}
-        <div className="flex items-center gap-2">
-          {onToggleWishlist && (
-            <button
-              type="button"
-              onClick={onToggleWishlist}
-              className={cn(
-                "inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all cursor-pointer",
-                isWishlisted
-                  ? "bg-rose-50 text-rose-600 border-rose-200 shadow-2xs"
-                  : "bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100 hover:text-stone-900"
-              )}
-              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            >
-              <Heart
-                className={cn(
-                  "w-3.5 h-3.5 transition-all duration-200",
-                  isWishlisted ? "fill-rose-500 text-rose-500 scale-110" : "text-stone-400"
-                )}
-              />
-              <span className="hidden sm:inline">
-                {isWishlisted ? "Wishlisted" : "Wishlist"}
-              </span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 transition-colors px-3 py-1.5 rounded-full border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer"
-            title="Share product link"
-          >
-            {copiedLink ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-700 font-medium">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-3.5 h-3.5 text-stone-500" />
-                <span className="hidden sm:inline">Share</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Product Title: Prominent Bengali with Clean Review Rating */}
+      {/* Element 1: Title & Rating */}
       <div className="space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight leading-snug font-bengali">
           {product.titleBn}
         </h1>
         {product.reviewCount > 0 && (
-          <div className="flex items-center gap-2 pt-0.5">
-            <a
-              href="#product-reviews"
-              className="flex items-center gap-1.5 text-xs hover:underline cursor-pointer group"
-            >
-              <div className="flex items-center text-amber-500">
-                <Star className="w-3.5 h-3.5 fill-current" />
-              </div>
-              <span className="font-mono font-bold text-stone-800">
-                {product.ratingAverage.toFixed(1)}
-              </span>
-              <span className="text-stone-400">
-                ({product.reviewCount} {product.reviewCount === 1 ? "review" : "reviews"})
-              </span>
-            </a>
+          <div className="flex items-center gap-1.5 text-xs text-stone-600">
+            <span className="text-amber-500 text-sm leading-none">★</span>
+            <span className="font-semibold text-stone-800">
+              {product.ratingAverage.toFixed(1)}
+            </span>
+            <span className="text-stone-400">({product.reviewCount})</span>
           </div>
         )}
       </div>
 
-      {/* 3. Price Display: English Currency Format (৳1,890) with Crossed-Out (৳2,090) & Clean Savings Pill */}
-      <div className="flex flex-wrap items-baseline gap-3 pt-1">
-        <span className="font-mono font-bold text-3xl sm:text-4xl text-stone-900 tracking-tight">
+      {/* Element 2: Price & Savings */}
+      <div className="flex flex-wrap items-baseline gap-3">
+        <span className="font-mono font-extrabold text-3xl sm:text-4xl text-stone-900 tracking-tight">
           ৳{currentPrice.toLocaleString("en-IN")}
         </span>
 
@@ -277,68 +176,51 @@ export function ProductInfo({
         )}
       </div>
 
-      {/* 4. Variant/Weight Selector: Sleek English Units (250g, 500g, 1kg, 1L, 5L) */}
-      {product.variants && product.variants.length > 0 && (
-        <div className="space-y-2.5 pt-1">
-          <div className="flex items-center justify-between text-xs sm:text-sm">
-            <label className="font-semibold text-stone-800">
-              Select Size / Weight:
+      {/* Element 3: Clean Size Selector & Quantity */}
+      <div className="space-y-5">
+        {/* Weight / Size Selector Pills */}
+        {product.variants && product.variants.length > 0 && (
+          <div className="space-y-2">
+            <label className="block text-xs sm:text-sm font-semibold text-stone-800">
+              Select Size:
             </label>
-            <span className="text-brand-900 font-medium">
-              Selected: {formatEnglishWeightLabel(selectedVariant)}
-            </span>
-          </div>
 
-          <div
-            className="flex flex-wrap gap-2.5"
-            role="radiogroup"
-            aria-label="Select size or weight variant"
-          >
-            {product.variants.map((variant) => {
-              const isSelected = selectedVariant?.id === variant.id;
-              const pillLabel = formatEnglishWeightLabel(variant);
-              const vPrice =
-                variant.salePrice && variant.salePrice > 0 && variant.salePrice < variant.regularPrice
-                  ? variant.salePrice
-                  : variant.regularPrice;
+            <div
+              className="flex flex-wrap gap-2.5"
+              role="radiogroup"
+              aria-label="Select size variant"
+            >
+              {product.variants.map((variant) => {
+                const isSelected = selectedVariant?.id === variant.id;
+                const pillLabel = formatEnglishWeightLabel(variant);
 
-              return (
-                <button
-                  key={variant.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => onVariantChange(variant)}
-                  className={cn(
-                    "px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all",
-                    isSelected
-                      ? "border-2 border-brand-800 bg-brand-50/70 text-brand-900 font-bold shadow-xs scale-[1.02]"
-                      : "border border-stone-200 bg-white text-stone-700 hover:border-brand-300 hover:bg-stone-50"
-                  )}
-                >
-                  <span className="font-medium">{pillLabel}</span>
-                  <span
+                return (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => onVariantChange(variant)}
                     className={cn(
-                      "font-mono text-xs",
-                      isSelected ? "text-brand-800 font-bold" : "text-stone-500"
+                      "px-4 py-2 rounded-xl text-xs sm:text-sm font-medium cursor-pointer transition-all",
+                      isSelected
+                        ? "border-2 border-brand-800 bg-brand-50/70 text-brand-900 font-bold shadow-xs scale-[1.02]"
+                        : "border border-stone-200 bg-white text-stone-700 hover:border-brand-300 hover:bg-stone-50"
                     )}
                   >
-                    ৳{vPrice.toLocaleString("en-IN")}
-                  </span>
-                  {isSelected && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-brand-800 shrink-0" />
-                  )}
-                </button>
-              );
-            })}
+                    {pillLabel}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 5. Quantity Selector: Clean Label "Quantity: [- 1 +]" */}
-      <div className="space-y-2 pt-1">
-        <label className="block text-xs sm:text-sm font-semibold text-stone-800">Quantity:</label>
-        <div className="flex items-center gap-3">
+        {/* Quantity Selector: Compact [- 1 +] */}
+        <div className="space-y-2">
+          <label className="block text-xs sm:text-sm font-semibold text-stone-800">
+            Quantity:
+          </label>
           <div className="inline-flex items-center border border-stone-300 rounded-xl bg-stone-50/70 overflow-hidden shadow-2xs">
             <button
               type="button"
@@ -364,18 +246,12 @@ export function ProductInfo({
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          {selectedVariant && selectedVariant.stockQuantity > 0 && selectedVariant.stockQuantity <= selectedVariant.lowStockThreshold && (
-            <span className="text-xs text-amber-700 font-medium">
-              (Only {selectedVariant.stockQuantity} remaining)
-            </span>
-          )}
         </div>
       </div>
 
-      {/* 6. Sleek English Action Buttons */}
+      {/* Element 4: Action Buttons */}
       <div className="pt-2 space-y-3">
-        {/* Primary Buttons Row */}
+        {/* Primary Row: BUY NOW & ADD TO CART */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* [ ⚡ BUY NOW ]: Rich Sunnah emerald gradient, opens 1-Click Express Cash on Delivery modal directly */}
           <button
@@ -408,7 +284,7 @@ export function ProductInfo({
           </button>
         </div>
 
-        {/* Quick Contact Strip (Sleek Twin Pills) */}
+        {/* Quick Assistance Row: Twin Contact Pills */}
         <div className="grid grid-cols-2 gap-2.5">
           {/* [ 💬 Order on WhatsApp ] */}
           <a
@@ -432,17 +308,6 @@ export function ProductInfo({
             <Phone className="w-3.5 h-3.5 text-stone-700 shrink-0" />
             <span>Call for Order</span>
           </a>
-        </div>
-      </div>
-
-      {/* 7. Minimalist Trust Strip */}
-      <div className="pt-3 border-t border-stone-200/80">
-        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1.5 text-xs text-stone-500 font-medium">
-          <span className="flex items-center gap-1">🌿 100% Pure & Natural</span>
-          <span className="text-emerald-700 font-bold select-none">•</span>
-          <span className="flex items-center gap-1">🛡️ Cash on Delivery</span>
-          <span className="text-emerald-700 font-bold select-none">•</span>
-          <span className="flex items-center gap-1">⚡ Fast Delivery</span>
         </div>
       </div>
     </div>
