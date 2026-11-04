@@ -6,36 +6,23 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
-  ShoppingBag,
   Heart,
-  Star,
-  Plus,
-  Minus,
   Truck,
   ShieldCheck,
-  CheckCircle2,
-  Clock,
   ArrowRight,
-  Share2,
-  Check,
   Info,
-  MessageCircle,
 } from "lucide-react";
 import { Product, ProductVariant, CartItem } from "@/types/commerce.types";
 import { Category } from "@/lib/data/categories";
 import { useCartStore } from "@/store/use-cart-store";
 import { useWishlistStore } from "@/store/use-wishlist-store";
-import { formatBDT } from "@/lib/utils";
 import { ProductCard } from "@/components/commerce/product-card";
-import { WhatsappOrderButton } from "@/components/commerce/whatsapp-order-button";
 import { ProductReviews } from "@/components/commerce/product-reviews";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
 import { fbViewContent, fbAddToCart } from "@/lib/services/facebook-pixel";
-
-function toBengaliNumber(num: number): string {
-  const bengaliDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
-  return num.toString().replace(/\d/g, (d) => bengaliDigits[Number(d)]);
-}
+import { ProductInfo } from "@/components/product/product-info";
+import { StickyMobileProductBar } from "@/components/product/sticky-mobile-product-bar";
+import { ExpressCheckoutModal } from "@/components/product/express-checkout-modal";
 
 export interface ProductDetailsContentProps {
   product: Product;
@@ -54,15 +41,23 @@ export function ProductDetailsContent({
   const [mounted, setMounted] = useState(false);
 
   // Safely resolve default variant
-  const defaultVariant: ProductVariant | undefined =
-    product.variants?.find((v) => v.isDefault) || product.variants?.[0];
+  const defaultVariant: ProductVariant =
+    product.variants?.find((v) => v.isDefault) ||
+    product.variants?.[0] || {
+      id: "default",
+      sku: product.id,
+      displayName: product.titleBn,
+      weightValue: 0,
+      weightUnit: "",
+      regularPrice: 0,
+      stockQuantity: 0,
+      lowStockThreshold: 0,
+    };
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
-    defaultVariant
-  );
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(defaultVariant);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
 
   // Store accessors
   const addItem = useCartStore((state) => state.addItem);
@@ -70,16 +65,11 @@ export function ProductDetailsContent({
 
   const activeVariant = selectedVariant ?? defaultVariant;
   const isOutOfStock = !activeVariant || activeVariant.stockQuantity <= 0;
-  const isLowStock = Boolean(
-    activeVariant &&
-      activeVariant.stockQuantity > 0 &&
-      activeVariant.stockQuantity <= activeVariant.lowStockThreshold
-  );
 
   // Price calculations
   const regularPrice = activeVariant?.regularPrice ?? 0;
   const salePrice = activeVariant?.salePrice;
-  const hasDiscount = Boolean(salePrice !== undefined && salePrice < regularPrice);
+  const hasDiscount = Boolean(salePrice !== undefined && salePrice > 0 && salePrice < regularPrice);
   const currentPrice = hasDiscount && salePrice !== undefined ? salePrice : regularPrice;
   const discountPercent =
     hasDiscount && regularPrice > 0 && salePrice !== undefined
@@ -109,19 +99,6 @@ export function ProductDetailsContent({
     // Reset quantity if current quantity exceeds new variant's stock
     if (quantity > variant.stockQuantity && variant.stockQuantity > 0) {
       setQuantity(1);
-    }
-  };
-
-  // Quantity controls
-  const handleDecreaseQty = () => {
-    if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
-    }
-  };
-
-  const handleIncreaseQty = () => {
-    if (activeVariant && quantity < activeVariant.stockQuantity) {
-      setQuantity((prev) => prev + 1);
     }
   };
 
@@ -158,37 +135,6 @@ export function ProductDetailsContent({
     }
   };
 
-  // Buy Now Action
-  const handleBuyNow = () => {
-    if (isOutOfStock || !activeVariant) return;
-
-    const cartItem: CartItem = {
-      id: `${product.id}-${activeVariant.id}`,
-      productId: product.id,
-      variantId: activeVariant.id,
-      title: product.titleEn,
-      titleBn: product.titleBn,
-      variantName: activeVariant.displayName,
-      unitPrice: currentPrice,
-      originalPrice: hasDiscount ? regularPrice : undefined,
-      image: product.images?.[0] || "",
-      weightLabel: `${activeVariant.weightValue} ${activeVariant.weightUnit}`,
-      quantity,
-      maxStock: activeVariant.stockQuantity,
-    };
-
-    if (typeof addItem === "function") {
-      addItem(cartItem);
-    }
-    fbAddToCart({
-      id: product.id,
-      name: product.titleBn || product.titleEn,
-      price: currentPrice,
-      quantity,
-    });
-    router.push("/checkout");
-  };
-
   // Wishlist Action
   const handleToggleWishlist = (e?: React.MouseEvent) => {
     if (e) {
@@ -198,20 +144,11 @@ export function ProductDetailsContent({
     useWishlistStore.getState().toggleWishlist(product);
   };
 
-  // Share Link Action
-  const handleShare = () => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    }
-  };
-
   const images = product.images && product.images.length > 0 ? product.images : [];
   const currentImage = images[selectedImageIndex] || images[0] || "";
 
   return (
-    <div className="space-y-10 font-bengali">
+    <div className="space-y-10 font-bengali pb-14 lg:pb-0">
       {/* 1. Breadcrumb Bar */}
       <section className="bg-white border-b border-surface-border py-4 px-4 shadow-subtle">
         <div className="container mx-auto max-w-7xl">
@@ -242,7 +179,7 @@ export function ProductDetailsContent({
         </div>
       </section>
 
-      {/* 2. Main Product Showcase (Side-by-Side on Desktop, Stacked on Mobile) */}
+      {/* 2. Main Product Showcase */}
       <section className="container mx-auto max-w-7xl px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Product Gallery (5 cols on lg) */}
@@ -299,7 +236,7 @@ export function ProductDetailsContent({
               </button>
             </div>
 
-            {/* Thumbnail Strip (if multiple images) */}
+            {/* Thumbnail Strip */}
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]">
                 {images.map((img, idx) => (
@@ -349,331 +286,31 @@ export function ProductDetailsContent({
             </div>
           </div>
 
-          {/* Right Column: Product Info & Purchase Controls (7 cols on lg) */}
-          <div className="lg:col-span-7 bg-white rounded-3xl border border-surface-border p-6 sm:p-8 shadow-card space-y-6">
-            {/* Header: Category Badge & Origin */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                {category && (
-                  <Link
-                    href={`/shop?category=${category.slug}`}
-                    className="bg-brand-50 hover:bg-brand-100/80 text-brand-800 border border-brand-200 text-xs font-bold px-3 py-1 rounded-full transition-colors"
-                  >
-                    {category.nameBn}
-                  </Link>
-                )}
-                {product.originSource && (
-                  <span className="bg-surface-canvas text-charcoal-600 border border-surface-border text-xs px-3 py-1 rounded-full">
-                    উৎস: {product.originSource}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Wishlist Button */}
-                <button
-                  type="button"
-                  onClick={handleToggleWishlist}
-                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                    active
-                      ? "bg-rose-50 text-rose-500 border border-rose-200 shadow-xs"
-                      : "bg-surface-canvas text-charcoal-600 border-surface-border hover:bg-stone-100 hover:text-stone-900"
-                  }`}
-                  aria-label={active ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
-                >
-                  <Heart
-                    className={`w-3.5 h-3.5 transition-all duration-200 ${
-                      active ? "fill-rose-500 text-rose-500 scale-110" : "text-stone-400"
-                    }`}
-                  />
-                  <span>{active ? "পছন্দের তালিকায় আছে" : "পছন্দ করুন"}</span>
-                </button>
-
-                {/* Share Button */}
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 text-xs text-charcoal-500 hover:text-brand-700 transition-colors px-2.5 py-1.5 rounded-full border border-surface-border bg-surface-canvas hover:bg-stone-100 cursor-pointer"
-                  title="লিংক কপি করুন"
-                >
-                  {copiedLink ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-700 font-bold">কপি হয়েছে!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-3.5 h-3.5" />
-                      <span>শেয়ার</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Product Title */}
-            <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-black text-charcoal-900 tracking-tight leading-snug">
-                {product.titleBn}
-              </h1>
-              {product.titleEn && (
-                <p className="text-sm text-charcoal-500 font-sans">{product.titleEn}</p>
-              )}
-            </div>
-
-            {/* Ratings & Stock Status */}
-            <div className="flex flex-wrap items-center gap-4 pt-1 pb-3 border-b border-surface-border/80">
-              {product.reviewCount > 0 && (
-                <a
-                  href="#product-reviews"
-                  className="flex items-center gap-1.5 text-accent-amber text-xs sm:text-sm hover:underline cursor-pointer group"
-                >
-                  <Star className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
-                  <span className="font-mono font-bold text-charcoal-900">
-                    {product.ratingAverage.toFixed(1)}
-                  </span>
-                  <span className="text-charcoal-500 group-hover:text-brand-700 transition-colors">
-                    ({toBengaliNumber(product.reviewCount)}টি কাস্টমার রিভিউ)
-                  </span>
-                </a>
-              )}
-
-              {/* Stock Status Badge */}
-              {isOutOfStock ? (
-                <span className="bg-red-50 text-red-700 border border-red-200 text-xs font-bold px-3 py-1 rounded-full">
-                  স্টক শেষ (Out of Stock)
-                </span>
-              ) : isLowStock ? (
-                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-3 py-1 rounded-full">
-                  সীমিত স্টক (আর মাত্র {toBengaliNumber(activeVariant.stockQuantity)}টি বাকি)
-                </span>
-              ) : (
-                <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>স্টকে আছে (In Stock)</span>
-                </span>
-              )}
-            </div>
-
-            {/* Price Display */}
-            <div className="space-y-1">
-              <div className="flex items-baseline gap-3">
-                <span className="font-mono font-black text-3xl sm:text-4xl text-brand-700">
-                  {formatBDT(currentPrice)}
-                </span>
-                {hasDiscount && (
-                  <span className="font-mono text-base sm:text-lg text-stone-400 line-through">
-                    {formatBDT(regularPrice)}
-                  </span>
-                )}
-                {hasDiscount && (
-                  <span className="bg-accent-amber/20 text-accent-dark border border-accent-amber/40 text-xs font-extrabold px-2.5 py-0.5 rounded-full">
-                    {formatBDT(regularPrice - currentPrice)} সাশ্রয়!
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-charcoal-500">
-                ভ্যাট ও ট্যাক্স অন্তর্ভুক্ত। কোনো অগ্রিম পেমেন্টের প্রয়োজন নেই।
-              </p>
-            </div>
-
-            {/* Short Description */}
-            {product.shortDescriptionBn && (
-              <div className="text-xs sm:text-sm text-charcoal-700 leading-relaxed bg-surface-canvas p-4 rounded-2xl border border-surface-border">
-                {product.shortDescriptionBn}
-              </div>
-            )}
-
-            {/* Variant Selector */}
-            {product.variants && product.variants.length > 0 && (
-              <div className="space-y-2.5 pt-2">
-                <label className="block text-xs sm:text-sm font-bold text-charcoal-900">
-                  প্যাক সাইজ / ভ্যারিয়েন্ট বেছে নিন:
-                </label>
-                <div
-                  className="flex flex-wrap gap-2.5"
-                  role="radiogroup"
-                  aria-label="ভ্যারিয়েন্ট নির্বাচন করুন"
-                >
-                  {product.variants.map((variant) => {
-                    const isSelected = activeVariant?.id === variant.id;
-                    const vPrice =
-                      variant.salePrice && variant.salePrice < variant.regularPrice
-                        ? variant.salePrice
-                        : variant.regularPrice;
-
-                    return (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={isSelected}
-                        onClick={() => handleVariantChange(variant)}
-                        className={`px-4 py-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center gap-2 cursor-pointer ${
-                          isSelected
-                            ? "bg-brand-700 text-white border-brand-700 shadow-card font-bold"
-                            : "bg-surface-canvas text-charcoal-800 border-surface-border hover:border-brand-300 hover:bg-white"
-                        }`}
-                      >
-                        <span>{variant.displayName}</span>
-                        <span
-                          className={`font-mono text-xs ${
-                            isSelected ? "text-stone-200" : "text-brand-700 font-bold"
-                          }`}
-                        >
-                          {formatBDT(vPrice)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Quantity Selector & Stock Indicator */}
-            <div className="space-y-2.5 pt-2">
-              <label className="block text-xs sm:text-sm font-bold text-charcoal-900">পরিমাণ:</label>
-              <div className="flex items-center gap-4">
-                <div className="inline-flex items-center border-2 border-surface-border rounded-xl bg-surface-canvas overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={handleDecreaseQty}
-                    disabled={quantity <= 1 || isOutOfStock}
-                    className="w-10 h-10 flex items-center justify-center hover:bg-white text-charcoal-700 transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-                    aria-label="পরিমাণ কমান"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="w-12 text-center font-mono text-sm sm:text-base font-bold text-charcoal-900 select-none">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleIncreaseQty}
-                    disabled={Boolean(
-                      isOutOfStock || (activeVariant && quantity >= activeVariant.stockQuantity)
-                    )}
-                    className="w-10 h-10 flex items-center justify-center hover:bg-white text-charcoal-700 transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-                    aria-label="পরিমাণ বাড়ান"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {activeVariant && activeVariant.stockQuantity > 0 && (
-                  <span className="text-xs text-charcoal-500">
-                    (সর্বোচ্চ {toBengaliNumber(activeVariant.stockQuantity)}টি অর্ডার করা যাবে)
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* CTA Buttons: Add to Cart & Buy Now */}
-            <div className="pt-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Add to Cart */}
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={isOutOfStock}
-                  className={`w-full py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 border-2 transition-all cursor-pointer ${
-                    isOutOfStock
-                      ? "bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed"
-                      : "bg-brand-50 hover:bg-brand-100 text-brand-700 border-brand-700 active:scale-[0.99]"
-                  }`}
-                >
-                  <ShoppingBag className="w-5 h-5" />
-                  <span>কার্টে যোগ করুন</span>
-                </button>
-
-                {/* Buy Now */}
-                <button
-                  type="button"
-                  onClick={handleBuyNow}
-                  disabled={isOutOfStock}
-                  className={`w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-card cursor-pointer ${
-                    isOutOfStock
-                      ? "bg-stone-200 text-stone-400 cursor-not-allowed"
-                      : "bg-brand-700 hover:bg-brand-800 text-white active:scale-[0.99] hover:shadow-lg"
-                  }`}
-                >
-                  <span>এখনই কিনুন</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* 1-Click WhatsApp Order Button */}
-              <WhatsappOrderButton
-                productTitle={product.titleBn}
-                variantName={activeVariant?.displayName}
-                unitPrice={currentPrice}
-                quantity={quantity}
-                productSlug={product.slug}
-                disabled={isOutOfStock}
-              />
-
-              {/* Wishlist Button Row (For Mobile & Desktop Accessibility) */}
-              <button
-                type="button"
-                onClick={handleToggleWishlist}
-                className="w-full py-2.5 px-4 rounded-xl border border-surface-border hover:bg-surface-canvas text-xs font-semibold text-charcoal-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <Heart
-                  className={`w-4 h-4 transition-colors ${
-                    isWishlisted ? "fill-red-500 text-red-500" : "text-charcoal-600"
-                  }`}
-                />
-                <span>
-                  {isWishlisted
-                    ? "পণ্যটি পছন্দের তালিকায় যুক্ত রয়েছে"
-                    : "পছন্দের তালিকায় যুক্ত করুন"}
-                </span>
-              </button>
-            </div>
-
-            {/* Delivery & Purity Perks */}
-            <div className="pt-4 border-t border-surface-border space-y-2.5 text-xs text-charcoal-700">
-              <div className="flex items-start gap-2.5">
-                <Truck className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-charcoal-900 block">ডেলিভারি চার্জ:</strong>
-                  ঢাকা সিটিতে ৳৭০ (২৪-৪৮ ঘণ্টা), ঢাকার বাইরে ৳১৩০ (২-৩ দিন)।{" "}
-                  <strong className="text-brand-800">৳২,০০০ বা তার বেশি অর্ডারে সারাদেশে ফ্রি ডেলিভারি!</strong>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <Clock className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-charcoal-900 block">ক্যাশ অন ডেলিভারি (COD):</strong>
-                  পণ্য হাতে পেয়ে দেখে মূল্য পরিশোধের শতভাগ নিশ্চয়তা।
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-charcoal-900 block">হোয়াটসঅ্যাপ সাপোর্ট:</strong>
-                  পণ্য সম্পর্কে জানতে বা সরাসরি কথা বলতে মেসেজ দিন:{" "}
-                  <a
-                    href="https://wa.me/8801914612007"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-emerald-700 font-bold hover:underline"
-                  >
-                    ০১৯১৪-৬১২০০৭
-                  </a>
-                </div>
-              </div>
-            </div>
+          {/* Right Column: Upgraded Product Info & Variant Selectors (7 cols on lg) */}
+          <div className="lg:col-span-7">
+            <ProductInfo
+              product={product}
+              category={category}
+              selectedVariant={activeVariant}
+              onVariantChange={handleVariantChange}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              onAddToCart={handleAddToCart}
+              onOrderNow={() => setIsExpressModalOpen(true)}
+              isOutOfStock={isOutOfStock}
+              isWishlisted={active}
+              onToggleWishlist={handleToggleWishlist}
+            />
           </div>
         </div>
       </section>
 
-      {/* 2.5 Frequently Bought Together (প্রায়শই একসাথে কেনা হয়) Cross-Sell Bundle */}
+      {/* 2.5 Frequently Bought Together Cross-Sell Bundle */}
       <section className="container mx-auto max-w-7xl px-4">
         {frequentlyBoughtTogether ?? <FrequentlyBoughtTogether mainProduct={product} />}
       </section>
 
-      {/* 3. Detailed Product Information (Full Description, Origin, Storage, Ingredients) */}
+      {/* 3. Detailed Product Information */}
       {(product.fullDescriptionBn || product.ingredients || product.storageInfo) && (
         <section className="container mx-auto max-w-7xl px-4">
           <div className="bg-white rounded-3xl border border-surface-border p-6 sm:p-10 shadow-card space-y-6">
@@ -749,6 +386,24 @@ export function ProductDetailsContent({
           </div>
         </section>
       )}
+
+      {/* 6. Mobile Sticky Action Bar Sync */}
+      <StickyMobileProductBar
+        product={product}
+        selectedVariant={activeVariant}
+        onAddToCart={handleAddToCart}
+        onOrderNow={() => setIsExpressModalOpen(true)}
+        isOutOfStock={isOutOfStock}
+      />
+
+      {/* 7. 1-Click Express Cash on Delivery Checkout Modal */}
+      <ExpressCheckoutModal
+        isOpen={isExpressModalOpen}
+        onClose={() => setIsExpressModalOpen(false)}
+        product={product}
+        selectedVariant={activeVariant}
+        initialQuantity={quantity}
+      />
     </div>
   );
 }

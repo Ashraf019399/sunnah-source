@@ -9,6 +9,42 @@ export function formatBDT(amount: number): string {
   return "৳" + Math.round(amount).toLocaleString("en-IN");
 }
 
+export function formatBanglaBDT(amount: number): string {
+  if (isNaN(amount) || amount === null || amount === undefined) return "৳০";
+  const numStr = Math.round(amount).toLocaleString("en-IN");
+  return "৳" + toBanglaDigits(numStr);
+}
+
+export function formatVariantWeightLabel(variant: {
+  weightValue?: number;
+  weightUnit?: string;
+  displayName: string;
+}): string {
+  if (variant.weightValue && variant.weightUnit) {
+    const unit = variant.weightUnit.toLowerCase();
+    const val = variant.weightValue;
+    if (unit === "g" || unit === "gram" || unit === "gm") {
+      if (val >= 1000 && val % 1000 === 0) {
+        return `${toBanglaDigits(val / 1000)} কেজি`;
+      }
+      return `${toBanglaDigits(val)} গ্রাম`;
+    }
+    if (unit === "kg") {
+      return `${toBanglaDigits(val)} কেজি`;
+    }
+    if (unit === "ml") {
+      if (val >= 1000 && val % 1000 === 0) {
+        return `${toBanglaDigits(val / 1000)} লিটার`;
+      }
+      return `${toBanglaDigits(val)} মি.লি.`;
+    }
+    if (unit === "l" || unit === "liter" || unit === "litre") {
+      return `${toBanglaDigits(val)} লিটার`;
+    }
+  }
+  return variant.displayName;
+}
+
 export function isValidBDPhone(phone: string): boolean {
   return /^(?:8801|01)[3-9]\d{8}$/.test(phone.replace(/\D/g, ""));
 }
