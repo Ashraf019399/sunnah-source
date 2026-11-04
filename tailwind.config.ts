@@ -9,6 +9,9 @@ const config: Config = {
         charcoal: { 50: "#F8F9F8", 100: "#F1F3F1", 200: "#E2E5E2", 300: "#C6CCC6", 400: "#9BA39B", 500: "#767D76", 700: "#4E544E", 900: "#181A18" },
         accent: { amber: "#D48B28", dark: "#B2711C" }
       },
+      boxShadow: {
+        "2xs": "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+      },
       fontFamily: {
         sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
         bengali: ["var(--font-bengali)", "sans-serif"]

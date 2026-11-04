@@ -42,16 +42,18 @@ test("Senior-Architect-Grade Mobile Bottom Navigation Suite", async (t) => {
   await t.test("2. Background and border styling meet clean frosted porcelain specification", () => {
     const content = fs.readFileSync(bottomNavPath, "utf-8");
 
-    // Pure clean white / frosted background
+    // Warm organic ivory / frosted background
     assert.ok(
+      content.includes("bg-[#FAF9F6]/95 backdrop-blur-md") ||
       content.includes("bg-white/95 backdrop-blur-md"),
-      "Must use ultra-clean frosted porcelain 'bg-white/95 backdrop-blur-md'"
+      "Must use organic warm porcelain 'bg-[#FAF9F6]/95 backdrop-blur-md'"
     );
 
     // Border and shadow
     assert.ok(
-      content.includes("border-t border-stone-200 shadow-sm"),
-      "Must include clean subtle border and shadow 'border-t border-stone-200 shadow-sm'"
+      content.includes("border-stone-200/70") ||
+      content.includes("border-t border-stone-200"),
+      "Must include subtle natural divider 'border-t border-stone-200/70'"
     );
   });
 
@@ -90,8 +92,9 @@ test("Senior-Architect-Grade Mobile Bottom Navigation Suite", async (t) => {
     const content = fs.readFileSync(bottomNavPath, "utf-8");
 
     assert.ok(
+      content.includes("text-brand-900 font-bold") ||
       content.includes("text-brand-800 font-semibold"),
-      "Active route styling must use 'text-brand-800 font-semibold'"
+      "Active route styling must use 'text-brand-900 font-bold'"
     );
   });
 

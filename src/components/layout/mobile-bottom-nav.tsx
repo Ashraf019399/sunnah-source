@@ -50,32 +50,37 @@ export const MobileBottomNav: React.FC = () => {
     <>
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 shadow-sm font-bengali pb-safe pb-[env(safe-area-inset-bottom,0px)]"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-t border-stone-200/70 shadow-[0_-2px_12px_rgba(0,0,0,0.03)] font-bengali pb-safe pb-[env(safe-area-inset-bottom,0px)]"
       >
         {/* 5 Evenly Spaced, Flush and Flat Navigation Items */}
-        <div className="grid grid-cols-5 h-14 max-w-md mx-auto items-center px-1">
+        <div className="grid grid-cols-5 h-14 max-w-md mx-auto items-center px-1 pt-1.5 pb-1">
           {/* 1. হোম (Home) -> "/" */}
           <Link
             href="/"
             prefetch={true}
             className={cn(
-              "group flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative",
+              "group flex flex-col items-center justify-center flex-1 h-full transition-colors relative",
               isHomeActive
-                ? "text-brand-800 font-semibold"
-                : "text-charcoal-700 hover:text-brand-700"
+                ? "text-brand-900 font-bold"
+                : "text-stone-500 hover:text-stone-700"
             )}
             aria-label="হোম"
           >
             <Home
+              strokeWidth={1.8}
               className={cn(
                 "w-5 h-5 transition-transform duration-200 group-hover:scale-110",
-                isHomeActive ? "text-brand-800 stroke-[2.2]" : "text-charcoal-700 group-hover:text-brand-700"
+                isHomeActive
+                  ? "text-brand-900"
+                  : "text-stone-500 group-hover:text-stone-700"
               )}
             />
             <span
               className={cn(
-                "text-[10px] mt-1 leading-none transition-colors",
-                isHomeActive ? "text-brand-800 font-semibold" : "text-charcoal-700 group-hover:text-brand-700"
+                "text-[10px] tracking-tight font-medium mt-0.5 leading-none transition-colors",
+                isHomeActive
+                  ? "text-brand-900 font-bold"
+                  : "text-stone-500 hover:text-stone-700"
               )}
             >
               হোম
@@ -87,45 +92,53 @@ export const MobileBottomNav: React.FC = () => {
             href="/shop"
             prefetch={true}
             className={cn(
-              "group flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative",
+              "group flex flex-col items-center justify-center flex-1 h-full transition-colors relative",
               isProductsActive
-                ? "text-brand-800 font-semibold"
-                : "text-charcoal-700 hover:text-brand-700"
+                ? "text-brand-900 font-bold"
+                : "text-stone-500 hover:text-stone-700"
             )}
             aria-label="পণ্যসমূহ"
           >
             <Grid
+              strokeWidth={1.8}
               className={cn(
                 "w-5 h-5 transition-transform duration-200 group-hover:scale-110",
-                isProductsActive ? "text-brand-800 stroke-[2.2]" : "text-charcoal-700 group-hover:text-brand-700"
+                isProductsActive
+                  ? "text-brand-900"
+                  : "text-stone-500 group-hover:text-stone-700"
               )}
             />
             <span
               className={cn(
-                "text-[10px] mt-1 leading-none transition-colors",
-                isProductsActive ? "text-brand-800 font-semibold" : "text-charcoal-700 group-hover:text-brand-700"
+                "text-[10px] tracking-tight font-medium mt-0.5 leading-none transition-colors",
+                isProductsActive
+                  ? "text-brand-900 font-bold"
+                  : "text-stone-500 hover:text-stone-700"
               )}
             >
               পণ্যসমূহ
             </span>
           </Link>
 
-          {/* 3. কার্ট (Cart) -> Opens Cart Drawer with clean amber count badge */}
+          {/* 3. কার্ট (Cart) -> Opens Cart Drawer */}
           <button
             type="button"
             onClick={openDrawer}
-            className="group flex flex-col items-center justify-center flex-1 h-full py-1 relative text-charcoal-700 hover:text-brand-700 transition-colors active:scale-95 cursor-pointer"
+            className="group flex flex-col items-center justify-center flex-1 h-full relative text-stone-500 hover:text-stone-700 transition-colors active:scale-95 cursor-pointer"
             aria-label="কার্ট খুলুন"
           >
             <div className="relative">
-              <ShoppingBag className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-charcoal-700 group-hover:text-brand-700" />
+              <ShoppingBag
+                strokeWidth={1.8}
+                className="w-5 h-5 transition-transform duration-200 group-hover:scale-110 text-stone-500 group-hover:text-stone-700"
+              />
               {displayCartCount > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 bg-accent-amber text-white font-mono text-[10px] font-bold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center shadow-xs">
+                <span className="absolute -top-1 -right-1.5 min-w-[15px] h-3.5 text-[9px] px-1 rounded-full bg-accent-amber text-white font-bold flex items-center justify-center shadow-2xs">
                   {displayCartCount > 99 ? "99+" : displayCartCount}
                 </span>
               )}
             </div>
-            <span className="text-[10px] mt-1 leading-none font-medium text-charcoal-700 group-hover:text-brand-700">
+            <span className="text-[10px] tracking-tight font-medium mt-0.5 leading-none text-stone-500 group-hover:text-stone-700">
               কার্ট
             </span>
           </button>
@@ -135,23 +148,28 @@ export const MobileBottomNav: React.FC = () => {
             type="button"
             onClick={openMenu}
             className={cn(
-              "group flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative cursor-pointer active:scale-95",
+              "group flex flex-col items-center justify-center flex-1 h-full transition-colors relative cursor-pointer active:scale-95",
               isCategoryActive
-                ? "text-brand-800 font-semibold"
-                : "text-charcoal-700 hover:text-brand-700"
+                ? "text-brand-900 font-bold"
+                : "text-stone-500 hover:text-stone-700"
             )}
             aria-label="ক্যাটাগরি"
           >
             <Layers
+              strokeWidth={1.8}
               className={cn(
                 "w-5 h-5 transition-transform duration-200 group-hover:scale-110",
-                isCategoryActive ? "text-brand-800 stroke-[2.2]" : "text-charcoal-700 group-hover:text-brand-700"
+                isCategoryActive
+                  ? "text-brand-900"
+                  : "text-stone-500 group-hover:text-stone-700"
               )}
             />
             <span
               className={cn(
-                "text-[10px] mt-1 leading-none transition-colors",
-                isCategoryActive ? "text-brand-800 font-semibold" : "text-charcoal-700 group-hover:text-brand-700"
+                "text-[10px] tracking-tight font-medium mt-0.5 leading-none transition-colors",
+                isCategoryActive
+                  ? "text-brand-900 font-bold"
+                  : "text-stone-500 hover:text-stone-700"
               )}
             >
               ক্যাটাগরি
@@ -163,23 +181,28 @@ export const MobileBottomNav: React.FC = () => {
             href="/account"
             prefetch={true}
             className={cn(
-              "group flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors relative",
+              "group flex flex-col items-center justify-center flex-1 h-full transition-colors relative",
               isAccountActive
-                ? "text-brand-800 font-semibold"
-                : "text-charcoal-700 hover:text-brand-700"
+                ? "text-brand-900 font-bold"
+                : "text-stone-500 hover:text-stone-700"
             )}
             aria-label="অ্যাকাউন্ট"
           >
             <User
+              strokeWidth={1.8}
               className={cn(
                 "w-5 h-5 transition-transform duration-200 group-hover:scale-110",
-                isAccountActive ? "text-brand-800 stroke-[2.2]" : "text-charcoal-700 group-hover:text-brand-700"
+                isAccountActive
+                  ? "text-brand-900"
+                  : "text-stone-500 group-hover:text-stone-700"
               )}
             />
             <span
               className={cn(
-                "text-[10px] mt-1 leading-none transition-colors",
-                isAccountActive ? "text-brand-800 font-semibold" : "text-charcoal-700 group-hover:text-brand-700"
+                "text-[10px] tracking-tight font-medium mt-0.5 leading-none transition-colors",
+                isAccountActive
+                  ? "text-brand-900 font-bold"
+                  : "text-stone-500 hover:text-stone-700"
               )}
             >
               অ্যাকাউন্ট
