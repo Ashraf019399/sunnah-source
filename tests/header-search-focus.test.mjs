@@ -11,9 +11,18 @@ test("Header Search Bar Single-Border Focus Verification Suite", async (t) => {
     "layout",
     "header.tsx"
   );
+  const globalsCssPath = path.join(
+    process.cwd(),
+    "src",
+    "app",
+    "globals.css"
+  );
 
   assert.ok(fs.existsSync(headerPath), "header.tsx must exist");
+  assert.ok(fs.existsSync(globalsCssPath), "globals.css must exist");
+
   const headerCode = fs.readFileSync(headerPath, "utf-8");
+  const globalsCss = fs.readFileSync(globalsCssPath, "utf-8");
 
   await t.test("1. Outer search container uses single-border with zero rings/shadows", () => {
     assert.ok(
@@ -43,6 +52,17 @@ test("Header Search Bar Single-Border Focus Verification Suite", async (t) => {
     assert.ok(
       searchFormBlock.includes("border-0 outline-none focus:outline-none focus:ring-0 ring-0 shadow-none bg-transparent"),
       "Inner input must completely strip internal borders, outlines, rings, and shadows"
+    );
+  });
+
+  await t.test("3. Global CSS excludes inputs from blanket :focus-visible outlines", () => {
+    assert.ok(
+      globalsCss.includes(":focus-visible:not(input):not(textarea):not(select)"),
+      "globals.css must exempt inputs/textareas from global outline ring"
+    );
+    assert.ok(
+      globalsCss.includes("input:focus-visible") && globalsCss.includes("outline: none !important"),
+      "globals.css must explicitly suppress outline on inputs to prevent double-border glitches"
     );
   });
 });
