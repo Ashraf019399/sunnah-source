@@ -35,7 +35,13 @@ body {
 @layer base {
   /* Bengali Typography & Line-Height Breathing Space:
      Bengali matras and diacritics (উ-কার, ই-কার, রেফ, হসন্ত) extend above and below the baseline.
-     Enforce generous line-heights so characters and diacritics never clip. */
+     Enforce generous line-heights so characters and diacritics never clip.
+     Enforce letter-spacing: normal (0) so Bengali conjuncts and ligatures are never broken apart. */
+  .font-bengali,
+  .font-hind {
+    letter-spacing: normal;
+  }
+
   .font-bengali h1,
   .font-bengali h2,
   .font-bengali h3,

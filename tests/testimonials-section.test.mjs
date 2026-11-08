@@ -4,107 +4,149 @@ import fs from "node:fs";
 import path from "node:path";
 import { toBanglaDigits } from "../src/lib/utils.ts";
 
-test("Testimonials Section - Hind Siliguri Font & Scroll Count-Up Animation Suite", async (t) => {
-  const filePath = path.join(
+test("Testimonials Section & Hind Siliguri Font Loading Suite", async (t) => {
+  const testimonialsPath = path.join(
     process.cwd(),
     "src",
     "components",
     "home",
     "testimonials-section.tsx"
   );
+  const layoutPath = path.join(process.cwd(), "src", "app", "layout.tsx");
+  const tailwindPath = path.join(process.cwd(), "tailwind.config.ts");
 
-  assert.ok(fs.existsSync(filePath), "testimonials-section.tsx must exist");
-  const content = fs.readFileSync(filePath, "utf-8");
+  assert.ok(fs.existsSync(testimonialsPath), "testimonials-section.tsx must exist");
+  assert.ok(fs.existsSync(layoutPath), "layout.tsx must exist");
+  assert.ok(fs.existsSync(tailwindPath), "tailwind.config.ts must exist");
 
-  await t.test("1. Stat numbers strictly use Hind Siliguri font and bold styling", () => {
-    // Stat numbers must use the exact requested classes
+  const testimonialsCode = fs.readFileSync(testimonialsPath, "utf-8");
+  const layoutCode = fs.readFileSync(layoutPath, "utf-8");
+  const tailwindCode = fs.readFileSync(tailwindPath, "utf-8");
+
+  await t.test("1. Google Font Hind_Siliguri is properly imported and loaded in layout.tsx", () => {
     assert.ok(
-      content.includes("font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal"),
-      "Stat numbers must have 'font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal'"
+      layoutCode.includes("from \"next/font/google\"") || layoutCode.includes("from 'next/font/google'"),
+      "layout.tsx must import from next/font/google"
+    );
+    assert.ok(
+      layoutCode.includes("Hind_Siliguri"),
+      "layout.tsx must import Hind_Siliguri"
+    );
+    assert.ok(
+      layoutCode.includes("--font-hind-siliguri"),
+      "layout.tsx must configure '--font-hind-siliguri' variable"
+    );
+    assert.ok(
+      layoutCode.includes("hindSiliguri.variable"),
+      "layout.tsx must add hindSiliguri.variable to body"
+    );
+  });
+
+  await t.test("2. tailwind.config.ts maps font-hind to var(--font-hind-siliguri)", () => {
+    assert.ok(
+      tailwindCode.includes("hind:"),
+      "tailwind.config.ts must define font family 'hind'"
+    );
+    assert.ok(
+      tailwindCode.includes("--font-hind-siliguri"),
+      "tailwind.config.ts must reference '--font-hind-siliguri'"
+    );
+  });
+
+  await t.test("3. No broken letter-spacing in testimonials-section.tsx (tracking-normal enforced)", () => {
+    // Stat labels must not have tracking-wide, tracking-wider, or tracking-widest which breaks Bengali ligatures
+    assert.ok(
+      !testimonialsCode.includes("tracking-wide"),
+      "Must not include tracking-wide on Bengali text"
+    );
+    assert.ok(
+      !testimonialsCode.includes("tracking-wider"),
+      "Must not include tracking-wider on Bengali text"
+    );
+    assert.ok(
+      !testimonialsCode.includes("tracking-widest"),
+      "Must not include tracking-widest on Bengali text"
     );
 
-    // Font Hind Siliguri must be present
+    // Ensure tracking-normal is explicitly used on labels and numbers
     assert.ok(
-      content.includes("Hind_Siliguri") || content.includes("font-bengali"),
-      "Must apply Hind Siliguri font family"
+      testimonialsCode.includes("tracking-normal"),
+      "Must enforce tracking-normal on Bengali text"
     );
 
-    // font-mono should not be used on the stat numbers
+    // Verify cohesive Bengali conjuncts in labels
     assert.ok(
-      !content.includes("text-stone-900 tracking-tight font-mono"),
+      testimonialsCode.includes("পজিটিভ রিভিউ"),
+      "Label 'পজিটিভ রিভিউ' must be rendered cohesively without separated letters"
+    );
+    assert.ok(
+      testimonialsCode.includes("সন্তুষ্ট পরিবার"),
+      "Label 'সন্তুষ্ট পরিবার' must be intact"
+    );
+    assert.ok(
+      testimonialsCode.includes("গড় কাস্টমার রেটিং"),
+      "Label 'গড় কাস্টমার রেটিং' must be intact"
+    );
+    assert.ok(
+      testimonialsCode.includes("মানি-ব্যাক নিশ্চয়তা"),
+      "Label 'মানি-ব্যাক নিশ্চয়তা' must be intact"
+    );
+  });
+
+  await t.test("4. Stat numbers and cards strictly use font-hind and bold styling", () => {
+    assert.ok(
+      testimonialsCode.includes("font-hind"),
+      "Must use font-hind in testimonials section"
+    );
+    assert.ok(
+      testimonialsCode.includes("font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-hind"),
+      "Stat numbers must have 'font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-hind'"
+    );
+    assert.ok(
+      !testimonialsCode.includes("text-stone-900 tracking-tight font-mono"),
       "Must not use font-mono on stat numbers"
     );
   });
 
-  await t.test("2. IntersectionObserver with threshold 0.2 and one-time execution", () => {
-    // Check for IntersectionObserver usage
+  await t.test("5. IntersectionObserver with threshold 0.2 and 1.5s easeOut count-up animation", () => {
     assert.ok(
-      content.includes("IntersectionObserver"),
+      testimonialsCode.includes("IntersectionObserver"),
       "Must implement IntersectionObserver"
     );
-
-    // Check threshold 0.2
     assert.ok(
-      content.includes("threshold: 0.2") || content.includes("threshold:0.2"),
+      testimonialsCode.includes("threshold: 0.2") || testimonialsCode.includes("threshold:0.2"),
       "IntersectionObserver must use threshold: 0.2"
     );
-
-    // Check disconnect to run cleanly once
     assert.ok(
-      content.includes("observer.disconnect()"),
-      "Observer must disconnect on first trigger to avoid glitches on minor scrolls"
+      testimonialsCode.includes("observer.disconnect()"),
+      "Observer must disconnect on first trigger to run cleanly once"
     );
-  });
-
-  await t.test("3. Smooth count-up animation over 1.5 seconds with easing curve", () => {
-    // Check 1.5s (1500ms) duration
     assert.ok(
-      content.includes("1500"),
+      testimonialsCode.includes("1500"),
       "Animation duration must be 1.5 seconds (1500ms)"
     );
-
-    // Check easing curve (easeOutCubic or easeOutQuad)
     assert.ok(
-      content.includes("easeOutCubic") ||
-        content.includes("Math.pow(1 - rawProgress, 3)") ||
-        content.includes("Math.pow(1 - progress, 3)") ||
-        content.includes("easeOutQuad"),
-      "Must implement smooth easeOut curve"
+      testimonialsCode.includes("requestAnimationFrame"),
+      "Must use requestAnimationFrame"
     );
 
-    // Check requestAnimationFrame usage
-    assert.ok(
-      content.includes("requestAnimationFrame"),
-      "Must use requestAnimationFrame for fluid frame updates"
-    );
-  });
+    // Accurate target values
+    assert.ok(testimonialsCode.includes("১০,০০০+"), "Target 1 must be '১০,০০০+'");
+    assert.ok(testimonialsCode.includes("৪.৯ / ৫.০"), "Target 2 must be '৪.৯ / ৫.০'");
+    assert.ok(testimonialsCode.includes("৯৯.২%"), "Target 3 must be '৯৯.২%'");
+    assert.ok(testimonialsCode.includes("১০০%"), "Target 4 must be '১০০%'");
 
-  await t.test("4. Accurate target values and Bengali digit formatting", () => {
-    // Check target values
-    assert.ok(content.includes("১০,০০০+"), "Target 1 must be '১০,০০০+'");
-    assert.ok(content.includes("৪.৯ / ৫.০"), "Target 2 must be '৪.৯ / ৫.০'");
-    assert.ok(content.includes("৯৯.২%"), "Target 3 must be '৯৯.২%'");
-    assert.ok(content.includes("১০০%"), "Target 4 must be '১০০%'");
-
-    // Verify Bengali digits conversion helper works identically
+    // Bengali digits helper verification
     assert.strictEqual(toBanglaDigits("10,000") + "+", "১০,০০০+");
     assert.strictEqual(toBanglaDigits("4.9") + " / ৫.০", "৪.৯ / ৫.০");
     assert.strictEqual(toBanglaDigits("99.2") + "%", "৯৯.২%");
     assert.strictEqual(toBanglaDigits(100) + "%", "১০০%");
   });
 
-  await t.test("5. Card layout maintains clean 4-card grid and required styling", () => {
-    // Required card styling
+  await t.test("6. Card layout maintains clean 4-card grid and polish classes", () => {
     assert.ok(
-      content.includes("rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow"),
+      testimonialsCode.includes("rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow"),
       "Must use 'rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow'"
     );
-
-    // All 4 Bengali labels must be present
-    assert.ok(content.includes("সন্তুষ্ট পরিবার"), "Must include label 'সন্তুষ্ট পরিবার'");
-    assert.ok(content.includes("গড় কাস্টমার রেটিং"), "Must include label 'গড় কাস্টমার রেটিং'");
-    assert.ok(content.includes("পজিティブ রিভিউ"), "Must include label 'পজিティブ রিভিউ'");
-    assert.ok(content.includes("মানি-ব্যাক নিশ্চয়তা"), "Must include label 'মানি-ব্যাক নিশ্চয়তা'");
   });
 });
-

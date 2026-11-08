@@ -331,16 +331,16 @@ export function TestimonialsSection() {
   return (
     <section
       ref={sectionRef}
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 space-y-8 sm:space-y-10 font-bengali font-['Hind_Siliguri',sans-serif] w-full"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 space-y-8 sm:space-y-10 font-hind font-bengali tracking-normal w-full"
     >
       {/* 1. Header & Social Proof Eyebrow */}
-      <div className="text-center max-w-2xl mx-auto space-y-3 font-['Hind_Siliguri',sans-serif]">
-        <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3.5 py-1 rounded-full text-xs font-bold shadow-xs">
+      <div className="text-center max-w-2xl mx-auto space-y-3 font-hind">
+        <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3.5 py-1 rounded-full text-xs font-bold shadow-xs tracking-normal">
           <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
           <span>প্রমাণিত বিশুদ্ধতা ও গ্রাহক সন্তুষ্টি</span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-stone-900 tracking-tight leading-snug">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-stone-900 tracking-normal leading-snug">
           গ্রাহকদের সন্তুষ্টি ও মতামত
         </h2>
         <p className="text-xs sm:text-sm md:text-base tracking-normal text-stone-500 font-medium leading-relaxed">
@@ -351,57 +351,57 @@ export function TestimonialsSection() {
 
       {/* 2. Top Trust Proof Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3 font-hind">
           <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 border border-brand-100">
             <Users className="w-5 h-5 text-brand-700" />
           </div>
           <div>
-            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-hind block">
               {statValues.stat1}
             </span>
-            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-hind tracking-normal block mt-1">
               সন্তুষ্ট পরিবার
             </span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3 font-hind">
           <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100">
             <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
           </div>
           <div>
-            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-hind block">
               {statValues.stat2}
             </span>
-            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-hind tracking-normal block mt-1">
               গড় কাস্টমার রেটিং
             </span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3 font-hind">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-hind block">
               {statValues.stat3}
             </span>
-            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
-              পজিティブ রিভিউ
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-hind tracking-normal block mt-1">
+              পজিটিভ রিভিউ
             </span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3 font-hind">
           <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 border border-rose-100">
             <ShieldCheck className="w-5 h-5 text-rose-600" />
           </div>
           <div>
-            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-hind block">
               {statValues.stat4}
             </span>
-            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-hind tracking-normal block mt-1">
               মানি-ব্যাক নিশ্চয়তা
             </span>
           </div>
@@ -441,7 +441,7 @@ export function TestimonialsSection() {
                 key={review.id}
                 className="w-full min-w-full sm:w-1/2 sm:min-w-[50%] lg:w-1/3 lg:min-w-[33.333333%] px-2.5 sm:px-3 shrink-0 flex select-none"
               >
-                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-bengali font-['Hind_Siliguri',sans-serif] text-left flex flex-col justify-between w-full h-full space-y-4 select-none">
+                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-hind font-bengali tracking-normal text-left flex flex-col justify-between w-full h-full space-y-4 select-none">
                   {/* Top: Stars & Quote Icon */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
@@ -542,7 +542,7 @@ export function TestimonialsSection() {
       </div>
 
       {/* 4. High-Converting Bottom Trust & Action Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-2xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 font-['Hind_Siliguri',sans-serif]">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-2xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 font-hind tracking-normal">
         <div className="space-y-2 text-center md:text-left max-w-xl">
           <span className="inline-block bg-accent-amber/20 text-accent-amber border border-accent-amber/40 text-xs font-bold px-3 py-1 rounded-full">
             ১০০% নিরাপদ ও ঝুঁকিমুক্ত কেনাকাটা

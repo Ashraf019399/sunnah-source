@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import localFont from "next/font/local";
+import { Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
@@ -9,35 +9,10 @@ import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 // import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 
-const hindSiliguri = localFont({
-  src: [
-    {
-      path: "./fonts/HindSiliguri Light.ttf",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "./fonts/HindSiliguri Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./fonts/HindSiliguri Medium.ttf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "./fonts/HindSiliguri SemiBold.ttf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "./fonts/HindSiliguri Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-bengali",
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
   display: "swap",
 });
 
@@ -115,7 +90,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="bn">
-      <body className={`${hindSiliguri.variable} ${hindSiliguri.className} font-bengali antialiased min-h-screen flex flex-col`}>
+      <body className={`${hindSiliguri.variable} font-hind font-bengali antialiased min-h-screen flex flex-col`}>
         <Suspense fallback={null}>
           <FacebookPixel
             pixelId={marketingSettings.pixelId}
