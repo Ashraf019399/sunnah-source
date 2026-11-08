@@ -6,7 +6,7 @@ import { AuthRecoveryRedirect } from "@/components/auth/auth-recovery-redirect";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
-import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
+// import { LiveSalesNotification } from "@/components/ui/live-sales-notification";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 
 const hindSiliguri = localFont({
@@ -126,7 +126,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         <FloatingWhatsApp />
         <ScrollToTop />
-        <LiveSalesNotification />
+        {/* <LiveSalesNotification /> */}
       </body>
     </html>
   );
