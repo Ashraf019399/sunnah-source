@@ -475,7 +475,7 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 bg-[#F3F4F6] hover:bg-[#EEF0F3] focus-within:bg-white focus:bg-white rounded-full border border-stone-300 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/20 transition-all shadow-xs"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 rounded-full bg-stone-50/80 border border-stone-200 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/15 focus-within:bg-white transition-all duration-200 shadow-xs"
           >
             <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -487,7 +487,7 @@ export const Header: React.FC = () => {
               }}
               onFocus={() => setIsSearchOpen(true)}
               placeholder="খাঁটি মধু, ঘি, তেল ও অর্গানিক খাদ্য খুঁজুন..."
-              className="w-full h-full bg-transparent border-0 border-none outline-none focus:outline-none focus:ring-0 text-sm text-charcoal-900 placeholder:text-stone-400 px-5 pl-11 pr-11 py-3 rounded-full"
+              className="w-full h-full border-0 outline-none focus:outline-none focus:ring-0 ring-0 shadow-none bg-transparent text-sm text-charcoal-900 placeholder:text-stone-400 px-5 pl-11 pr-11 py-3 rounded-full"
               aria-label="পণ্য খুঁজুন"
             />
             {searchQuery && (
