@@ -8,25 +8,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface BannerSlide {
   id: string;
   image: string;
-  alt?: string;
+  alt: string;
   link: string;
-  title?: string;
-  subtitle?: string;
-  badge?: string;
-  ctaText?: string;
 }
 
 export const MAIN_BANNERS: BannerSlide[] = [
-  {
-    id: "sunnah-special-combo",
-    title: "সুন্নাহ স্পেশাল কম্বো",
-    subtitle: "প্রাকৃতিক কাঁচা মধু, মদিনার আজওয়া খেজুর ও গাওয়া ঘি",
-    badge: "১৫% ছাড়",
-    image: "/images/banners/sunnah-special-combo-banner.jpg",
-    link: "/combos",
-    ctaText: "এখনই অর্ডার করুন",
-    alt: "সুন্নাহ স্পেশাল কম্বো — প্রাকৃতিক কাঁচা মধু, মদিনার আজওয়া খেজুর ও গাওয়া ঘি (১৫% ছাড়)",
-  },
   {
     id: "honey",
     image: "/images/banners/banner-nature-honey.jpg",
@@ -53,12 +39,23 @@ export const MAIN_BANNERS: BannerSlide[] = [
   },
 ];
 
-export const TWIN_PROMOS = [
+export interface PromoCard {
+  id: string;
+  image: string;
+  alt: string;
+  link: string;
+  title?: string;
+  badge?: string;
+}
+
+export const TWIN_PROMOS: PromoCard[] = [
   {
     id: "promo-combo",
-    image: "/images/banners/promo-combo.jpg",
-    alt: "সুন্নাহ স্পেশাল কম্বো অফার - Sunnah Special Combo Offer",
+    image: "/images/banners/sunnah-special-combo-banner.jpg",
+    title: "সুন্নাহ স্পেশাল কম্বো",
+    badge: "১৫% ছাড়",
     link: "/combos",
+    alt: "সুন্নাহ স্পেশাল কম্বো — ১৫% ছাড়",
   },
   {
     id: "promo-honey",
@@ -237,7 +234,7 @@ export function HeroSection() {
                 prefetch={true}
                 draggable={false}
                 tabIndex={currentIndex === idx ? 0 : -1}
-                aria-label={slide.alt || slide.title || "Sunnah Source banner"}
+                aria-label={slide.alt}
                 onClick={(e) => {
                   // Prevent accidental link navigation if user dragged more than 6px
                   if (dragDistanceRef.current > 6) {
@@ -250,7 +247,7 @@ export function HeroSection() {
               >
                 <Image
                   src={slide.image}
-                  alt={slide.alt || slide.title || "Sunnah Source banner"}
+                  alt={slide.alt}
                   fill
                   draggable={false}
                   priority={idx === 0}
