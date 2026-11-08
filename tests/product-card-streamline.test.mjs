@@ -79,5 +79,28 @@ test("Product Card Streamline Suite (Clean Title + English Stock Status)", async
       "Must use stone pill styling for Out of Stock badge"
     );
   });
+
+  await t.test("4. Discount badge features luxury frosted glassmorphism effect", () => {
+    assert.ok(
+      cardCode.includes("backdrop-blur-md"),
+      "Discount badge must feature frosted glass blur (backdrop-blur-md)"
+    );
+    assert.ok(
+      cardCode.includes("bg-amber-500/20"),
+      "Discount badge must feature warm golden tint (bg-amber-500/20)"
+    );
+    assert.ok(
+      cardCode.includes("border border-amber-400/50"),
+      "Discount badge must feature luminous edge border (border-amber-400/50)"
+    );
+    assert.ok(
+      cardCode.includes("text-amber-950 font-bold"),
+      "Discount badge must feature crisp text (text-amber-950 font-bold)"
+    );
+    assert.ok(
+      cardCode.includes("shadow-[0_2px_8px_rgba(245,158,11,0.15)]"),
+      "Discount badge must feature soft ambient glow shadow"
+    );
+  });
 });
 

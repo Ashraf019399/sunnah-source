@@ -141,7 +141,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
         {/* Discount Badge on Top-Left */}
         {hasDiscount && (
           <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none select-none">
-            <span className="bg-accent-amber text-charcoal-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
+            <span className="backdrop-blur-md bg-amber-500/20 border border-amber-400/50 text-amber-950 font-bold px-2.5 py-0.5 rounded-full text-[11px] shadow-[0_2px_8px_rgba(245,158,11,0.15)] inline-flex items-center gap-1 transition-all duration-300">
               {discountPercent}% ছাড়
             </span>
           </div>
