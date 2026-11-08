@@ -15,14 +15,14 @@ test("Header Search Bar Single-Border Focus Verification Suite", async (t) => {
   assert.ok(fs.existsSync(headerPath), "header.tsx must exist");
   const headerCode = fs.readFileSync(headerPath, "utf-8");
 
-  await t.test("1. Outer search container controls border and focus state using focus-within", () => {
+  await t.test("1. Outer search container uses single-border with zero rings/shadows", () => {
     assert.ok(
       headerCode.includes("focus-within:border-brand-700"),
-      "Outer container must illuminate brand-700 on focus-within"
+      "Outer container must illuminate single brand-700 border on focus-within"
     );
     assert.ok(
-      headerCode.includes("focus-within:ring-2 focus-within:ring-brand-700/15"),
-      "Outer container must apply single elegant focus ring"
+      !headerCode.includes("focus-within:ring-"),
+      "Outer container must NEVER have ring- classes (which cause double-line artifact)"
     );
     assert.ok(
       headerCode.includes("focus-within:bg-white"),
@@ -35,7 +35,6 @@ test("Header Search Bar Single-Border Focus Verification Suite", async (t) => {
   });
 
   await t.test("2. Inner search input element strips all internal borders and outlines", () => {
-    // Locate the search input within desktopSearch form
     const searchFormBlock = headerCode.substring(
       headerCode.indexOf('role="search"'),
       headerCode.indexOf("{renderSearchDropdown()}")
@@ -47,4 +46,3 @@ test("Header Search Bar Single-Border Focus Verification Suite", async (t) => {
     );
   });
 });
-

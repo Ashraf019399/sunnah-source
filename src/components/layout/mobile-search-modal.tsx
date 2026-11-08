@@ -268,7 +268,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="পণ্য খুঁজুন (মধু, ঘি, খেজুর)..."
                 aria-label="পণ্য খুঁজুন"
-                className="w-full h-12 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/10 text-stone-900 font-medium text-[16px] pl-11 pr-9 outline-none transition-all placeholder:text-stone-400"
+                className="w-full h-12 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:border-brand-600 text-stone-900 font-medium text-[16px] pl-11 pr-9 outline-none transition-colors placeholder:text-stone-400"
               />
               {/* Soft clear [✕] button */}
               {searchQuery && (

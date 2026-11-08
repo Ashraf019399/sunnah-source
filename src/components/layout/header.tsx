@@ -475,7 +475,7 @@ export const Header: React.FC = () => {
             ref={desktopSearchRef}
             role="search"
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 rounded-full bg-stone-50/80 border border-stone-200 focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/15 focus-within:bg-white transition-all duration-200 shadow-xs"
+            className="hidden md:flex flex-1 max-w-xl relative items-center w-full h-12 rounded-full bg-stone-50/80 border border-stone-200 focus-within:border-brand-700 focus-within:bg-white transition-colors duration-200"
           >
             <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
