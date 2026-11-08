@@ -786,10 +786,9 @@ export const Header: React.FC = () => {
             <li>
               <Link
                 href="/shop?filter=offer"
-                className="flex items-center gap-1 font-semibold text-amber-300 hover:text-amber-200 transition-colors whitespace-nowrap text-[13.5px] lg:text-sm"
+                className="inline-flex items-center py-1.5 font-semibold text-amber-300 hover:text-amber-200 transition-colors whitespace-nowrap text-[13.5px] lg:text-sm"
               >
-                <span>🔥</span>
-                <span>Offer Zone</span>
+                Offer Zone
               </Link>
             </li>
 
