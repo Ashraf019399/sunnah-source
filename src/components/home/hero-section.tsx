@@ -8,11 +8,25 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface BannerSlide {
   id: string;
   image: string;
-  alt: string;
+  alt?: string;
   link: string;
+  title?: string;
+  subtitle?: string;
+  badge?: string;
+  ctaText?: string;
 }
 
-const MAIN_BANNERS: BannerSlide[] = [
+export const MAIN_BANNERS: BannerSlide[] = [
+  {
+    id: "sunnah-special-combo",
+    title: "সুন্নাহ স্পেশাল কম্বো",
+    subtitle: "প্রাকৃতিক কাঁচা মধু, মদিনার আজওয়া খেজুর ও গাওয়া ঘি",
+    badge: "১৫% ছাড়",
+    image: "/images/banners/sunnah-special-combo-banner.jpg",
+    link: "/combos",
+    ctaText: "এখনই অর্ডার করুন",
+    alt: "সুন্নাহ স্পেশাল কম্বো — প্রাকৃতিক কাঁচা মধু, মদিনার আজওয়া খেজুর ও গাওয়া ঘি (১৫% ছাড়)",
+  },
   {
     id: "honey",
     image: "/images/banners/banner-nature-honey.jpg",
@@ -223,7 +237,7 @@ export function HeroSection() {
                 prefetch={true}
                 draggable={false}
                 tabIndex={currentIndex === idx ? 0 : -1}
-                aria-label={slide.alt}
+                aria-label={slide.alt || slide.title || "Sunnah Source banner"}
                 onClick={(e) => {
                   // Prevent accidental link navigation if user dragged more than 6px
                   if (dragDistanceRef.current > 6) {
@@ -236,7 +250,7 @@ export function HeroSection() {
               >
                 <Image
                   src={slide.image}
-                  alt={slide.alt}
+                  alt={slide.alt || slide.title || "Sunnah Source banner"}
                   fill
                   draggable={false}
                   priority={idx === 0}
