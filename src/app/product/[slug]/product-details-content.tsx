@@ -286,44 +286,44 @@ export function ProductDetailsContent({
         {frequentlyBoughtTogether ?? <FrequentlyBoughtTogether mainProduct={product} />}
       </section>
 
-      {/* 3. Detailed Product Information */}
+      {/* 3. Detailed Product Information (Strictly in Bengali: স্বাস্থ্য উপকারিতা, বিবরণ, উপাদান) */}
       {(product.fullDescriptionBn || product.ingredients || product.storageInfo) && (
         <section className="container mx-auto max-w-7xl px-4">
-          <div className="bg-white rounded-3xl border border-surface-border p-6 sm:p-10 shadow-card space-y-6">
+          <div className="bg-white rounded-3xl border border-surface-border p-6 sm:p-10 shadow-card space-y-6 font-hind">
             <div className="pb-4 border-b border-surface-border flex items-center gap-2">
               <Info className="w-5 h-5 text-brand-700" />
-              <h2 className="text-xl sm:text-2xl font-black text-charcoal-900">
-                পণ্যের বিস্তারিত বিবরণ ও উপকারিতা
+              <h2 className="text-xl sm:text-2xl font-black text-charcoal-900 font-hind tracking-normal">
+                পণ্যের বিস্তারিত বিবরণ ও স্বাস্থ্য উপকারিতা
               </h2>
             </div>
 
-            {/* Full Bengali Description */}
+            {/* Full Bengali Description & Health Benefits */}
             {product.fullDescriptionBn && (
-              <div className="prose prose-stone max-w-none text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-4">
+              <div className="prose prose-stone max-w-none text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-4 font-hind tracking-normal">
                 <p className="whitespace-pre-line">{product.fullDescriptionBn}</p>
               </div>
             )}
 
             {/* Sourcing & Highlights Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-surface-border/60 text-xs sm:text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-surface-border/60 text-xs sm:text-sm font-hind tracking-normal">
               {product.originSource && (
                 <div className="p-4 bg-surface-canvas rounded-2xl border border-surface-border space-y-1">
-                  <strong className="text-brand-900 block font-bold">সংগ্রহের উৎস:</strong>
-                  <p className="text-charcoal-600">{product.originSource}</p>
+                  <strong className="text-brand-900 block font-bold font-hind">সংগ্রহের উৎস:</strong>
+                  <p className="text-charcoal-600 font-hind">{product.originSource}</p>
                 </div>
               )}
 
               {product.ingredients && product.ingredients.length > 0 && (
                 <div className="p-4 bg-surface-canvas rounded-2xl border border-surface-border space-y-1">
-                  <strong className="text-brand-900 block font-bold">উপাদানসমূহ:</strong>
-                  <p className="text-charcoal-600">{product.ingredients.join(", ")}</p>
+                  <strong className="text-brand-900 block font-bold font-hind">উপাদানসমূহ:</strong>
+                  <p className="text-charcoal-600 font-hind">{product.ingredients.join(", ")}</p>
                 </div>
               )}
 
               {product.storageInfo && (
                 <div className="p-4 bg-surface-canvas rounded-2xl border border-surface-border space-y-1">
-                  <strong className="text-brand-900 block font-bold">সংরক্ষণ পদ্ধতি:</strong>
-                  <p className="text-charcoal-600">{product.storageInfo}</p>
+                  <strong className="text-brand-900 block font-bold font-hind">সংরক্ষণ ও ব্যবহার পদ্ধতি:</strong>
+                  <p className="text-charcoal-600 font-hind">{product.storageInfo}</p>
                 </div>
               )}
             </div>

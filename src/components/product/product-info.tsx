@@ -12,60 +12,9 @@ import {
 } from "lucide-react";
 import { Product, ProductVariant } from "@/types/commerce.types";
 import { Category } from "@/lib/data/categories";
-import { cn, formatVariantWeightLabel } from "@/lib/utils";
+import { cn, formatVariantWeightLabel, formatEnglishWeightLabel } from "@/lib/utils";
 
-export { formatVariantWeightLabel };
-
-/**
- * Formats variant weights into sleek, modern English units (e.g. 250g, 500g, 1kg, 1L, 5L)
- */
-export function formatEnglishWeightLabel(variant?: Partial<ProductVariant>): string {
-  if (!variant) return "";
-  const { weightValue, weightUnit, displayName } = variant;
-
-  if (weightValue && weightUnit) {
-    const unit = weightUnit.toLowerCase().trim();
-    if (unit === "g" || unit === "gram" || unit === "grams") {
-      if (weightValue >= 1000 && weightValue % 1000 === 0) {
-        return `${weightValue / 1000}kg`;
-      }
-      return `${weightValue}g`;
-    }
-    if (unit === "kg") {
-      return `${weightValue}kg`;
-    }
-    if (unit === "ml") {
-      if (weightValue >= 1000 && weightValue % 1000 === 0) {
-        return `${weightValue / 1000}L`;
-      }
-      return `${weightValue}ml`;
-    }
-    if (unit === "l" || unit === "liter" || unit === "litre") {
-      return `${weightValue}L`;
-    }
-    return `${weightValue}${unit}`;
-  }
-
-  // Fallback parsing from displayName if weightValue/unit not explicitly separated
-  if (displayName) {
-    const bnToEnMap: Record<string, string> = {
-      "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
-      "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9",
-    };
-    const normalized = displayName.replace(/[০-৯]/g, (d) => bnToEnMap[d] || d);
-    const kgMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:কেজি|kg)/i);
-    if (kgMatch) return `${kgMatch[1]}kg`;
-    const gmMatch = normalized.match(/(\d+)\s*(?:গ্রাম|gm|g)/i);
-    if (gmMatch) return `${gmMatch[1]}g`;
-    const literMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:লিটার|l|liter)/i);
-    if (literMatch) return `${literMatch[1]}L`;
-    const mlMatch = normalized.match(/(\d+)\s*(?:মিলি|ml)/i);
-    if (mlMatch) return `${mlMatch[1]}ml`;
-    return displayName;
-  }
-
-  return "";
-}
+export { formatVariantWeightLabel, formatEnglishWeightLabel };
 
 export interface ProductInfoProps {
   product: Product;
@@ -112,6 +61,12 @@ export function ProductInfo({
     }
   };
 
+  // English & Bengali Titles
+  const englishTitle =
+    product.titleEn || (product as any).name || (product as any).title || product.titleBn;
+  const bengaliSubtitle =
+    product.titleBn && product.titleBn !== englishTitle ? product.titleBn : null;
+
   // WhatsApp order message URL
   const cleanPhone = "8801914612007";
   const totalPrice = currentPrice * quantity;
@@ -123,15 +78,15 @@ export function ProductInfo({
   const selectedSizeLabel = formatEnglishWeightLabel(selectedVariant);
 
   const whatsappMsg = [
-    "আসসালামু আলাইকুম, আমি সুন্নাহ সোর্স থেকে এই পণ্যটি অর্ডার করতে চাই:",
+    "Assalamu Alaikum, I would like to order from Sunnah Source:",
     "",
-    `📦 পণ্য: ${product.titleBn}`,
-    selectedSizeLabel ? `⚖️ সাইজ: ${selectedSizeLabel}` : null,
-    `🔢 পরিমাণ: ${quantity}টি`,
-    `💰 মোট মূল্য: ৳${totalPrice.toLocaleString("en-IN")}`,
-    `🔗 লিংক: ${productUrl}`,
+    `📦 Product: ${englishTitle}${bengaliSubtitle ? ` (${bengaliSubtitle})` : ""}`,
+    selectedSizeLabel ? `⚖️ Size: ${selectedSizeLabel}` : null,
+    `🔢 Quantity: ${quantity}`,
+    `💰 Total Price: ৳${totalPrice.toLocaleString("en-IN")}`,
+    `🔗 Link: ${productUrl}`,
     "",
-    "আমার নাম ও ডেলিভারি ঠিকানা:",
+    "My Name & Delivery Address:",
   ]
     .filter(Boolean)
     .join("\n");
@@ -139,12 +94,19 @@ export function ProductInfo({
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`;
 
   return (
-    <div className="bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-sm space-y-6 sm:space-y-7">
+    <div className="bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-sm space-y-6 sm:space-y-7 font-sans">
       {/* Element 1: Title & Rating */}
       <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight leading-snug font-bengali">
-          {product.titleBn}
-        </h1>
+        <div>
+          <h1 className="font-bold text-2xl sm:text-3xl text-stone-900 tracking-tight leading-snug font-sans">
+            {englishTitle}
+          </h1>
+          {bengaliSubtitle && (
+            <span className="block text-sm sm:text-base font-medium text-stone-500 font-hind tracking-normal mt-1">
+              ({bengaliSubtitle})
+            </span>
+          )}
+        </div>
         {product.reviewCount > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-stone-600">
             <span className="text-amber-500 text-sm leading-none">★</span>

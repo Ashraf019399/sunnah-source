@@ -45,6 +45,66 @@ export function formatVariantWeightLabel(variant: {
   return variant.displayName;
 }
 
+export function formatEnglishWeightLabel(variant?: {
+  weightValue?: number;
+  weightUnit?: string;
+  displayName?: string;
+}): string {
+  if (!variant) return "";
+  const { weightValue, weightUnit, displayName } = variant;
+
+  if (weightValue && weightUnit) {
+    const unit = weightUnit.toLowerCase().trim();
+    if (unit === "g" || unit === "gram" || unit === "grams" || unit === "gm") {
+      if (weightValue >= 1000 && weightValue % 1000 === 0) {
+        return `${weightValue / 1000}kg`;
+      }
+      return `${weightValue}g`;
+    }
+    if (unit === "kg") {
+      return `${weightValue}kg`;
+    }
+    if (unit === "ml") {
+      if (weightValue >= 1000 && weightValue % 1000 === 0) {
+        return `${weightValue / 1000}L`;
+      }
+      return `${weightValue}ml`;
+    }
+    if (unit === "l" || unit === "liter" || unit === "litre") {
+      return `${weightValue}L`;
+    }
+    return `${weightValue}${unit}`;
+  }
+
+  // Fallback parsing from displayName if weightValue/unit not explicitly separated
+  if (displayName) {
+    const bnToEnMap: Record<string, string> = {
+      "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
+      "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9",
+    };
+    const normalized = displayName.replace(/[০-৯]/g, (d) => bnToEnMap[d] || d);
+    const kgMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:কেজি|kg)/i);
+    if (kgMatch) return `${kgMatch[1]}kg`;
+    const gmMatch = normalized.match(/(\d+)\s*(?:গ্রাম|gm|g)/i);
+    if (gmMatch) {
+      const val = parseInt(gmMatch[1], 10);
+      if (val >= 1000 && val % 1000 === 0) return `${val / 1000}kg`;
+      return `${val}g`;
+    }
+    const literMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:লিটার|l|liter)/i);
+    if (literMatch) return `${literMatch[1]}L`;
+    const mlMatch = normalized.match(/(\d+)\s*(?:মিলি|ml)/i);
+    if (mlMatch) {
+      const val = parseInt(mlMatch[1], 10);
+      if (val >= 1000 && val % 1000 === 0) return `${val / 1000}L`;
+      return `${val}ml`;
+    }
+    return displayName;
+  }
+
+  return "";
+}
+
 export function isValidBDPhone(phone: string): boolean {
   return /^(?:8801|01)[3-9]\d{8}$/.test(phone.replace(/\D/g, ""));
 }
