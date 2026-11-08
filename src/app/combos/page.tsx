@@ -45,7 +45,7 @@ export default function CombosPage() {
       <main className="flex-1 pb-16 lg:pb-12 space-y-8">
         {/* Breadcrumb & Header Banner */}
         <section className="bg-white border-b border-surface-border py-8 px-4 shadow-subtle">
-          <div className="container mx-auto max-w-7xl space-y-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             {/* Breadcrumb: হোম → কম্বো অফার */}
             <nav aria-label="ব্রেডক্রাম্ব" className="flex items-center gap-1.5 text-xs text-charcoal-500">
               <Link href="/" className="hover:text-brand-700 transition-colors font-medium">
@@ -82,7 +82,7 @@ export default function CombosPage() {
         </section>
 
         {/* Content Section: Product Grid OR Polished Empty State */}
-        <section className="container mx-auto max-w-7xl px-4 space-y-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 space-y-8">
           {comboProducts.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-surface-border">

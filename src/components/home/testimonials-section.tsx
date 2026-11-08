@@ -216,7 +216,7 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="container mx-auto max-w-7xl px-4 py-8 lg:py-12 space-y-10 font-bengali">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 space-y-8 sm:space-y-10 font-bengali w-full">
       {/* 1. Header & Social Proof Eyebrow */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3.5 py-1 rounded-full text-xs font-bold shadow-xs">
@@ -224,10 +224,10 @@ export function TestimonialsSection() {
           <span>প্রমাণিত বিশুদ্ধতা ও গ্রাহক সন্তুষ্টি</span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-charcoal-900 tracking-tight leading-tight">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-stone-900 tracking-tight leading-snug">
           গ্রাহকদের সন্তুষ্টি ও মতামত
         </h2>
-        <p className="text-xs sm:text-sm md:text-base text-charcoal-600 leading-relaxed">
+        <p className="text-xs sm:text-sm md:text-base tracking-normal text-stone-500 font-medium leading-relaxed">
           দেশজুড়ে হাজারো সচেতন পরিবারের আস্থার প্রতীক সুন্নাহ সোর্স। যাচাইকৃত ক্রেতাদের মুখ থেকেই শুনুন শতভাগ বিশুদ্ধ খাদ্যের বাস্তব অভিজ্ঞতা।
         </p>
         <div className="w-20 h-1 bg-amber-500 rounded-full mx-auto mt-2" />
@@ -235,57 +235,57 @@ export function TestimonialsSection() {
 
       {/* 2. Top Trust Proof Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-surface-border shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
           <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 border border-brand-100">
             <Users className="w-5 h-5 text-brand-700" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-charcoal-900 tracking-tight font-mono block">
+            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
               ১০,০০০+
             </span>
-            <span className="text-[11px] sm:text-xs text-charcoal-500 font-semibold">
+            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
               সন্তুষ্ট পরিবার
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-surface-border shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
           <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100">
             <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-charcoal-900 tracking-tight font-mono block">
+            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
               ৪.৯ / ৫.০
             </span>
-            <span className="text-[11px] sm:text-xs text-charcoal-500 font-semibold">
+            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
               গড় কাস্টমার রেটিং
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-surface-border shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-charcoal-900 tracking-tight font-mono block">
+            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
               ৯৯.২%
             </span>
-            <span className="text-[11px] sm:text-xs text-charcoal-500 font-semibold">
+            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
               পজিটিভ রিভিউ
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-surface-border shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
           <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 border border-rose-100">
             <ShieldCheck className="w-5 h-5 text-rose-600" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-charcoal-900 tracking-tight font-mono block">
+            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
               ১০০%
             </span>
-            <span className="text-[11px] sm:text-xs text-charcoal-500 font-semibold">
+            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
               মানি-ব্যাক নিশ্চয়তা
             </span>
           </div>
@@ -347,7 +347,7 @@ export function TestimonialsSection() {
                   {/* Product Tag */}
                   {review.product && (
                     <div className="pt-1">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200/70 truncate max-w-full select-none">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-800 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200/70 truncate max-w-full select-none">
                         পণ্য: {review.product}
                       </span>
                     </div>
@@ -426,7 +426,7 @@ export function TestimonialsSection() {
       </div>
 
       {/* 4. High-Converting Bottom Trust & Action Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-3xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-2xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2 text-center md:text-left max-w-xl">
           <span className="inline-block bg-accent-amber/20 text-accent-amber border border-accent-amber/40 text-xs font-bold px-3 py-1 rounded-full">
             ১০০% নিরাপদ ও ঝুঁকিমুক্ত কেনাকাটা
@@ -442,7 +442,7 @@ export function TestimonialsSection() {
         <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
           <Link
             href="/shop"
-            className="w-full sm:w-auto text-center px-6 py-3 rounded-xl bg-accent-amber hover:bg-accent-dark text-charcoal-900 font-extrabold text-xs sm:text-sm transition-all shadow-card"
+            className="w-full sm:w-auto text-center px-6 h-11 sm:h-12 flex items-center justify-center rounded-xl bg-accent-amber hover:bg-accent-dark text-charcoal-900 font-extrabold text-xs sm:text-sm transition-all shadow-card"
           >
             সব পণ্য দেখুন
           </Link>
@@ -450,7 +450,7 @@ export function TestimonialsSection() {
             href="https://wa.me/8801914612007"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition-all shadow-xs"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 h-11 sm:h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition-all shadow-xs"
           >
             <MessageCircle className="w-4 h-4" />
             <span>হোয়াটসঅ্যাপে অর্ডার</span>

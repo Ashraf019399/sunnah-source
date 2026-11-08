@@ -9,7 +9,7 @@ export function MobilePromoBanners() {
   return (
     <section
       aria-label="অফার ব্যানার"
-      className="container mx-auto max-w-7xl px-4 lg:hidden font-bengali"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:hidden font-bengali w-full"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
         {TWIN_PROMOS.map((promo) => (
@@ -19,7 +19,7 @@ export function MobilePromoBanners() {
             prefetch={true}
             draggable={false}
             aria-label={promo.alt}
-            className="group relative w-full rounded-2xl overflow-hidden shadow-subtle hover:shadow-md transition-all duration-300 border border-charcoal-200/60 hover:border-emerald-500/40 aspect-[21/9] sm:aspect-[16/7] block bg-stone-900"
+            className="group relative w-full rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 border border-stone-200/80 hover:border-emerald-500/40 aspect-[21/9] sm:aspect-[16/7] block bg-stone-900"
           >
             <Image
               src={promo.image}

@@ -110,7 +110,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     <article
       aria-label={product.titleBn}
       className={cn(
-        "bg-white rounded-2xl border border-surface-border overflow-hidden hover:shadow-card transition-all flex flex-col justify-between group font-bengali",
+        "h-full bg-white rounded-2xl border border-stone-200/80 overflow-hidden hover:shadow-card transition-all duration-200 flex flex-col justify-between group font-bengali",
         className
       )}
     >
@@ -141,7 +141,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
         {/* Discount Badge on Top-Left */}
         {hasDiscount && (
           <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none select-none">
-            <span className="bg-accent-amber text-charcoal-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+            <span className="bg-accent-amber text-charcoal-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
               {discountPercent}% ছাড়
             </span>
           </div>
@@ -169,10 +169,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
         </button>
       </div>
 
-      {/* Product Meta & Variant Selection */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+      {/* Product Meta & Variant Selection - Flex Column with justify-between */}
+      <div className="p-3.5 sm:p-4 flex flex-col justify-between flex-1">
         <div className="space-y-1.5">
-          <h3 className="font-bold text-charcoal-900 text-sm line-clamp-2 leading-snug mt-2 sm:mt-2.5">
+          <h3 className="line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem] font-bengali font-bold text-stone-900 leading-snug text-xs sm:text-sm">
             <Link
               href={`/product/${product.slug}`}
               prefetch={true}
@@ -183,14 +183,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           </h3>
 
           {activeVariant?.displayName && (
-            <p className="text-[11px] text-charcoal-500 font-medium">
+            <p className="text-[11px] text-charcoal-500 font-medium line-clamp-1">
               {activeVariant.displayName}
             </p>
           )}
 
           {product.variants && product.variants.length > 1 && (
             <div
-              className="flex flex-wrap gap-1.5 pt-1"
+              className="flex flex-wrap gap-1.5 pt-0.5"
               role="radiogroup"
               aria-label="ওজন বা ভ্যারিয়েন্ট নির্বাচন করুন"
             >
@@ -208,7 +208,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
                       setSelectedVariant(variant);
                     }}
                     className={cn(
-                      "px-2 py-0.5 text-[10px] font-semibold rounded-lg border transition-all",
+                      "px-2.5 py-0.5 text-[10px] font-semibold rounded-full border transition-all",
                       isSelected
                         ? "bg-brand-700 text-white border-brand-700 shadow-xs"
                         : "bg-surface-canvas text-charcoal-700 border-surface-border hover:border-brand-300"
@@ -222,66 +222,69 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           )}
         </div>
 
-        {/* Pricing & Stock Status */}
-        <div className="pt-2.5 border-t border-surface-border/60 flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-mono font-bold text-brand-700 text-base sm:text-lg">
-              {formatBDT(currentPrice)}
-            </span>
-            {hasDiscount && (
-              <span className="font-mono text-[11px] text-stone-400 line-through">
-                {formatBDT(regularPrice)}
+        {/* Bottom Pinned Area: Pricing & Stock Baseline Row + Action Buttons */}
+        <div className="mt-auto pt-3 space-y-2.5">
+          {/* Price & Stock row: Always aligned to the baseline */}
+          <div className="flex items-baseline justify-between mt-auto pt-2 border-t border-stone-200/80 gap-2">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono font-bold text-brand-700 text-base sm:text-lg">
+                {formatBDT(currentPrice)}
+              </span>
+              {hasDiscount && (
+                <span className="font-mono text-[11px] text-stone-400 line-through">
+                  {formatBDT(regularPrice)}
+                </span>
+              )}
+            </div>
+            {isOutOfStock ? (
+              <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200/80 px-2.5 py-0.5 rounded-full shrink-0">
+                স্টক শেষ
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full shrink-0">
+                স্টকে আছে
               </span>
             )}
           </div>
-          {isOutOfStock ? (
-            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200/80 px-2 py-0.5 rounded-full">
-              স্টক শেষ
-            </span>
-          ) : (
-            <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
-              স্টকে আছে
-            </span>
-          )}
-        </div>
 
-        {/* Dual Action Buttons (Ghorer Bazar Style) */}
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-3 font-bengali">
-          {/* Button 1: Add to Cart */}
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            className={cn(
-              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold font-sans transition-all duration-200",
-              isOutOfStock
-                ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
-                : "bg-white text-emerald-800 border border-emerald-700/80 hover:bg-emerald-800 hover:text-white hover:border-emerald-800 shadow-sm active:scale-95 cursor-pointer"
-            )}
-            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} Add to Cart`}
-            title={isOutOfStock ? "স্টক শেষ" : "Add to Cart"}
-          >
-            <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Add to Cart</span>
-          </button>
+          {/* Action Buttons row: Pinned to the bottom across all cards in the grid row so buttons never stagger up and down */}
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 font-bengali">
+            {/* Button 1: Add to Cart */}
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              className={cn(
+                "h-11 flex items-center justify-center gap-1 sm:gap-1.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold font-sans transition-all duration-200",
+                isOutOfStock
+                  ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
+                  : "bg-white text-emerald-800 border border-emerald-700/80 hover:bg-emerald-800 hover:text-white hover:border-emerald-800 shadow-xs hover:shadow-sm active:scale-95 cursor-pointer"
+              )}
+              aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} Add to Cart`}
+              title={isOutOfStock ? "স্টক শেষ" : "Add to Cart"}
+            >
+              <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Add to Cart</span>
+            </button>
 
-          {/* Button 2: Buy Now */}
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={isOutOfStock}
-            className={cn(
-              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 shadow-xs hover:shadow-sm",
-              isOutOfStock
-                ? "bg-stone-200 text-stone-400 cursor-not-allowed"
-                : "bg-emerald-900 text-white hover:bg-emerald-950 active:scale-95 cursor-pointer"
-            )}
-            aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} Buy Now`}
-            title={isOutOfStock ? "স্টক শেষ" : "Buy Now"}
-          >
-            <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Buy Now</span>
-          </button>
+            {/* Button 2: Buy Now */}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={isOutOfStock}
+              className={cn(
+                "h-11 flex items-center justify-center gap-1 sm:gap-1.5 px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 shadow-xs hover:shadow-sm",
+                isOutOfStock
+                  ? "bg-stone-200 text-stone-400 cursor-not-allowed"
+                  : "bg-emerald-900 text-white hover:bg-emerald-950 active:scale-95 cursor-pointer"
+              )}
+              aria-label={isOutOfStock ? "পণ্যটি স্টকে নেই" : `${product.titleBn} Buy Now`}
+              title={isOutOfStock ? "স্টক শেষ" : "Buy Now"}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Buy Now</span>
+            </button>
+          </div>
         </div>
       </div>
     </article>

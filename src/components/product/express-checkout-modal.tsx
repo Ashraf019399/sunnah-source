@@ -260,7 +260,7 @@ export function ExpressCheckoutModal({
       />
 
       {/* Slide-Up Drawer / Modal Card */}
-      <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl z-10 max-h-[92vh] flex flex-col overflow-hidden animate-slide-up sm:animate-scale-in">
+      <div className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl border border-stone-200/80 shadow-2xl z-10 max-h-[92vh] flex flex-col overflow-hidden animate-slide-up sm:animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border bg-stone-50/70">
           <div className="flex items-center gap-2">
@@ -366,7 +366,7 @@ export function ExpressCheckoutModal({
                     {product.titleBn}
                   </h4>
                   <div className="flex items-center gap-2 text-xs text-stone-600 mt-0.5">
-                    <span className="bg-brand-50 text-brand-800 font-bold px-2 py-0.5 rounded-md border border-brand-200">
+                    <span className="bg-brand-50 text-brand-800 font-bold px-2.5 py-0.5 rounded-full border border-brand-200">
                       {formatVariantWeightLabel(selectedVariant)}
                     </span>
                     <span className="font-mono text-brand-800 font-bold">
@@ -462,7 +462,7 @@ export function ExpressCheckoutModal({
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="আপনার সম্পূর্ণ নাম লিখুন"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-stone-300 bg-stone-50/50 focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 outline-none transition-all placeholder:text-stone-400"
+                    className="w-full h-11 px-4 text-sm rounded-xl border border-stone-300 bg-stone-50/50 focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 outline-none transition-all placeholder:text-stone-400"
                   />
                 </div>
 
@@ -478,7 +478,7 @@ export function ExpressCheckoutModal({
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="০১৭XXXXXXXX (১১ ডিজিটের মোবাইল নম্বর)"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-stone-300 bg-stone-50/50 focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 outline-none transition-all placeholder:text-stone-400 font-mono"
+                    className="w-full h-11 px-4 text-sm rounded-xl border border-stone-300 bg-stone-50/50 focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20 outline-none transition-all placeholder:text-stone-400 font-mono"
                   />
                 </div>
 
@@ -538,7 +538,7 @@ export function ExpressCheckoutModal({
                 type="submit"
                 disabled={isSubmitting}
                 className={cn(
-                  "w-full py-4 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 bg-gradient-to-r from-brand-700 via-brand-800 to-brand-900 hover:from-brand-800 hover:to-brand-950 text-white shadow-lg active:scale-[0.99] transition-all cursor-pointer ring-2 ring-brand-700/20",
+                  "w-full h-12 px-6 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 bg-gradient-to-r from-brand-700 via-brand-800 to-brand-900 hover:from-brand-800 hover:to-brand-950 text-white shadow-lg active:scale-[0.99] transition-all cursor-pointer ring-2 ring-brand-700/20",
                   isSubmitting && "opacity-80 cursor-wait"
                 )}
               >

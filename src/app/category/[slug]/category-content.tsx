@@ -61,7 +61,7 @@ export function CategoryContent({ category, products }: CategoryContentProps) {
     <div className="space-y-8 font-bengali">
       {/* 1. Category Header & Breadcrumb Banner */}
       <section className="bg-white border-b border-surface-border py-8 px-4 shadow-subtle">
-        <div className="container mx-auto max-w-7xl space-y-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           {/* Breadcrumb: হোম → ক্যাটাগরি → [ক্যাটাগরির নাম] */}
           <nav aria-label="ব্রেডক্রাম্ব" className="flex items-center gap-1.5 text-xs text-charcoal-500">
             <Link href="/" className="hover:text-brand-700 transition-colors font-medium">
@@ -148,7 +148,7 @@ export function CategoryContent({ category, products }: CategoryContentProps) {
       </section>
 
       {/* 2. Controls & Products Grid Section */}
-      <section className="container mx-auto max-w-7xl px-4 space-y-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-6">
         {/* Filter Summary & Sorting Controls */}
         <div className="bg-white p-4 rounded-2xl border border-surface-border shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Dynamic Product Count */}

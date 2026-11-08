@@ -10,7 +10,7 @@ export default function RootStorefrontLoading() {
       <main className="flex-1 space-y-12 pb-16 lg:pb-12">
         {/* 1. Hero Banner Skeleton */}
         <section className="bg-brand-900 text-white py-12 md:py-16 lg:py-20 px-4 border-b border-brand-800">
-          <div className="container mx-auto max-w-7xl flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 xl:gap-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 xl:gap-16">
             <div className="w-full lg:w-1/2 xl:flex-1 space-y-5 lg:space-y-6">
               <div className="h-6 w-44 rounded-full bg-brand-800/80 border border-brand-700/80" />
               <div className="space-y-3">
@@ -33,7 +33,7 @@ export default function RootStorefrontLoading() {
         </section>
 
         {/* 2. Trust Feature Badges Skeleton */}
-        <section className="container mx-auto max-w-7xl px-4">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-white rounded-2xl border border-surface-border shadow-subtle">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex items-center gap-3">
@@ -48,7 +48,7 @@ export default function RootStorefrontLoading() {
         </section>
 
         {/* 3. Category Showcase Grid Skeleton */}
-        <section className="container mx-auto max-w-7xl px-4 space-y-6">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex items-end justify-between border-b border-surface-border pb-3">
             <div className="space-y-2">
               <div className="h-4 w-28 rounded-full bg-stone-200" />
@@ -73,7 +73,7 @@ export default function RootStorefrontLoading() {
         </section>
 
         {/* 4. Products Grid Skeleton */}
-        <section className="container mx-auto max-w-7xl px-4 space-y-6">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex items-center justify-between border-b border-surface-border pb-2">
             <div className="space-y-1.5">
               <div className="h-6 w-48 rounded-xl bg-stone-200" />

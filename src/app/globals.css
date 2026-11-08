@@ -1,9 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-:root { --background: #FBF9F5; --foreground: #181A18; }
-body { background: var(--background); color: var(--foreground); overflow-x: hidden; }
-:focus-visible { outline: 2px solid #1B4D2E !important; outline-offset: 3px !important; }
+
+:root {
+  --background: #FBF9F5;
+  --foreground: #181A18;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+:focus-visible {
+  outline: 2px solid #1B4D2E !important;
+  outline-offset: 3px !important;
+}
 
 /* Custom scrollbar hiding utilities for horizontal strips */
 .no-scrollbar::-webkit-scrollbar {
@@ -17,4 +30,54 @@ body { background: var(--background); color: var(--foreground); overflow-x: hidd
 /* Mobile Safe Area Inset Support */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@layer base {
+  /* Bengali Typography & Line-Height Breathing Space:
+     Bengali matras and diacritics (উ-কার, ই-কার, রেফ, হসন্ত) extend above and below the baseline.
+     Enforce generous line-heights so characters and diacritics never clip. */
+  .font-bengali h1,
+  .font-bengali h2,
+  .font-bengali h3,
+  .font-bengali h4,
+  h1.font-bengali,
+  h2.font-bengali,
+  h3.font-bengali,
+  h4.font-bengali {
+    line-height: 1.35;
+  }
+
+  .font-bengali p,
+  p.font-bengali {
+    line-height: 1.6;
+  }
+}
+
+@layer utilities {
+  /* Section Subtitles standard styling */
+  .section-subtitle {
+    letter-spacing: 0;
+    color: #78716c; /* text-stone-500 */
+    font-weight: 500; /* font-medium */
+    line-height: 1.6; /* leading-relaxed */
+  }
+
+  /* 3-Tier Design System Standards */
+  /* Tier 1: Cards, Containers & Modals */
+  .tier1-card {
+    border-radius: 1rem; /* rounded-2xl (16px) */
+    border: 1px solid rgba(231, 229, 228, 0.8); /* border-stone-200/80 */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* soft shadow */
+  }
+
+  /* Tier 2: Action Buttons & Input Fields */
+  .tier2-action {
+    border-radius: 0.75rem; /* rounded-xl (12px) */
+    min-height: 2.75rem; /* touch-friendly h-11 */
+  }
+
+  /* Tier 3: Badges, Tags, Pills, Discount Indicators */
+  .tier3-pill {
+    border-radius: 9999px; /* rounded-full */
+  }
 }

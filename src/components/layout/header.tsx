@@ -429,7 +429,7 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 w-full font-bengali shadow-subtle">
       {/* 1. Main Header */}
       <div className="bg-white border-b border-surface-border">
-        <div className="container mx-auto px-4 max-w-7xl py-3 sm:py-3.5 md:py-4 lg:py-5 min-h-[72px] sm:min-h-[78px] lg:min-h-[90px] flex items-center justify-between gap-3 sm:gap-4 lg:gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 md:py-4 lg:py-5 min-h-[72px] sm:min-h-[78px] lg:min-h-[90px] flex items-center justify-between gap-3 sm:gap-4 lg:gap-6">
           {/* Left: Mobile Menu & Logo */}
           <div className="flex items-center gap-3 shrink-0">
             <button
@@ -780,7 +780,7 @@ export const Header: React.FC = () => {
         aria-label="Secondary Navigation"
         className="hidden lg:block bg-brand-900 border-b border-brand-800 text-stone-200 text-sm font-medium"
       >
-        <div className="container mx-auto px-4 max-w-7xl py-3 lg:py-3.5 min-h-[48px] lg:min-h-[50px] flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-3.5 min-h-[48px] lg:min-h-[50px] flex items-center justify-between">
           <ul className="flex items-center gap-5 lg:gap-7">
             {/* Offer Zone */}
             <li>

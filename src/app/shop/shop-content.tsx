@@ -130,7 +130,7 @@ export function ShopContent() {
     <div className="space-y-8 font-bengali">
       {/* 1. Shop Header & Breadcrumb Section */}
       <section className="bg-white border-b border-surface-border py-8 px-4 shadow-subtle">
-        <div className="container mx-auto max-w-7xl space-y-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           {/* Breadcrumb: হোম → সব পণ্য */}
           <nav aria-label="ব্রেডক্রাম্ব" className="flex items-center gap-1.5 text-xs text-charcoal-500">
             <Link
@@ -208,7 +208,7 @@ export function ShopContent() {
       </section>
 
       {/* 2. Category Filter & Controls Section */}
-      <section className="container mx-auto max-w-7xl px-4 space-y-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-6">
         {/* Horizontal Category Filter */}
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
@@ -296,7 +296,7 @@ export function ShopContent() {
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2">
               {selectedCategory !== "all" && activeCategoryObj && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] bg-brand-50 border border-brand-200 text-brand-800 font-bold px-2.5 py-1 rounded-lg">
+                <span className="inline-flex items-center gap-1.5 text-[11px] bg-brand-50 border border-brand-200 text-brand-800 font-bold px-3 py-1 rounded-full">
                   <span>ক্যাটাগরি: {activeCategoryObj.nameBn}</span>
                   <button
                     type="button"
@@ -310,7 +310,7 @@ export function ShopContent() {
               )}
 
               {searchInput.trim() && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] bg-accent-amber/15 border border-accent-amber/40 text-charcoal-900 font-bold px-2.5 py-1 rounded-lg">
+                <span className="inline-flex items-center gap-1.5 text-[11px] bg-accent-amber/15 border border-accent-amber/40 text-charcoal-900 font-bold px-3 py-1 rounded-full">
                   <span>অনুসন্ধান: &ldquo;{searchInput.trim()}&rdquo;</span>
                   <button
                     type="button"

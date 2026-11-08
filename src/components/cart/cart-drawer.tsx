@@ -308,7 +308,7 @@ export const CartDrawer: React.FC = () => {
               </div>
 
               {isQualified && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>ডেলিভারি চার্জ: ফ্রি (সাশ্রয় ৳৭০-৳১৩০)</span>
                 </div>
@@ -319,7 +319,7 @@ export const CartDrawer: React.FC = () => {
               <Link
                 href="/checkout"
                 onClick={handleCheckoutNavigation}
-                className="w-full bg-brand-700 hover:bg-brand-800 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-card hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer relative z-30 pointer-events-auto"
+                className="w-full h-12 bg-brand-700 hover:bg-brand-800 text-white font-bold px-4 rounded-xl flex items-center justify-center gap-2 text-sm shadow-card hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer relative z-30 pointer-events-auto"
               >
                 <span>অর্ডার সম্পন্ন করুন</span>
                 <ArrowRight className="w-4 h-4" />

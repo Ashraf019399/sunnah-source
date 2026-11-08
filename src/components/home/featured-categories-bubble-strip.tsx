@@ -61,7 +61,7 @@ export function FeaturedCategoriesBubbleStrip() {
   return (
     <section
       aria-label="জনপ্রিয় ক্যাটাগরি"
-      className="container mx-auto max-w-7xl lg:hidden font-bengali"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:hidden font-bengali w-full"
     >
       {/* ক্যাটাগরি সেকশন হেডার */}
       <div className="flex items-center justify-between px-4 mb-1.5">

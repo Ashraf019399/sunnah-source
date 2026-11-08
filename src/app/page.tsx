@@ -49,7 +49,7 @@ export default function HomePage() {
       <Header />
 
       {/* ৩. স্টোরফ্রন্ট বডি */}
-      <main className="flex-1 space-y-8 sm:space-y-10 lg:space-y-12 pb-16 lg:pb-12">
+      <main className="flex-1 pb-16 lg:pb-12 space-y-4 sm:space-y-6 lg:space-y-8">
         {/* ১. হিরো ব্যানার সেকশন — Sunnah Royal Split (ডেস্কটপে স্লাইডার ও ব্যানার পাশাপাশি, মোবাইলে শুধু মেইন স্লাইডার) */}
         <HeroSection />
 
@@ -57,17 +57,17 @@ export default function HomePage() {
         <FeaturedCategoriesBubbleStrip />
 
         {/* ৩. ৪টি ট্রাস্ট ফিচার ব্যাজ (কমপ্যাক্ট ২x২ গ্রিড) */}
-        <section className="container mx-auto max-w-7xl px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 px-4 py-3.5 sm:px-8 sm:py-5 lg:px-12 bg-white rounded-2xl border border-surface-border shadow-subtle text-xs">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 w-full">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 px-4 py-3.5 sm:px-8 sm:py-5 lg:px-12 bg-white rounded-2xl border border-stone-200/80 shadow-xs text-xs">
             <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-3.5 w-full">
               <div className="p-2 sm:p-2.5 bg-brand-50 text-brand-700 rounded-xl shrink-0">
                 <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                <strong className="block text-stone-900 text-[11px] sm:text-xs leading-tight">
                   100% Pure & Natural
                 </strong>
-                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                <span className="text-stone-500 text-[9.5px] sm:text-xs leading-tight block">
                   Lab Tested & Certified
                 </span>
               </div>
@@ -77,10 +77,10 @@ export default function HomePage() {
                 <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                <strong className="block text-stone-900 text-[11px] sm:text-xs leading-tight">
                   Nationwide Delivery
                 </strong>
-                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                <span className="text-stone-500 text-[9.5px] sm:text-xs leading-tight block">
                   Cash on Delivery Available
                 </span>
               </div>
@@ -90,10 +90,10 @@ export default function HomePage() {
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                <strong className="block text-stone-900 text-[11px] sm:text-xs leading-tight">
                   Fast Delivery
                 </strong>
-                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                <span className="text-stone-500 text-[9.5px] sm:text-xs leading-tight block">
                   Within 24-48 Hours
                 </span>
               </div>
@@ -103,10 +103,10 @@ export default function HomePage() {
                 <Award className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <strong className="block text-charcoal-900 text-[11px] sm:text-xs leading-tight">
+                <strong className="block text-stone-900 text-[11px] sm:text-xs leading-tight">
                   7 Days Return
                 </strong>
-                <span className="text-charcoal-500 text-[9.5px] sm:text-xs leading-tight block">
+                <span className="text-stone-500 text-[9.5px] sm:text-xs leading-tight block">
                   Hassle-Free Guarantee
                 </span>
               </div>
@@ -115,13 +115,13 @@ export default function HomePage() {
         </section>
 
         {/* ৪. Naturo & Ghorer Bazar Inspired "Best Selling Products" Showcase (পণ্য, মূল্য ও সরাসরি বাই নাও বাটন) */}
-        <section className="container mx-auto max-w-7xl px-4">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 w-full">
           {/* Header Section */}
-          <div className="text-center max-w-xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-black text-brand-900 tracking-tight">
+          <div className="text-center max-w-xl mx-auto space-y-1.5">
+            <h2 className="text-2xl sm:text-3xl font-black text-brand-900 tracking-tight leading-snug">
               Best Selling Products
             </h2>
-            <p className="text-xs sm:text-sm text-charcoal-600 mt-1">
+            <p className="text-xs sm:text-sm tracking-normal text-stone-500 font-medium leading-relaxed">
               গ্রাহকদের সবচেয়ে পছন্দের ও সর্বাধিক বিক্রিত খাঁটি পণ্যসমূহ
             </p>
             <div className="w-16 h-1 bg-amber-500 rounded-full mx-auto mt-2.5" />
@@ -139,7 +139,7 @@ export default function HomePage() {
             <Link
               href="/shop"
               prefetch={true}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border-2 border-brand-700 text-brand-800 hover:bg-brand-700 hover:text-white font-bold text-xs sm:text-sm transition-all shadow-xs group"
+              className="inline-flex items-center gap-2 px-6 h-11 rounded-xl border-2 border-brand-700 text-brand-800 hover:bg-brand-700 hover:text-white font-bold text-xs sm:text-sm transition-all shadow-xs group"
             >
               <span>সব পণ্য দেখুন</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -151,16 +151,16 @@ export default function HomePage() {
         <MobilePromoBanners />
 
         {/* ৬. ক্যাটাগরি তালিকা */}
-        <section className="container mx-auto max-w-7xl px-4 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-surface-border">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 w-full space-y-6 sm:space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-stone-200/80">
             <div>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-700 bg-brand-50 border border-brand-200/60 px-2.5 py-0.5 rounded-full mb-1.5">
                 খাঁটি পণ্যের সমাহার
               </span>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-charcoal-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 tracking-tight leading-snug">
                 পণ্য ক্যাটাগরি
               </h2>
-              <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">
+              <p className="text-xs sm:text-sm tracking-normal text-stone-500 font-medium leading-relaxed mt-0.5">
                 আপনার প্রয়োজনীয় খাঁটি ও প্রাকৃতিক খাদ্যপণ্য বেছে নিন।
               </p>
             </div>
@@ -182,10 +182,10 @@ export default function HomePage() {
                   key={cat.id}
                   href={"/category/" + cat.slug}
                   prefetch={true}
-                  className="group p-3 sm:p-4 bg-white rounded-2xl border border-surface-border hover:border-brand-700/60 shadow-subtle hover:shadow-card transition-all duration-300 flex flex-col justify-between text-left"
+                  className="group p-3 sm:p-4 bg-white rounded-2xl border border-stone-200/80 hover:border-brand-700/60 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left"
                 >
                   <div>
-                    <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden mb-3 bg-surface-canvas border border-surface-border/40">
+                    <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden mb-3 bg-surface-canvas border border-stone-200/60">
                       <Image
                         src={imageSrc}
                         alt={cat.nameBn}
@@ -194,14 +194,14 @@ export default function HomePage() {
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
-                    <h3 className="font-bold text-xs sm:text-sm text-charcoal-900 group-hover:text-brand-700 transition-colors leading-snug line-clamp-1">
+                    <h3 className="font-bold text-xs sm:text-sm text-stone-900 group-hover:text-brand-700 transition-colors leading-snug line-clamp-1">
                       {cat.nameBn}
                     </h3>
-                    <span className="text-[11px] text-charcoal-500 block mt-0.5 font-sans line-clamp-1">
+                    <span className="text-[11px] text-stone-500 block mt-0.5 font-sans line-clamp-1">
                       {cat.nameEn}
                     </span>
                   </div>
-                  <div className="mt-3 pt-2.5 border-t border-surface-border/60 flex items-center justify-between text-[11px] font-bold text-brand-700 group-hover:text-accent-dark transition-colors">
+                  <div className="mt-3 pt-2.5 border-t border-stone-200/60 flex items-center justify-between text-[11px] font-bold text-brand-700 group-hover:text-accent-dark transition-colors">
                     <span>পণ্য দেখুন</span>
                     <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                   </div>
@@ -215,16 +215,16 @@ export default function HomePage() {
         <TestimonialsSection />
 
         {/* সম্পূর্ণ ক্যাটালগ ও সকল খাঁটি পণ্যসমূহ */}
-        <section className="container mx-auto max-w-7xl px-4 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-surface-border">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 w-full space-y-6 sm:space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-stone-200/80">
             <div>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full mb-1.5">
                 সম্পূর্ণ ক্যাটালগ
               </span>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-charcoal-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 tracking-tight leading-snug">
                 আমাদের সকল খাঁটি পণ্যসমূহ
               </h2>
-              <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">
+              <p className="text-xs sm:text-sm tracking-normal text-stone-500 font-medium leading-relaxed mt-0.5">
                 সুন্নাহ সোর্সের শতভাগ বিশুদ্ধ ও অর্গানিক খাদ্যপণ্যের সম্পূর্ণ সমাহার।
               </p>
             </div>

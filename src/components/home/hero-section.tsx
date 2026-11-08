@@ -188,7 +188,7 @@ export function HeroSection() {
   return (
     <section
       aria-label="Sunnah Source Hero Graphic Banners"
-      className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 sm:py-5 font-bengali"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 font-bengali w-full"
     >
       {/* Sunnah Royal Split Grid: 12-Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 lg:gap-5 items-stretch">
@@ -206,11 +206,10 @@ export function HeroSection() {
         >
           {/* Horizontal Sliding Banner Track with Smooth Follow & Snap Animation */}
           <div
-            className={`flex h-full will-change-transform ${
-              isDragging
+            className={`flex h-full will-change-transform ${isDragging
                 ? "transition-none"
                 : "transition-transform duration-700 ease-out"
-            }`}
+              }`}
             style={{
               transform: isDragging
                 ? `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`
@@ -287,11 +286,10 @@ export function HeroSection() {
                   setCurrentIndex(idx);
                 }}
                 aria-label={`Go to slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full cursor-pointer ${
-                  currentIndex === idx
+                className={`transition-all duration-300 rounded-full cursor-pointer ${currentIndex === idx
                     ? "w-6 sm:w-7 h-2 sm:h-2.5 bg-accent-amber shadow-xs"
                     : "w-2 sm:w-2.5 h-2 sm:h-2.5 bg-white/50 hover:bg-white/80"
-                }`}
+                  }`}
               />
             ))}
           </div>
