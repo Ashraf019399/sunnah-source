@@ -45,23 +45,28 @@ export interface PromoCard {
   alt: string;
   link: string;
   title?: string;
+  subtitle?: string;
   badge?: string;
 }
 
 export const TWIN_PROMOS: PromoCard[] = [
   {
-    id: "promo-combo",
-    image: "/images/banners/sunnah-special-combo-banner.jpg",
+    id: "sunnah-special-combo",
     title: "সুন্নাহ স্পেশাল কম্বো",
+    subtitle: "প্রাকৃতিক কাঁচা মধু, মদিনার আজওয়া খেজুর ও গাওয়া ঘি",
     badge: "১৫% ছাড়",
+    image: "/images/banners/sunnah-special-combo-banner.jpg",
     link: "/combos",
     alt: "সুন্নাহ স্পেশাল কম্বো — ১৫% ছাড়",
   },
   {
-    id: "promo-honey",
-    image: "/images/banners/promo-honey.jpg",
-    alt: "১০০% খাঁটি সুন্দরবনের কাঁচা মধু - 100% Pure Wild Raw Honey",
-    link: "/category/honey",
+    id: "organic-wild-honey",
+    title: "অর্গানিক ওয়াইল্ড হানি",
+    subtitle: "সুন্দরবনের প্রাকৃতিক চাকের খাঁটি কাঁচা মধু",
+    badge: "১০০% খাঁটি",
+    image: "/images/banners/organic-wild-honey-banner.jpg",
+    link: "/product/sundarban-raw-wild-honey",
+    alt: "অর্গানিক ওয়াইল্ড হানি — সুন্দরবনের প্রাকৃতিক চাকের কাঁচা মধু",
   },
 ];
 

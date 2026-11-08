@@ -73,8 +73,8 @@ test("Sunnah Special Combo Banner Placement & Hero Configuration Suite", async (
   await t.test("3. Right-side Promo Section (TWIN_PROMOS) features the new Sunnah Special Combo banner", () => {
     // Promo combo card with the new banner
     assert.ok(
-      heroCode.includes('id: "promo-combo"'),
-      "TWIN_PROMOS must include promo-combo"
+      heroCode.includes('id: "sunnah-special-combo"') || heroCode.includes('id: "promo-combo"'),
+      "TWIN_PROMOS must include sunnah-special-combo"
     );
     assert.ok(
       heroCode.includes('image: "/images/banners/sunnah-special-combo-banner.jpg"'),
@@ -98,7 +98,43 @@ test("Sunnah Special Combo Banner Placement & Hero Configuration Suite", async (
     );
   });
 
-  await t.test("4. Mobile Promo Banners seamlessly renders TWIN_PROMOS on mobile viewports", () => {
+  await t.test("4. Right-side Promo Section (TWIN_PROMOS) features the Organic Wild Honey banner in Slot 2", () => {
+    const honeyBannerJpg = path.join(
+      process.cwd(),
+      "public",
+      "images",
+      "banners",
+      "organic-wild-honey-banner.jpg"
+    );
+    assert.ok(fs.existsSync(honeyBannerJpg), "organic-wild-honey-banner.jpg must physically exist");
+
+    assert.ok(
+      heroCode.includes('id: "organic-wild-honey"'),
+      "TWIN_PROMOS must include organic-wild-honey"
+    );
+    assert.ok(
+      heroCode.includes('image: "/images/banners/organic-wild-honey-banner.jpg"'),
+      "Promo honey must use organic-wild-honey-banner.jpg"
+    );
+    assert.ok(
+      heroCode.includes('title: "অর্গানিক ওয়াইল্ড হানি"'),
+      "Promo honey must have title 'অর্গানিক ওয়াইল্ড হানি'"
+    );
+    assert.ok(
+      heroCode.includes('badge: "১০০% খাঁটি"'),
+      "Promo honey must have badge '১০০% খাঁটি'"
+    );
+    assert.ok(
+      heroCode.includes('link: "/product/sundarban-raw-wild-honey"'),
+      "Promo honey must link to '/product/sundarban-raw-wild-honey'"
+    );
+    assert.ok(
+      heroCode.includes('alt: "অর্গানিক ওয়াইল্ড হানি — সুন্দরবনের প্রাকৃতিক চাকের কাঁচা মধু"'),
+      "Promo honey must have correct alt text"
+    );
+  });
+
+  await t.test("5. Mobile Promo Banners seamlessly renders TWIN_PROMOS on mobile viewports", () => {
     assert.ok(
       mobilePromoCode.includes("TWIN_PROMOS"),
       "mobile-promo-banners.tsx must map TWIN_PROMOS"
