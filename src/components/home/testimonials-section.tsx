@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Star,
@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Sparkles,
 } from "lucide-react";
+import { toBanglaDigits } from "@/lib/utils";
 
 export interface Testimonial {
   id: string;
@@ -90,6 +91,7 @@ const TESTIMONIALS: Testimonial[] = [
 ];
 
 export function TestimonialsSection() {
+  const sectionRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
   const [cardsPerView, setCardsPerView] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -99,6 +101,117 @@ export function TestimonialsSection() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
+
+  // Scroll count-up animation state
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [statValues, setStatValues] = useState({
+    stat1: "০+",
+    stat2: "০.০ / ৫.০",
+    stat3: "০.০%",
+    stat4: "০%",
+  });
+
+  // IntersectionObserver to trigger animation when entering viewport (threshold: 0.2)
+  useEffect(() => {
+    if (hasAnimated) return;
+
+    const element = sectionRef.current;
+    if (!element) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setHasAnimated(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry && entry.isIntersecting) {
+          setHasAnimated(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasAnimated]);
+
+  // Smooth Count-Up Animation (1.5s duration, easeOutCubic curve)
+  useEffect(() => {
+    if (!hasAnimated) return;
+
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setStatValues({
+        stat1: "১০,০০০+",
+        stat2: "৪.৯ / ৫.০",
+        stat3: "৯৯.২%",
+        stat4: "১০০%",
+      });
+      return;
+    }
+
+    if (typeof requestAnimationFrame === "undefined") {
+      setStatValues({
+        stat1: "১০,০০০+",
+        stat2: "৪.৯ / ৫.০",
+        stat3: "৯৯.২%",
+        stat4: "১০০%",
+      });
+      return;
+    }
+
+    const duration = 1500;
+    let startTime: number | null = null;
+    let animationFrameId: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const rawProgress = Math.min(elapsed / duration, 1);
+      // easeOutCubic curve
+      const progress = 1 - Math.pow(1 - rawProgress, 3);
+
+      const val1 = Math.round(progress * 10000);
+      const val2 = (progress * 4.9).toFixed(1);
+      const val3 = (progress * 99.2).toFixed(1);
+      const val4 = Math.round(progress * 100);
+
+      setStatValues({
+        stat1: `${toBanglaDigits(val1.toLocaleString("en-US"))}+`,
+        stat2: `${toBanglaDigits(val2)} / ৫.০`,
+        stat3: `${toBanglaDigits(val3)}%`,
+        stat4: `${toBanglaDigits(val4)}%`,
+      });
+
+      if (rawProgress < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      } else {
+        setStatValues({
+          stat1: "১০,০০০+",
+          stat2: "৪.৯ / ৫.০",
+          stat3: "৯৯.২%",
+          stat4: "১০০%",
+        });
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [hasAnimated]);
 
   useEffect(() => {
     setMounted(true);
@@ -216,9 +329,12 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 space-y-8 sm:space-y-10 font-bengali w-full">
+    <section
+      ref={sectionRef}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16 space-y-8 sm:space-y-10 font-bengali font-['Hind_Siliguri',sans-serif] w-full"
+    >
       {/* 1. Header & Social Proof Eyebrow */}
-      <div className="text-center max-w-2xl mx-auto space-y-3">
+      <div className="text-center max-w-2xl mx-auto space-y-3 font-['Hind_Siliguri',sans-serif]">
         <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3.5 py-1 rounded-full text-xs font-bold shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
           <span>প্রমাণিত বিশুদ্ধতা ও গ্রাহক সন্তুষ্টি</span>
@@ -234,58 +350,58 @@ export function TestimonialsSection() {
       </div>
 
       {/* 2. Top Trust Proof Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
           <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 border border-brand-100">
             <Users className="w-5 h-5 text-brand-700" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
-              ১০,০০০+
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+              {statValues.stat1}
             </span>
-            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
               সন্তুষ্ট পরিবার
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
           <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100">
             <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
-              ৪.৯ / ৫.০
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+              {statValues.stat2}
             </span>
-            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
               গড় কাস্টমার রেটিং
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
-              ৯৯.২%
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+              {statValues.stat3}
             </span>
-            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
-              পজিটিভ রিভিউ
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
+              পজিティブ রিভিউ
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5 hover:border-brand-700/50 transition-colors">
+        <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between gap-3">
           <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0 border border-rose-100">
             <ShieldCheck className="w-5 h-5 text-rose-600" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight font-mono block">
-              ১০০%
+            <span className="font-bold text-3xl sm:text-4xl text-stone-900 leading-tight tracking-normal font-['Hind_Siliguri',sans-serif] block">
+              {statValues.stat4}
             </span>
-            <span className="text-[11px] sm:text-xs text-stone-500 font-semibold">
+            <span className="text-xs sm:text-sm text-stone-500 font-semibold font-['Hind_Siliguri',sans-serif] block mt-1">
               মানি-ব্যাক নিশ্চয়তা
             </span>
           </div>
@@ -325,7 +441,7 @@ export function TestimonialsSection() {
                 key={review.id}
                 className="w-full min-w-full sm:w-1/2 sm:min-w-[50%] lg:w-1/3 lg:min-w-[33.333333%] px-2.5 sm:px-3 shrink-0 flex select-none"
               >
-                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-bengali text-left flex flex-col justify-between w-full h-full space-y-4 select-none">
+                <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all font-bengali font-['Hind_Siliguri',sans-serif] text-left flex flex-col justify-between w-full h-full space-y-4 select-none">
                   {/* Top: Stars & Quote Icon */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
@@ -426,7 +542,7 @@ export function TestimonialsSection() {
       </div>
 
       {/* 4. High-Converting Bottom Trust & Action Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-2xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-900 text-white rounded-2xl p-6 sm:p-10 border border-brand-700 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 font-['Hind_Siliguri',sans-serif]">
         <div className="space-y-2 text-center md:text-left max-w-xl">
           <span className="inline-block bg-accent-amber/20 text-accent-amber border border-accent-amber/40 text-xs font-bold px-3 py-1 rounded-full">
             ১০০% নিরাপদ ও ঝুঁকিমুক্ত কেনাকাটা
