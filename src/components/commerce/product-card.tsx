@@ -182,12 +182,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
             </Link>
           </h3>
 
-          {activeVariant?.displayName && (
-            <p className="text-[11px] text-charcoal-500 font-medium line-clamp-1">
-              {activeVariant.displayName}
-            </p>
-          )}
-
           {product.variants && product.variants.length > 1 && (
             <div
               className="flex flex-wrap gap-1.5 pt-0.5"
@@ -237,12 +231,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
               )}
             </div>
             {isOutOfStock ? (
-              <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200/80 px-2.5 py-0.5 rounded-full shrink-0">
-                স্টক শেষ
+              <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 shrink-0">
+                Out of Stock
               </span>
             ) : (
-              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full shrink-0">
-                স্টকে আছে
+              <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
+                In Stock
               </span>
             )}
           </div>
