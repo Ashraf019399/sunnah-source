@@ -76,6 +76,7 @@ async function executeAdminDbQuery<T>(
 
 /**
  * Internal computation for fetching paginated orders.
+ * Uses service role client directly without touching cookies so it is safe inside unstable_cache.
  */
 async function fetchAdminOrdersInternal(
   params: OrdersFilterParams = {}
@@ -86,42 +87,42 @@ async function fetchAdminOrdersInternal(
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    const queryResult = await executeAdminDbQuery<AdminOrder[]>(async (client) => {
-      let query = client
-        .from("orders")
-        .select("*", { count: "exact" });
+    const client = await createAdminClient();
 
-      // Search by Order number, Customer name, or Phone
-      if (params.searchQuery && params.searchQuery.trim().length > 0) {
-        const cleanQuery = params.searchQuery.trim().replace(/[%_]/g, "\\$&");
-        query = query.or(
-          `order_number.ilike.%${cleanQuery}%,guest_name.ilike.%${cleanQuery}%,guest_phone.ilike.%${cleanQuery}%`
-        );
-      }
+    let query = client
+      .from("orders")
+      .select("*", { count: "exact" });
 
-      // Filter by Order Status
-      if (params.status && params.status !== "all") {
-        query = query.eq("order_status", params.status);
-      }
+    // Search by Order number, Customer name, or Phone
+    if (params.searchQuery && params.searchQuery.trim().length > 0) {
+      const cleanQuery = params.searchQuery.trim().replace(/[%_]/g, "\\$&");
+      query = query.or(
+        `order_number.ilike.%${cleanQuery}%,guest_name.ilike.%${cleanQuery}%,guest_phone.ilike.%${cleanQuery}%`
+      );
+    }
 
-      // Filter by Payment Status
-      if (params.paymentStatus && params.paymentStatus !== "all") {
-        query = query.eq("payment_status", params.paymentStatus);
-      }
+    // Filter by Order Status
+    if (params.status && params.status !== "all") {
+      query = query.eq("order_status", params.status);
+    }
 
-      // Filter by Delivery Zone (JSONB inside shipping_address)
-      if (params.zone && params.zone !== "all") {
-        query = query.filter("shipping_address->>zone", "eq", params.zone);
-      }
+    // Filter by Payment Status
+    if (params.paymentStatus && params.paymentStatus !== "all") {
+      query = query.eq("payment_status", params.paymentStatus);
+    }
 
-      // Sort newest orders first
-      query = query.order("created_at", { ascending: false }).range(from, to);
+    // Filter by Delivery Zone (JSONB inside shipping_address)
+    if (params.zone && params.zone !== "all") {
+      query = query.filter("shipping_address->>zone", "eq", params.zone);
+    }
 
-      return (await query) as any;
-    });
+    // Sort newest orders first
+    query = query.order("created_at", { ascending: false }).range(from, to);
+
+    const queryResult = await query;
 
     if (queryResult.error) {
-      console.error("[getAdminOrders] DB error:", queryResult.error);
+      console.error("[fetchAdminOrdersInternal] DB error:", queryResult.error);
       return {
         success: false,
         message: "অর্ডার তালিকা লোড করা যায়নি: " + queryResult.error.message,
@@ -136,14 +137,10 @@ async function fetchAdminOrdersInternal(
     if (orders.length > 0) {
       try {
         const orderIds = orders.map((o) => o.id);
-        const itemsRes = await executeAdminDbQuery<{ order_id: string; quantity: number }[]>(
-          async (client) => {
-            return (await client
-              .from("order_items")
-              .select("order_id, quantity")
-              .in("order_id", orderIds)) as any;
-          }
-        );
+        const itemsRes = await client
+          .from("order_items")
+          .select("order_id, quantity")
+          .in("order_id", orderIds);
 
         if (itemsRes.data && Array.isArray(itemsRes.data)) {
           const countMap: Record<string, number> = {};
@@ -162,7 +159,7 @@ async function fetchAdminOrdersInternal(
           }
         }
       } catch (err) {
-        console.warn("[getAdminOrders] Failed to attach items_count:", err);
+        console.warn("[fetchAdminOrdersInternal] Failed to attach items_count:", err);
       }
     }
 
@@ -187,22 +184,17 @@ async function fetchAdminOrdersInternal(
       },
     };
   } catch (err: any) {
-    if (err.message === "UNAUTHORIZED" || err.message === "FORBIDDEN") {
-      return {
-        success: false,
-        message: "অননুমোদিত প্রবেশাধিকার। অ্যাডমিন লগইন প্রয়োজন।",
-      };
-    }
-    console.error("[getAdminOrders] Server error:", err);
+    console.error("[fetchAdminOrdersInternal] Server error:", err);
     return {
       success: false,
-      message: err.message || "সার্ভার এরর ঘটেছে।",
+      message: err?.message || "সার্ভার এরর ঘটেছে।",
     };
   }
 }
 
 /**
  * Fast cached accessor for default initial page 1 of orders.
+ * Runs with createAdminClient() without touching cookies.
  * Revalidates in background every 10s or immediately on order mutations.
  */
 export const getCachedDefaultAdminOrdersPage = unstable_cache(
@@ -222,21 +214,38 @@ export const getCachedDefaultAdminOrdersPage = unstable_cache(
 export async function getAdminOrders(
   params: OrdersFilterParams = {}
 ): Promise<{ success: boolean; data?: PaginatedOrdersResult; message?: string }> {
-  const page = Math.max(1, Number(params.page) || 1);
-  const pageSize = Math.max(1, Math.min(100, Number(params.pageSize) || 20));
-  const isDefaultFirstPage =
-    page === 1 &&
-    pageSize === 20 &&
-    (!params.searchQuery || params.searchQuery.trim().length === 0) &&
-    (!params.status || params.status === "all") &&
-    (!params.paymentStatus || params.paymentStatus === "all") &&
-    (!params.zone || params.zone === "all");
+  try {
+    // Authenticate user with session cookies OUTSIDE unstable_cache scope
+    await getAuthenticatedAdminClient();
 
-  if (isDefaultFirstPage) {
-    return await getCachedDefaultAdminOrdersPage();
+    const page = Math.max(1, Number(params.page) || 1);
+    const pageSize = Math.max(1, Math.min(100, Number(params.pageSize) || 20));
+    const isDefaultFirstPage =
+      page === 1 &&
+      pageSize === 20 &&
+      (!params.searchQuery || params.searchQuery.trim().length === 0) &&
+      (!params.status || params.status === "all") &&
+      (!params.paymentStatus || params.paymentStatus === "all") &&
+      (!params.zone || params.zone === "all");
+
+    if (isDefaultFirstPage) {
+      return await getCachedDefaultAdminOrdersPage();
+    }
+
+    return await fetchAdminOrdersInternal(params);
+  } catch (err: any) {
+    if (err.message === "UNAUTHORIZED" || err.message === "FORBIDDEN") {
+      return {
+        success: false,
+        message: "অননুমোদিত প্রবেশাধিকার। অ্যাডমিন লগইন প্রয়োজন।",
+      };
+    }
+    console.error("[getAdminOrders] Server error:", err);
+    return {
+      success: false,
+      message: err?.message || "সার্ভার এরর ঘটেছে।",
+    };
   }
-
-  return await fetchAdminOrdersInternal(params);
 }
 
 /**
@@ -557,6 +566,7 @@ export async function updatePaymentStatusAction(
 
 /**
  * Internal computation of dashboard metrics using admin client directly.
+ * Zero cookie dependency so it is safely cacheable by unstable_cache.
  */
 async function fetchAdminDashboardMetricsInternal(): Promise<{
   success: boolean;
@@ -569,37 +579,15 @@ async function fetchAdminDashboardMetricsInternal(): Promise<{
   message?: string;
 }> {
   try {
-    let rows: { grand_total: number; order_status: OrderStatus; payment_status: PaymentStatus }[] = [];
+    const adminClient = await createAdminClient();
+    const { data, error } = await adminClient
+      .from("orders")
+      .select("grand_total, order_status, payment_status");
 
-    if (
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
-    ) {
-      const adminClient = await createAdminClient();
-      const { data, error } = await adminClient
-        .from("orders")
-        .select("grand_total, order_status, payment_status");
-
-      if (error) {
-        return { success: false, message: error.message };
-      }
-      rows = data || [];
-    } else {
-      const ordersResult = await executeAdminDbQuery<{
-        grand_total: number;
-        order_status: OrderStatus;
-        payment_status: PaymentStatus;
-      }[]>(async (client) => {
-        return (await client
-          .from("orders")
-          .select("grand_total, order_status, payment_status")) as any;
-      });
-
-      if (ordersResult.error) {
-        return { success: false, message: ordersResult.error.message };
-      }
-      rows = ordersResult.data || [];
+    if (error) {
+      return { success: false, message: error.message };
     }
+    const rows = data || [];
 
     const totalOrders = rows.length;
     let totalRevenue = 0;
@@ -667,16 +655,7 @@ export async function getAdminDashboardMetrics() {
 async function fetchAdminRecentOrdersInternal(limit: number = 5) {
   try {
     let orders: AdminOrder[] = [];
-    let adminClient: any = null;
-
-    if (
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
-    ) {
-      adminClient = await createAdminClient();
-    } else {
-      adminClient = (await getAuthenticatedAdminClient()).supabase;
-    }
+    const adminClient = await createAdminClient();
 
     const { data: dbOrders, error } = await adminClient
       .from("orders")
