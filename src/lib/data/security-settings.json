@@ -1,0 +1,10 @@
+{
+  "enableFakeOrderGuard": true,
+  "enableDuplicateWarning": true,
+  "blockDuplicate24hPhone": true,
+  "maxOrdersPerPhone24h": 1,
+  "blockDuplicate24hIp": true,
+  "maxOrdersPerIp24h": 3,
+  "updatedAt": null,
+  "updatedBy": null
+}

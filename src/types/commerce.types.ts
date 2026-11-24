@@ -21,6 +21,8 @@ export interface CustomerAddress {
   thana: string;
   fullAddress: string;
   notes?: string;
+  clientIp?: string;
+  userAgent?: string;
 }
 
 export interface CartItem {
@@ -49,6 +51,7 @@ export interface OrderCreationPayload {
   grandTotal: number;
   paymentMethod: PaymentMethod;
   idempotencyKey?: string;
+  honeypot?: string;
 }
 
 export interface ProductVariant {

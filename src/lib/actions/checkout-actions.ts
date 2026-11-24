@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { OrderCreationPayload } from "@/types/commerce.types";
 import { createAdminClient } from "@/lib/supabase/server";
 import { isValidBDPhone } from "@/lib/utils";
@@ -12,6 +13,16 @@ import {
 } from "@/lib/data/catalog-mapping";
 import { processOrderCouponServerSide } from "@/lib/actions/coupon-actions";
 import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
+import { getOrderSecuritySettings } from "@/lib/actions/admin-security-actions";
+import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
+import {
+  validateHoneypot,
+  validateBangladeshiPhone,
+  validateCustomerName,
+  validateCustomerAddress,
+  checkRecentCustomerOrders,
+  checkIpOrderLimit,
+} from "@/lib/services/fake-order-guard";
 
 interface AggregatedOrderItem {
   productId: string;
@@ -27,15 +38,91 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
   try {
     const { customer, items, paymentMethod } = payload;
 
-    // 1. Customer validation
+    // 0. Bot & Honeypot Trap Validation (Fake Order Guard)
+    if (!validateHoneypot(payload.honeypot)) {
+      console.warn("[checkout-actions] Honeypot triggered. Rejected bot order.");
+      return {
+        success: false,
+        message: "অপ্রত্যাশিত অনুরোধ। অনুগ্রহ করে পেজ রিফ্রেশ করে আবার চেষ্টা করুন।",
+      };
+    }
+
+    // 1. Fetch Order Security & Fraud Settings
+    const securitySettings = await getOrderSecuritySettings();
+
+    // 2. Customer validation & Fraud Guard checks
     if (!customer?.fullName?.trim() || !customer?.phone?.trim() || !customer?.fullAddress?.trim()) {
       return { success: false, message: "গ্রাহকের নাম, মোবাইল নম্বর এবং ঠিকানা আবশ্যক।" };
     }
-    if (!isValidBDPhone(customer.phone)) {
+
+    // Deep Bangladeshi phone validation (prefix 013-019, length 11, dummy check)
+    if (securitySettings.enableFakeOrderGuard) {
+      const phoneValidation = validateBangladeshiPhone(customer.phone);
+      if (!phoneValidation.isValid) {
+        return {
+          success: false,
+          message: phoneValidation.errorMessage || "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।",
+        };
+      }
+
+      const nameValidation = validateCustomerName(customer.fullName);
+      if (!nameValidation.isValid) {
+        return {
+          success: false,
+          message: nameValidation.errorMessage || "অনুগ্রহ করে আপনার প্রকৃত নাম লিখুন।",
+        };
+      }
+
+      const addressValidation = validateCustomerAddress(customer.fullAddress);
+      if (!addressValidation.isValid) {
+        return {
+          success: false,
+          message: addressValidation.errorMessage || "অনুগ্রহ করে বিস্তারিত ডেলিভারি ঠিকানা লিখুন।",
+        };
+      }
+    } else if (!isValidBDPhone(customer.phone)) {
       return { success: false, message: "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।" };
     }
+
     if (!items || items.length === 0) {
       return { success: false, message: "কার্ট খালি!" };
+    }
+
+    // Extract client IP & User Agent safely
+    let clientIp = "127.0.0.1";
+    let userAgent = "";
+    try {
+      const headerList = await headers();
+      const forwarded = headerList.get("x-forwarded-for");
+      const realIp = headerList.get("x-real-ip");
+      clientIp = forwarded ? forwarded.split(",")[0].trim() : realIp || "127.0.0.1";
+      userAgent = headerList.get("user-agent") || "";
+    } catch {
+      // Non-blocking in mock or isolated test environments
+    }
+
+    const cleanPhone = customer.phone.replace(/\D/g, "").slice(-11);
+
+    // 3. 24-Hour Phone Limit & Duplicate Protection
+    if (securitySettings.blockDuplicate24hPhone) {
+      const phoneCheck = await checkRecentCustomerOrders(cleanPhone, securitySettings);
+      if (phoneCheck.isBlocked) {
+        return {
+          success: false,
+          message: phoneCheck.message || "এই মোবাইল নম্বর দিয়ে গত ২৪ ঘণ্টার মধ্যে ইতোমধ্যে অর্ডার গৃহীত হয়েছে।",
+        };
+      }
+    }
+
+    // 4. 24-Hour IP Limit Protection
+    if (securitySettings.blockDuplicate24hIp) {
+      const ipCheck = await checkIpOrderLimit(clientIp, securitySettings);
+      if (!ipCheck.isAllowed) {
+        return {
+          success: false,
+          message: ipCheck.message || "একই ডিভাইস/আইপি থেকে অতিরিক্ত অর্ডার অনুরোধ পরিলক্ষিত হয়েছে।",
+        };
+      }
     }
 
     // 2. Validate and aggregate items by variant ID, verifying against trusted catalog
@@ -125,7 +212,6 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
     const orderId = crypto.randomUUID();
     const orderNumber =
       "SS-" + Date.now().toString().slice(-6) + Math.floor(10 + Math.random() * 90);
-    const cleanPhone = customer.phone.replace(/\D/g, "").slice(-11);
 
     // 5. Ensure service-role key is available
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -245,7 +331,11 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       p_order_number: orderNumber,
       p_guest_name: customer.fullName.trim(),
       p_guest_phone: cleanPhone,
-      p_shipping_address: customer,
+      p_shipping_address: {
+        ...customer,
+        clientIp,
+        userAgent,
+      },
       p_subtotal: trustedSubtotal,
       p_delivery_fee: trustedDeliveryFee,
       p_discount_amount: trustedDiscount,
@@ -345,4 +435,43 @@ export async function getPublicDeliverySettingsAction(): Promise<{
     outsideDhakaFee: settings.outsideDhakaFee,
     freeDeliveryThreshold: settings.freeDeliveryThreshold,
   };
+}
+
+/**
+ * Public action for checkout UI to verify duplicate phone number in real-time.
+ */
+export async function checkDuplicatePhoneAction(phone: string) {
+  try {
+    const settings = await getOrderSecuritySettings();
+    if (!settings.enableDuplicateWarning && !settings.blockDuplicate24hPhone) {
+      return { hasDuplicate: false, isBlocked: false };
+    }
+    return await checkRecentCustomerOrders(phone, settings);
+  } catch {
+    return { hasDuplicate: false, isBlocked: false };
+  }
+}
+
+/**
+ * Public action for storefront to query whether Pixel purchase should fire immediately or on call confirmation.
+ */
+export async function getMarketingPixelConfigAction(): Promise<{
+  pixelId: string;
+  isEnabled: boolean;
+  fireOnOrderConfirmationOnly: boolean;
+}> {
+  try {
+    const settings = await getMarketingSettings();
+    return {
+      pixelId: settings.pixelId,
+      isEnabled: settings.isEnabled,
+      fireOnOrderConfirmationOnly: settings.fireOnOrderConfirmationOnly,
+    };
+  } catch {
+    return {
+      pixelId: "2675229749603202",
+      isEnabled: true,
+      fireOnOrderConfirmationOnly: true,
+    };
+  }
 }

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Product, ProductVariant, CartItem, OrderCreationPayload, DeliveryZone } from "@/types/commerce.types";
 import { formatBanglaBDT, toBanglaDigits, isValidBDPhone, cn } from "@/lib/utils";
-import { submitOrderServerAction } from "@/lib/actions/checkout-actions";
+import { submitOrderServerAction, getMarketingPixelConfigAction } from "@/lib/actions/checkout-actions";
 import { fbPurchase } from "@/lib/services/facebook-pixel";
 import { formatVariantWeightLabel } from "./product-info";
 
@@ -51,11 +51,23 @@ export function ExpressCheckoutModal({
   // States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+  const [pixelConfig, setPixelConfig] = useState<{
+    pixelId: string;
+    isEnabled: boolean;
+    fireOnOrderConfirmationOnly: boolean;
+  } | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<{
     orderNumber: string;
     grandTotal: number;
     phone: string;
   } | null>(null);
+
+  useEffect(() => {
+    getMarketingPixelConfigAction()
+      .then(setPixelConfig)
+      .catch(() => {});
+  }, []);
 
   // Sync initialQuantity on open
   useEffect(() => {
@@ -183,6 +195,7 @@ export function ExpressCheckoutModal({
         grandTotal,
         paymentMethod: "cod",
         idempotencyKey: crypto.randomUUID(),
+        honeypot,
       };
 
       const result = await submitOrderServerAction(payload);
@@ -190,13 +203,15 @@ export function ExpressCheckoutModal({
       if (result.success && result.data?.orderNumber) {
         const orderNum = result.data.orderNumber;
 
-        // 1. Meta Pixel Purchase event tracking
-        fbPurchase({
-          orderId: orderNum,
-          total: grandTotal,
-          numItems: quantity,
-          items: [{ id: product.id, name: product.titleBn }],
-        });
+        // 1. Meta Pixel Purchase event tracking (only if not confirmation-only)
+        if (!pixelConfig?.fireOnOrderConfirmationOnly) {
+          fbPurchase({
+            orderId: orderNum,
+            total: grandTotal,
+            numItems: quantity,
+            items: [{ id: product.id, name: product.titleBn }],
+          });
+        }
 
         // 2. Persist order in local customer history
         try {
@@ -343,6 +358,17 @@ export function ExpressCheckoutModal({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Invisible bot honeypot trap */}
+              <input
+                type="text"
+                name="b_express_hp"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden opacity-0 absolute -left-[9999px] -top-[9999px] pointer-events-none"
+              />
               {/* 1. Top Summary: Thumbnail, Title, Variant & Quantity */}
               <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/80 flex items-center gap-4">
                 <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white border border-stone-200 shrink-0">

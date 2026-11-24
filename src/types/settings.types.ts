@@ -80,6 +80,9 @@ export interface AdminSecurityProfile {
 
 export interface MarketingPixelSettings {
   pixelId: string;
+  accessToken?: string;
+  testEventCode?: string;
+  fireOnOrderConfirmationOnly: boolean;
   isEnabled: boolean;
   updatedAt?: string | null;
   updatedBy?: string | null;
@@ -87,6 +90,9 @@ export interface MarketingPixelSettings {
 
 export const DEFAULT_MARKETING_SETTINGS: MarketingPixelSettings = {
   pixelId: "2675229749603202",
+  accessToken: "",
+  testEventCode: "",
+  fireOnOrderConfirmationOnly: true,
   isEnabled: true,
   updatedAt: null,
   updatedBy: null,
@@ -97,6 +103,35 @@ export interface MarketingSettingsMutationResult {
   message: string;
   data?: MarketingPixelSettings;
   fieldError?: string;
+}
+
+export interface OrderSecuritySettings {
+  enableFakeOrderGuard: boolean;
+  enableDuplicateWarning: boolean;
+  blockDuplicate24hPhone: boolean;
+  maxOrdersPerPhone24h: number;
+  blockDuplicate24hIp: boolean;
+  maxOrdersPerIp24h: number;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export const DEFAULT_SECURITY_SETTINGS: OrderSecuritySettings = {
+  enableFakeOrderGuard: true,
+  enableDuplicateWarning: true,
+  blockDuplicate24hPhone: true,
+  maxOrdersPerPhone24h: 1,
+  blockDuplicate24hIp: true,
+  maxOrdersPerIp24h: 3,
+  updatedAt: null,
+  updatedBy: null,
+};
+
+export interface SecuritySettingsMutationResult {
+  success: boolean;
+  message: string;
+  data?: OrderSecuritySettings;
+  fieldErrors?: Record<string, string>;
 }
 
 export interface CourierSettings {
@@ -154,5 +189,6 @@ export interface SettingsViewData {
   adminSecurity: AdminSecurityProfile;
   marketing: MarketingPixelSettings;
   courier?: CourierSettings;
+  security?: OrderSecuritySettings;
 }
 

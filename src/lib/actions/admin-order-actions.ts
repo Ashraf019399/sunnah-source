@@ -15,6 +15,8 @@ import {
 import { OrderStatus } from "@/types/commerce.types";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
+import { sendMetaCapiPurchaseEvent } from "@/lib/services/facebook-conversions-api";
 
 /**
  * Ensures the requesting user has valid admin authorization.
@@ -350,6 +352,64 @@ export async function updateOrderStatusAction(
       };
     }
 
+    // Server-Side Meta Conversions API (CAPI): Fire purchase event after confirmation call
+    if (newStatus === "confirmed") {
+      try {
+        const marketingSettings = await getMarketingSettings({ unmasked: true });
+        if (
+          marketingSettings.isEnabled &&
+          marketingSettings.accessToken &&
+          marketingSettings.fireOnOrderConfirmationOnly
+        ) {
+          const { data: orderDetails } = await adminClient
+            .from("orders")
+            .select("id, order_number, grand_total, guest_name, guest_phone, shipping_address, admin_notes")
+            .eq("id", orderId)
+            .maybeSingle();
+
+          if (orderDetails) {
+            const alreadyFired = orderDetails.admin_notes?.includes("Meta CAPI Purchase Fired");
+            if (!alreadyFired) {
+              const { data: orderItems } = await adminClient
+                .from("order_items")
+                .select("product_id, quantity, unit_price, product_title")
+                .eq("order_id", orderId);
+
+              const shipping = (orderDetails.shipping_address || {}) as Record<string, any>;
+              const capiRes = await sendMetaCapiPurchaseEvent({
+                orderNumber: orderDetails.order_number,
+                grandTotal: Number(orderDetails.grand_total) || 0,
+                customerName: orderDetails.guest_name || shipping.fullName,
+                phone: orderDetails.guest_phone || shipping.phone,
+                city: shipping.district || shipping.zone || "Dhaka",
+                clientIp: shipping.clientIp,
+                userAgent: shipping.userAgent,
+                items: (orderItems || []).map((it) => ({
+                  id: it.product_id,
+                  name: it.product_title,
+                  quantity: it.quantity,
+                  item_price: Number(it.unit_price) || 0,
+                })),
+              });
+
+              if (capiRes.success) {
+                const noteEntry = `Meta CAPI Purchase Fired`;
+                const newNotes = orderDetails.admin_notes
+                  ? `${orderDetails.admin_notes} | ${noteEntry}`
+                  : noteEntry;
+                await adminClient
+                  .from("orders")
+                  .update({ admin_notes: newNotes })
+                  .eq("id", orderId);
+              }
+            }
+          }
+        }
+      } catch (capiErr) {
+        console.warn("[updateOrderStatusAction] Meta CAPI notice:", capiErr);
+      }
+    }
+
     // Revalidate paths for instant consistency
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
@@ -525,5 +585,71 @@ export async function getAdminDashboardMetrics(): Promise<{
     };
   } catch (err: any) {
     return { success: false, message: err.message };
+  }
+}
+
+/**
+ * Server action to manually trigger Meta CAPI Purchase event from Admin Order Details.
+ */
+export async function fireMetaCapiPurchaseManualAction(
+  orderId: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const adminClient = await getVerifiedAdminServiceClient();
+    const { data: order } = await adminClient
+      .from("orders")
+      .select("id, order_number, grand_total, guest_name, guest_phone, shipping_address, admin_notes")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (!order) {
+      return { success: false, message: "অর্ডারটি পাওয়া যায়নি।" };
+    }
+
+    const { data: orderItems } = await adminClient
+      .from("order_items")
+      .select("product_id, quantity, unit_price, product_title")
+      .eq("order_id", orderId);
+
+    const shipping = (order.shipping_address || {}) as Record<string, any>;
+    const capiRes = await sendMetaCapiPurchaseEvent({
+      orderNumber: order.order_number,
+      grandTotal: Number(order.grand_total) || 0,
+      customerName: order.guest_name || shipping.fullName,
+      phone: order.guest_phone || shipping.phone,
+      city: shipping.district || shipping.zone || "Dhaka",
+      clientIp: shipping.clientIp,
+      userAgent: shipping.userAgent,
+      items: (orderItems || []).map((it) => ({
+        id: it.product_id,
+        name: it.product_title,
+        quantity: it.quantity,
+        item_price: Number(it.unit_price) || 0,
+      })),
+    });
+
+    if (capiRes.success) {
+      const noteEntry = `Meta CAPI Purchase Fired (Manual)`;
+      const newNotes = order.admin_notes
+        ? `${order.admin_notes} | ${noteEntry}`
+        : noteEntry;
+      await adminClient
+        .from("orders")
+        .update({ admin_notes: newNotes })
+        .eq("id", orderId);
+
+      revalidatePath(`/admin/orders/${orderId}`);
+      revalidatePath("/admin/orders");
+    }
+
+    return {
+      success: capiRes.success,
+      message: capiRes.message,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.message || "Meta CAPI সার্ভার এরর ঘটেছে।",
+    };
   }
 }

@@ -38,6 +38,7 @@ import {
   Eye,
   EyeOff,
   Wallet,
+  ShieldAlert,
 } from "lucide-react";
 import {
   SettingsViewData,
@@ -46,10 +47,13 @@ import {
   CourierSettings,
   DEFAULT_COURIER_SETTINGS,
   isMaskedSecret,
+  OrderSecuritySettings,
+  DEFAULT_SECURITY_SETTINGS,
 } from "@/types/settings.types";
 import { formatBDT, toBanglaDigits, formatBanglaDateTime } from "@/lib/utils";
 import { updateAdminDeliverySettingsAction } from "@/lib/actions/admin-settings-actions";
 import { updateAdminMarketingSettingsAction } from "@/lib/actions/admin-marketing-actions";
+import { updateOrderSecuritySettingsAction } from "@/lib/actions/admin-security-actions";
 import {
   saveCourierSettingsAction,
   testCourierConnectionAction,
@@ -59,7 +63,7 @@ interface SettingsManagerProps {
   data: SettingsViewData;
 }
 
-type TabType = "store" | "courier" | "marketing" | "delivery" | "integrations" | "templates" | "security";
+type TabType = "store" | "fraud_guard" | "marketing" | "courier" | "delivery" | "integrations" | "templates" | "security";
 
 export function SettingsManager({ data }: SettingsManagerProps) {
   const [activeTab, setActiveTab] = useState<TabType>("store");
@@ -67,11 +71,29 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
   // Marketing & Facebook Pixel State
   const [marketing, setMarketing] = useState<MarketingPixelSettings>(
-    data.marketing || { pixelId: "2675229749603202", isEnabled: true }
+    data.marketing || {
+      pixelId: "2675229749603202",
+      accessToken: "",
+      testEventCode: "",
+      fireOnOrderConfirmationOnly: true,
+      isEnabled: true,
+    }
   );
   const [pixelIdInput, setPixelIdInput] = useState<string>(
     data.marketing?.pixelId || "2675229749603202"
   );
+  const [accessTokenInput, setAccessTokenInput] = useState<string>(
+    data.marketing?.accessToken || ""
+  );
+  const [testEventCodeInput, setTestEventCodeInput] = useState<string>(
+    data.marketing?.testEventCode || ""
+  );
+  const [fireOnConfirmation, setFireOnConfirmation] = useState<boolean>(
+    typeof data.marketing?.fireOnOrderConfirmationOnly === "boolean"
+      ? data.marketing.fireOnOrderConfirmationOnly
+      : true
+  );
+  const [showAccessToken, setShowAccessToken] = useState<boolean>(false);
   const [pixelEnabled, setPixelEnabled] = useState<boolean>(
     typeof data.marketing?.isEnabled === "boolean" ? data.marketing.isEnabled : true
   );
@@ -84,6 +106,9 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
   const handleResetMarketing = () => {
     setPixelIdInput(marketing.pixelId);
+    setAccessTokenInput(marketing.accessToken || "");
+    setTestEventCodeInput(marketing.testEventCode || "");
+    setFireOnConfirmation(marketing.fireOnOrderConfirmationOnly ?? true);
     setPixelEnabled(marketing.isEnabled);
     setMarketingFeedback(null);
     setPixelError(null);
@@ -109,10 +134,14 @@ export function SettingsManager({ data }: SettingsManagerProps) {
         const res = await updateAdminMarketingSettingsAction({
           pixelId: cleanId,
           isEnabled: pixelEnabled,
+          accessToken: accessTokenInput,
+          testEventCode: testEventCodeInput,
+          fireOnOrderConfirmationOnly: fireOnConfirmation,
         });
 
         if (res.success && res.data) {
           setMarketing(res.data);
+          setAccessTokenInput(res.data.accessToken || "");
           setMarketingFeedback({ type: "success", message: res.message });
         } else {
           setMarketingFeedback({
@@ -128,6 +157,77 @@ export function SettingsManager({ data }: SettingsManagerProps) {
           type: "error",
           message:
             err?.message || "সার্ভার এরর ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+        });
+      }
+    });
+  };
+
+  // Fraud Guard & Order Security State
+  const [security, setSecurity] = useState<OrderSecuritySettings>(
+    data.security || DEFAULT_SECURITY_SETTINGS
+  );
+  const [enableFakeOrderGuard, setEnableFakeOrderGuard] = useState<boolean>(
+    security.enableFakeOrderGuard
+  );
+  const [enableDuplicateWarning, setEnableDuplicateWarning] = useState<boolean>(
+    security.enableDuplicateWarning
+  );
+  const [blockDuplicate24hPhone, setBlockDuplicate24hPhone] = useState<boolean>(
+    security.blockDuplicate24hPhone
+  );
+  const [maxOrdersPerPhone24h, setMaxOrdersPerPhone24h] = useState<number>(
+    security.maxOrdersPerPhone24h || 1
+  );
+  const [blockDuplicate24hIp, setBlockDuplicate24hIp] = useState<boolean>(
+    security.blockDuplicate24hIp
+  );
+  const [maxOrdersPerIp24h, setMaxOrdersPerIp24h] = useState<number>(
+    security.maxOrdersPerIp24h || 3
+  );
+  const [isSavingSecurity, startSavingSecurityTransition] = useTransition();
+  const [securityFeedback, setSecurityFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const handleResetSecurity = () => {
+    setEnableFakeOrderGuard(security.enableFakeOrderGuard);
+    setEnableDuplicateWarning(security.enableDuplicateWarning);
+    setBlockDuplicate24hPhone(security.blockDuplicate24hPhone);
+    setMaxOrdersPerPhone24h(security.maxOrdersPerPhone24h || 1);
+    setBlockDuplicate24hIp(security.blockDuplicate24hIp);
+    setMaxOrdersPerIp24h(security.maxOrdersPerIp24h || 3);
+    setSecurityFeedback(null);
+  };
+
+  const handleSaveSecurity = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecurityFeedback(null);
+
+    startSavingSecurityTransition(async () => {
+      try {
+        const res = await updateOrderSecuritySettingsAction({
+          enableFakeOrderGuard,
+          enableDuplicateWarning,
+          blockDuplicate24hPhone,
+          maxOrdersPerPhone24h,
+          blockDuplicate24hIp,
+          maxOrdersPerIp24h,
+        });
+
+        if (res.success && res.data) {
+          setSecurity(res.data);
+          setSecurityFeedback({ type: "success", message: res.message });
+        } else {
+          setSecurityFeedback({
+            type: "error",
+            message: res.message || "সেটিংস সংরক্ষণ ব্যর্থ হয়েছে।",
+          });
+        }
+      } catch (err: any) {
+        setSecurityFeedback({
+          type: "error",
+          message: err?.message || "সার্ভার এরর ঘটেছে।",
         });
       }
     });
@@ -373,8 +473,9 @@ export function SettingsManager({ data }: SettingsManagerProps) {
 
   const tabs = [
     { id: "store" as TabType, labelBn: "স্টোর প্রোফাইল", icon: Store },
+    { id: "fraud_guard" as TabType, labelBn: "ফ্রড গার্ড ও অর্ডার লিমিট", icon: ShieldAlert },
+    { id: "marketing" as TabType, labelBn: "মার্কেটিং ও পিক্সেল (CAPI)", icon: Target },
     { id: "courier" as TabType, labelBn: "কুরিয়ার ও স্টিডফাস্ট", icon: Truck },
-    { id: "marketing" as TabType, labelBn: "মার্কেটিং ও পিক্সেল", icon: Target },
     { id: "delivery" as TabType, labelBn: "ডেলিভারি নীতি", icon: MapPin },
     { id: "integrations" as TabType, labelBn: "সিস্টেম ও API হেলথ", icon: Server },
     { id: "templates" as TabType, labelBn: "নোটিফিকেশন প্রিভিউ", icon: MessageSquare },
@@ -897,6 +998,283 @@ export function SettingsManager({ data }: SettingsManagerProps) {
         </div>
       )}
 
+      {/* Tab: Fraud Guard & Order Limits */}
+      {activeTab === "fraud_guard" && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Toast / Feedback Banner */}
+          {securityFeedback && (
+            <div
+              className={`p-4 sm:p-5 rounded-2xl border shadow-subtle flex items-start gap-3.5 transition-all ${
+                securityFeedback.type === "success"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                  : "bg-rose-50 border-rose-200 text-rose-950"
+              }`}
+            >
+              {securityFeedback.type === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-brand-700 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-bold">{securityFeedback.message}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSecurityFeedback(null)}
+                className="text-xs font-bold underline opacity-70 hover:opacity-100 shrink-0 cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          )}
+
+          {/* Main Fraud Guard Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-surface-border shadow-subtle space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-surface-border gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-6 h-6 text-rose-700" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-charcoal-900">
+                    ফেক অর্ডার গার্ড ও লিমিটেশন (Fraud Guard & Order Limits)
+                  </h2>
+                  <p className="text-xs text-charcoal-500">
+                    ভুয়া অর্ডার প্রতিরোধ, ডুপ্লিকেট অর্ডার নিয়ন্ত্রণ এবং ২৪ ঘণ্টার ফোন ও আইপি লিমিট ব্যবস্থা
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                    enableFakeOrderGuard
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-amber-50 text-amber-800 border-amber-200"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      enableFakeOrderGuard ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                    }`}
+                  />
+                  <span>{enableFakeOrderGuard ? "ফ্রড গার্ড সক্রিয়" : "ফ্রড গার্ড শিথিল"}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveSecurity} className="space-y-6">
+              {/* Option 1: Fake Order Guard */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface-canvas/60 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="text-sm font-bold text-charcoal-900 block">
+                    ১. ফেক অর্ডার গার্ড সেটআপ (Fake Order Guard)
+                  </span>
+                  <p className="text-xs text-charcoal-500 max-w-xl leading-relaxed">
+                    ভুয়া বা স্প্যাম অর্ডার ফিল্টার করার সিস্টেম। এটি চেকআউটে অদৃশ্য হনিপট ট্র্যাপ বসায়, ১১ ডিজিটের সঠিক বিডি ক্যারিয়ার প্রিফিক্স (০১৩-০১৯) যাচাই করে এবং ০১৭০০০০০০০০ ইত্যাদি ডামি নম্বর স্বয়ংক্রিয়ভাবে আটকে দেয়।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-bold text-charcoal-700">
+                    {enableFakeOrderGuard ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enableFakeOrderGuard}
+                    onClick={() => setEnableFakeOrderGuard(!enableFakeOrderGuard)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
+                      enableFakeOrderGuard ? "bg-brand-700" : "bg-slate-300"
+                    }`}
+                  >
+                    <span className="sr-only">ফেক অর্ডার গার্ড সক্রিয় করুন</span>
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        enableFakeOrderGuard ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Option 2: Duplicate Order Warning System */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface-canvas/60 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="text-sm font-bold text-charcoal-900 block">
+                    ২. ডুপ্লিকেট অর্ডার ওয়ার্নিং সিস্টেম (Duplicate Order Warning)
+                  </span>
+                  <p className="text-xs text-charcoal-500 max-w-xl leading-relaxed">
+                    একই অর্ডার একাধিকবার এলে সতর্কবার্তা দেখাবে। কাস্টমার যখন ফোন নম্বর ইনপুট করবে, ঐ নম্বরে গত ২৪ ঘণ্টার মধ্যে অর্ডার প্রক্রিয়াধীন থাকলে চেকআউট পেজে সাথে সাথে সতর্কবার্তা প্রদর্শন করে।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-bold text-charcoal-700">
+                    {enableDuplicateWarning ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enableDuplicateWarning}
+                    onClick={() => setEnableDuplicateWarning(!enableDuplicateWarning)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
+                      enableDuplicateWarning ? "bg-brand-700" : "bg-slate-300"
+                    }`}
+                  >
+                    <span className="sr-only">ডুপ্লিকেট ওয়ার্নিং সক্রিয় করুন</span>
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        enableDuplicateWarning ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Option 3: Phone Based 24h Limit */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface-canvas/60 border border-surface-border space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-sm font-bold text-charcoal-900 block">
+                      ৩. নাম্বার ভিত্তিক ২৪ ঘণ্টা লিমিট (24-Hour Phone Limit)
+                    </span>
+                    <p className="text-xs text-charcoal-500 max-w-xl leading-relaxed">
+                      একই ফোন নাম্বার দিয়ে ২৪ ঘণ্টার মধ্যে দ্বিতীয় বা অতিরিক্ত অর্ডার আটকে দেওয়া। এতে অনাকাঙ্ক্ষিত ডুপ্লিকেট অর্ডার প্রতিরোধ হয়।
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs font-bold text-charcoal-700">
+                      {blockDuplicate24hPhone ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={blockDuplicate24hPhone}
+                      onClick={() => setBlockDuplicate24hPhone(!blockDuplicate24hPhone)}
+                      className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
+                        blockDuplicate24hPhone ? "bg-brand-700" : "bg-slate-300"
+                      }`}
+                    >
+                      <span className="sr-only">ফোন নম্বর লিমিট সক্রিয় করুন</span>
+                      <span
+                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                          blockDuplicate24hPhone ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {blockDuplicate24hPhone && (
+                  <div className="pt-2 border-t border-surface-border/70 flex items-center gap-3 text-xs">
+                    <label htmlFor="max-phone-limit" className="text-charcoal-700 font-semibold">
+                      ২৪ ঘণ্টায় প্রতি নম্বরে সর্বোচ্চ অর্ডার সংখ্যা:
+                    </label>
+                    <input
+                      id="max-phone-limit"
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={maxOrdersPerPhone24h}
+                      onChange={(e) => setMaxOrdersPerPhone24h(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      className="w-20 px-3 py-1.5 rounded-xl border border-surface-border bg-white font-mono font-bold text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                    />
+                    <span className="text-charcoal-400">টি (ডিফল্ট: ১)</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Option 4: IP Based 24h Limit */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface-canvas/60 border border-surface-border space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-sm font-bold text-charcoal-900 block">
+                      ৪. আইপি ভিত্তিক ২৪ ঘণ্টা লিমিট (24-Hour IP Limit)
+                    </span>
+                    <p className="text-xs text-charcoal-500 max-w-xl leading-relaxed">
+                      একই আইপি অ্যাড্রেস থেকে ২৪ ঘণ্টার মধ্যে অতিরিক্ত অর্ডার আটকে দেওয়া। স্প্যাম রোবট আক্রমণ ও ওয়েবসাইট অপব্যবহার রোধে কার্যকর।
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs font-bold text-charcoal-700">
+                      {blockDuplicate24hIp ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={blockDuplicate24hIp}
+                      onClick={() => setBlockDuplicate24hIp(!blockDuplicate24hIp)}
+                      className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
+                        blockDuplicate24hIp ? "bg-brand-700" : "bg-slate-300"
+                      }`}
+                    >
+                      <span className="sr-only">আইপি লিমিট সক্রিয় করুন</span>
+                      <span
+                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                          blockDuplicate24hIp ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {blockDuplicate24hIp && (
+                  <div className="pt-2 border-t border-surface-border/70 flex items-center gap-3 text-xs">
+                    <label htmlFor="max-ip-limit" className="text-charcoal-700 font-semibold">
+                      ২৪ ঘণ্টায় প্রতি আইপিতে সর্বোচ্চ অর্ডার সংখ্যা:
+                    </label>
+                    <input
+                      id="max-ip-limit"
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={maxOrdersPerIp24h}
+                      onChange={(e) => setMaxOrdersPerIp24h(Math.max(1, parseInt(e.target.value, 10) || 3))}
+                      className="w-20 px-3 py-1.5 rounded-xl border border-surface-border bg-white font-mono font-bold text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                    />
+                    <span className="text-charcoal-400">টি (ডিফল্ট: ৩ — শেয়ার্ড ওয়াইফাই/মোবাইল নেটওয়ার্কের জন্য নিরাপদ)</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSavingSecurity}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                >
+                  {isSavingSecurity ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>সংরক্ষণ করা হচ্ছে...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-accent-amber" />
+                      <span>সেভ করুন (Save Changes)</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetSecurity}
+                  disabled={isSavingSecurity}
+                  className="px-4 py-2.5 rounded-xl border border-surface-border hover:bg-surface-canvas text-charcoal-700 text-xs sm:text-sm font-bold transition-all disabled:opacity-60 cursor-pointer"
+                >
+                  রিসেট
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Tab: Marketing & Facebook Pixel (Dedicated Card) */}
       {activeTab === "marketing" && (
         <div className="space-y-6 animate-fadeIn">
@@ -1038,6 +1416,101 @@ export function SettingsManager({ data }: SettingsManagerProps) {
                     <span
                       className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                         pixelEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Field 3: Meta Conversions API (CAPI) Access Token */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="facebook-capi-token-input"
+                  className="block text-sm font-bold text-charcoal-900"
+                >
+                  Meta Conversions API (CAPI) Access Token
+                </label>
+                <div className="relative">
+                  <input
+                    id="facebook-capi-token-input"
+                    type={showAccessToken ? "text" : "password"}
+                    value={accessTokenInput}
+                    onChange={(e) => setAccessTokenInput(e.target.value)}
+                    placeholder="EAAG... (Meta Business Access Token)"
+                    className="w-full px-4 py-3 rounded-2xl border border-surface-border text-sm font-mono tracking-wider transition-all focus:outline-none focus:ring-2 focus:border-brand-600 focus:ring-brand-100 bg-white pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAccessToken(!showAccessToken)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-charcoal-400 hover:text-charcoal-700 transition-colors cursor-pointer"
+                    title={showAccessToken ? "হাইড করুন" : "দেখুন"}
+                  >
+                    {showAccessToken ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-charcoal-500">
+                  ব্রাউজারে AdBlocker বা iOS কুকি ব্লকিং থাকলেও সার্ভার থেকে সরাসরি ১০০% নির্ভুল ডেটা পাঠাতে মেটা CAPI এক্সেস টোকেন প্রদান করুন। Meta Business &gt; Events Manager &gt; Settings &gt; Conversions API থেকে এটি তৈরি করা যায়।
+                </p>
+              </div>
+
+              {/* Field 4: Meta Test Event Code (Optional) */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="facebook-test-code-input"
+                  className="block text-sm font-bold text-charcoal-900"
+                >
+                  Meta Test Event Code (টেস্ট ইভেন্ট কোড - ঐচ্ছিক)
+                </label>
+                <input
+                  id="facebook-test-code-input"
+                  type="text"
+                  value={testEventCodeInput}
+                  onChange={(e) => setTestEventCodeInput(e.target.value)}
+                  placeholder="যেমন: TEST12345"
+                  className="w-full px-4 py-3 rounded-2xl border border-surface-border text-sm font-mono tracking-wider transition-all focus:outline-none focus:ring-2 focus:border-brand-600 focus:ring-brand-100 bg-white"
+                />
+                <p className="text-xs text-charcoal-500">
+                  Meta Events Manager-এর &apos;Test Events&apos; ট্যাবে লাইভ ডেটা দেখার জন্য কোড দিতে পারেন। টেস্ট সম্পন্ন হলে খালি রাখবেন।
+                </p>
+              </div>
+
+              {/* Field 5: Confirmation Call Pixel Firing Toggle */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-charcoal-900 block">
+                      কনফার্মেশন কলের পরই পিক্সেল ফায়ার (Fire Purchase after Call Confirmation)
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      রেকমেন্ডেড
+                    </span>
+                  </div>
+                  <p className="text-xs text-charcoal-600 max-w-xl leading-relaxed">
+                    সক্রিয় থাকলে কাস্টমারকে কল করে অর্ডার কনফার্ম হওয়ার পরেই সার্ভার সাইড (CAPI) থেকে Purchase ইভেন্ট ফেসবুকে যাবে। এর ফলে ফেক বা ক্যানসেল করা অর্ডারের ডেটা মেটা প্ল্যাটফর্মে ঢুকবে না এবং বিজ্ঞাপন নিখুঁত অপ্টিমাইজ হবে।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-bold text-charcoal-700">
+                    {fireOnConfirmation ? "কল কনফার্মেশনে (ON)" : "তাৎক্ষণিক চেকআউটে (OFF)"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={fireOnConfirmation}
+                    onClick={() => setFireOnConfirmation(!fireOnConfirmation)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
+                      fireOnConfirmation ? "bg-brand-700" : "bg-slate-300"
+                    }`}
+                  >
+                    <span className="sr-only">কল কনফার্মেশনের পর পিক্সেল ফায়ার সুইচ</span>
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        fireOnConfirmation ? "translate-x-5" : "translate-x-0"
                       }`}
                     />
                   </button>

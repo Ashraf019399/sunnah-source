@@ -9,6 +9,8 @@ import {
   MarketingPixelSettings,
   DEFAULT_MARKETING_SETTINGS,
   MarketingSettingsMutationResult,
+  MASKED_SECRET,
+  isMaskedSecret,
 } from "@/types/settings.types";
 
 const SETTINGS_FILE_PATH = path.join(
@@ -23,7 +25,9 @@ const SETTINGS_FILE_PATH = path.join(
  * Reads persistent Meta / Facebook Pixel configuration.
  * Always returns a validated settings object with reliable defaults.
  */
-export async function getMarketingSettings(): Promise<MarketingPixelSettings> {
+export async function getMarketingSettings(options?: {
+  unmasked?: boolean;
+}): Promise<MarketingPixelSettings> {
   try {
     const raw = await fs.readFile(SETTINGS_FILE_PATH, "utf-8");
     const parsed = JSON.parse(raw);
@@ -39,8 +43,30 @@ export async function getMarketingSettings(): Promise<MarketingPixelSettings> {
         ? parsed.isEnabled
         : DEFAULT_MARKETING_SETTINGS.isEnabled;
 
+    const fireOnOrderConfirmationOnly =
+      typeof parsed.fireOnOrderConfirmationOnly === "boolean"
+        ? parsed.fireOnOrderConfirmationOnly
+        : true;
+
+    const rawToken = String(
+      parsed.accessToken || process.env.FACEBOOK_CAPI_ACCESS_TOKEN || ""
+    ).trim();
+
+    const accessToken = options?.unmasked
+      ? rawToken
+      : rawToken
+      ? MASKED_SECRET
+      : "";
+
+    const testEventCode = String(
+      parsed.testEventCode || process.env.FACEBOOK_CAPI_TEST_EVENT_CODE || ""
+    ).trim();
+
     return {
       pixelId: pixelId || DEFAULT_MARKETING_SETTINGS.pixelId,
+      accessToken,
+      testEventCode,
+      fireOnOrderConfirmationOnly,
       isEnabled,
       updatedAt: parsed.updatedAt || null,
       updatedBy: parsed.updatedBy || null,
@@ -50,6 +76,9 @@ export async function getMarketingSettings(): Promise<MarketingPixelSettings> {
       pixelId:
         process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID ||
         DEFAULT_MARKETING_SETTINGS.pixelId,
+      accessToken: "",
+      testEventCode: "",
+      fireOnOrderConfirmationOnly: true,
       isEnabled: DEFAULT_MARKETING_SETTINGS.isEnabled,
       updatedAt: null,
       updatedBy: null,
@@ -58,13 +87,15 @@ export async function getMarketingSettings(): Promise<MarketingPixelSettings> {
 }
 
 /**
- * Server Action: Updates Facebook Pixel ID and Tracking Switch.
+ * Server Action: Updates Facebook Pixel ID, Meta CAPI Access Token, and Tracking switches.
  * Guarded strictly by Admin authentication.
- * Instantly revalidates storefront and admin cache so changes take effect immediately.
  */
 export async function updateAdminMarketingSettingsAction(formData: {
   pixelId: string;
   isEnabled: boolean;
+  accessToken?: string;
+  testEventCode?: string;
+  fireOnOrderConfirmationOnly?: boolean;
 }): Promise<MarketingSettingsMutationResult> {
   try {
     // 1. Authenticate user
@@ -109,29 +140,48 @@ export async function updateAdminMarketingSettingsAction(formData: {
       };
     }
 
+    // 4. Handle Access Token preservation if masked
+    let finalToken = String(formData.accessToken || "").trim();
+    if (isMaskedSecret(finalToken)) {
+      const existing = await getMarketingSettings({ unmasked: true });
+      finalToken = existing.accessToken || "";
+    }
+
+    const cleanTestCode = String(formData.testEventCode || "").trim();
+    const fireOnConfirmation =
+      typeof formData.fireOnOrderConfirmationOnly === "boolean"
+        ? formData.fireOnOrderConfirmationOnly
+        : true;
+
     const updatedSettings: MarketingPixelSettings = {
       pixelId: cleanId,
+      accessToken: finalToken,
+      testEventCode: cleanTestCode,
+      fireOnOrderConfirmationOnly: fireOnConfirmation,
       isEnabled: Boolean(formData.isEnabled),
       updatedAt: new Date().toISOString(),
       updatedBy: user.email || "Admin",
     };
 
-    // 4. Persist to storage
+    // 5. Persist to storage
     await fs.writeFile(
       SETTINGS_FILE_PATH,
       JSON.stringify(updatedSettings, null, 2),
       "utf-8"
     );
 
-    // 5. Revalidate cache across all pages so changes reflect immediately
+    // 6. Revalidate cache across all pages so changes reflect immediately
     revalidatePath("/", "layout");
     revalidatePath("/admin/settings");
     revalidatePath("/checkout");
 
     return {
       success: true,
-      message: "ফেসবুক পিক্সেল সফলভাবে আপডেট হয়েছে!",
-      data: updatedSettings,
+      message: "ফেসবুক পিক্সেল ও সার্ভার সাইড (CAPI) ট্র্যাকিং সেটিংস সফলভাবে আপডেট হয়েছে!",
+      data: {
+        ...updatedSettings,
+        accessToken: finalToken ? MASKED_SECRET : "",
+      },
     };
   } catch (err: any) {
     console.error("[updateAdminMarketingSettingsAction] Unexpected error:", err);

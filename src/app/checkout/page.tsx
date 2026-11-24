@@ -28,7 +28,12 @@ import {
 import { useCartStore } from "@/store/use-cart-store";
 import { formatBDT, isValidBDPhone } from "@/lib/utils";
 import { DeliveryZone, OrderCreationPayload, CartItem } from "@/types/commerce.types";
-import { submitOrderServerAction, getPublicDeliverySettingsAction } from "@/lib/actions/checkout-actions";
+import {
+  submitOrderServerAction,
+  getPublicDeliverySettingsAction,
+  checkDuplicatePhoneAction,
+  getMarketingPixelConfigAction,
+} from "@/lib/actions/checkout-actions";
 import { validateCouponAction } from "@/lib/actions/coupon-actions";
 import { Coupon } from "@/types/coupons.types";
 import { validateCoupon } from "@/lib/services/coupons";
@@ -122,6 +127,50 @@ export default function CheckoutPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // Security, Fraud Guard & Real-Time Duplicate Warning State
+  const [honeypot, setHoneypot] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    hasDuplicate: boolean;
+    isBlocked: boolean;
+    existingOrderNumber?: string;
+    orderStatus?: string;
+    placedAt?: string;
+    message?: string;
+  } | null>(null);
+  const [pixelConfig, setPixelConfig] = useState<{
+    pixelId: string;
+    isEnabled: boolean;
+    fireOnOrderConfirmationOnly: boolean;
+  } | null>(null);
+
+  // Load marketing tracking configuration on mount
+  useEffect(() => {
+    getMarketingPixelConfigAction()
+      .then((cfg) => setPixelConfig(cfg))
+      .catch(() => {});
+  }, []);
+
+  // Real-time 24-hour duplicate phone detection
+  useEffect(() => {
+    const clean = phone.replace(/\D/g, "").slice(-11);
+    if (clean.length === 11 && isValidBDPhone(clean)) {
+      const timer = setTimeout(() => {
+        checkDuplicatePhoneAction(clean)
+          .then((res) => {
+            if (res && res.hasDuplicate) {
+              setDuplicateWarning(res);
+            } else {
+              setDuplicateWarning(null);
+            }
+          })
+          .catch(() => {});
+      }, 400);
+      return () => clearTimeout(timer);
+    } else {
+      setDuplicateWarning(null);
+    }
+  }, [phone]);
 
   // Stable Idempotency Key per checkout attempt
   const cartSignature = useMemo(
@@ -461,6 +510,14 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (duplicateWarning?.isBlocked) {
+      setServerError(
+        duplicateWarning.message ||
+          "এই মোবাইল নম্বর দিয়ে গত ২৪ ঘণ্টার মধ্যে ইতোমধ্যে একটি অর্ডার গ্রহণ করা হয়েছে।"
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -488,6 +545,7 @@ export default function CheckoutPage() {
         grandTotal: isNaN(grandTotal) ? 0 : grandTotal,
         paymentMethod: "cod",
         idempotencyKey: effectiveKey,
+        honeypot,
       };
 
       const result = await submitOrderServerAction(payload);
@@ -515,16 +573,18 @@ export default function CheckoutPage() {
         };
         setPlacedOrder(placedOrderData);
 
-        // Track Meta Pixel Purchase event
-        fbPurchase({
-          orderId: result.data.orderNumber,
-          total: isNaN(grandTotal) ? 0 : grandTotal,
-          numItems: validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0),
-          items: validItems.map((item) => ({
-            id: item.productId || item.variantId || item.id,
-            name: item.titleBn || item.title,
-          })),
-        });
+        // Track Meta Pixel Purchase event only when immediate browser firing is enabled
+        if (!pixelConfig?.fireOnOrderConfirmationOnly) {
+          fbPurchase({
+            orderId: result.data.orderNumber,
+            total: isNaN(grandTotal) ? 0 : grandTotal,
+            numItems: validItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0),
+            items: validItems.map((item) => ({
+              id: item.productId || item.variantId || item.id,
+              name: item.titleBn || item.title,
+            })),
+          });
+        }
 
         // Save order to localStorage for customer invoice and order resilience
         try {
@@ -946,6 +1006,17 @@ export default function CheckoutPage() {
             {/* Left Column: Ultra-Clean Shipping Form & Payment Guarantee (7 cols) */}
             <div className="lg:col-span-7 space-y-6">
               <form id="checkout-form" onSubmit={handleOrderSubmit} className="space-y-6">
+                {/* Honeypot field for invisible bot/spam trap */}
+                <input
+                  type="text"
+                  name="website_url_hp"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="hidden opacity-0 absolute -left-[9999px] -top-[9999px] pointer-events-none"
+                />
                 {/* 1. Ultra-Clean Shipping Information Container (Single Luxury Card) */}
                 <section className="bg-white rounded-2xl shadow-sm border border-charcoal-100 p-6 sm:p-8 space-y-5">
                   {/* Card Header */}
@@ -1057,6 +1128,35 @@ export default function CheckoutPage() {
                         <p className="text-charcoal-400 text-xs mt-1.5">
                           অর্ডারের অগ্রগতি ও ডেলিভারি সংক্রান্ত তথ্যের জন্য সক্রিয় নম্বর দিন।
                         </p>
+                      )}
+
+                      {/* Real-Time Duplicate Order Warning or 24h Block Banner */}
+                      {duplicateWarning && (
+                        <div
+                          className={`p-3.5 rounded-2xl text-xs flex items-start gap-2.5 mt-2.5 transition-all shadow-xs ${
+                            duplicateWarning.isBlocked
+                              ? "bg-rose-50 border border-rose-200 text-rose-900"
+                              : "bg-amber-50 border border-amber-200 text-amber-950"
+                          }`}
+                        >
+                          <AlertCircle
+                            className={`w-4 h-4 shrink-0 mt-0.5 ${
+                              duplicateWarning.isBlocked
+                                ? "text-rose-600"
+                                : "text-amber-600"
+                            }`}
+                          />
+                          <div className="space-y-0.5">
+                            <p className="font-bold">
+                              {duplicateWarning.isBlocked
+                                ? "২৪ ঘণ্টার মধ্যে ডুপ্লিকেট অর্ডার সীমাবদ্ধ"
+                                : "ডুপ্লিকেট অর্ডার সতর্কতা"}
+                            </p>
+                            <p className="leading-relaxed text-[11px] opacity-90">
+                              {duplicateWarning.message}
+                            </p>
+                          </div>
+                        </div>
                       )}
                     </div>
 
@@ -1549,10 +1649,10 @@ export default function CheckoutPage() {
                   <button
                     type="submit"
                     form="checkout-form"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || Boolean(duplicateWarning?.isBlocked)}
                     className={`w-full py-4 px-6 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer ${
-                      isSubmitting
-                        ? "bg-emerald-800/80 text-stone-200 cursor-not-allowed"
+                      isSubmitting || duplicateWarning?.isBlocked
+                        ? "bg-stone-300 text-stone-500 cursor-not-allowed"
                         : "bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white"
                     }`}
                   >

@@ -8,6 +8,7 @@ import { OrderStatusUpdater } from "@/components/admin/orders/order-status-updat
 import { PaymentStatusUpdater } from "@/components/admin/orders/payment-status-updater";
 import { PrintInvoiceButton } from "@/components/admin/orders/print-invoice-button";
 import { SteadfastBookingModal } from "@/components/admin/orders/steadfast-booking-modal";
+import { CustomerCourierHistoryCard } from "@/components/admin/orders/customer-courier-history-card";
 import {
   ArrowLeft,
   User,
@@ -346,7 +347,16 @@ export default async function AdminOrderDetailsPage({
             )}
           </div>
 
-          {/* 3. Customer Information Card */}
+          {/* 3. Customer Courier History & Fraud Guard Card */}
+          <CustomerCourierHistoryCard
+            orderId={order.id}
+            orderNumber={order.order_number}
+            phone={order.guest_phone || shipping.phone || ""}
+            customerName={order.guest_name || shipping.fullName}
+            adminNotes={order.admin_notes}
+          />
+
+          {/* 4. Customer Information Card */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-surface-border shadow-subtle space-y-4">
             <div className="flex items-center gap-2 border-b border-surface-border/70 pb-3">
               <User className="w-4 h-4 text-brand-700" />

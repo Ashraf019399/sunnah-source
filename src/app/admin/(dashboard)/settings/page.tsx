@@ -7,6 +7,7 @@ import { SettingsManager } from "@/components/admin/settings/settings-manager";
 import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 import { getCourierSettings } from "@/lib/actions/admin-courier-actions";
+import { getOrderSecuritySettings } from "@/lib/actions/admin-security-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export default async function AdminSettingsPage() {
 
   // 2. Integration Services Health & Courier Settings
   const courierSettings = await getCourierSettings({ checkLiveBalance: true });
+  const securitySettings = await getOrderSecuritySettings();
 
   const integrations: IntegrationServiceItem[] = [
     {
@@ -190,6 +192,7 @@ export default async function AdminSettingsPage() {
     },
     marketing,
     courier: courierSettings,
+    security: securitySettings,
   };
 
   return (

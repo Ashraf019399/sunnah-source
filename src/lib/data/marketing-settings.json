@@ -1,5 +1,8 @@
 {
   "pixelId": "2675229749603202",
+  "accessToken": "",
+  "testEventCode": "",
+  "fireOnOrderConfirmationOnly": true,
   "isEnabled": true,
   "updatedAt": null,
   "updatedBy": null
