@@ -24,10 +24,10 @@ import {
   PackageCheck,
 } from "lucide-react";
 import {
-  getAdminDashboardMetrics,
-  getAdminOrders,
+  getCachedAdminDashboardMetrics,
+  getCachedAdminRecentOrders,
 } from "@/lib/actions/admin-order-actions";
-import { getAdminLowStockAlertsAction } from "@/lib/actions/admin-product-actions";
+import { getCachedAdminLowStockAlerts } from "@/lib/actions/admin-product-actions";
 import { getStoreTrafficMetrics } from "@/lib/services/traffic-analytics";
 import { TrafficAnalyticsClient } from "@/components/admin/traffic/traffic-analytics-client";
 import { formatBDT, formatBanglaDateTime, toBanglaDigits } from "@/lib/utils";
@@ -45,11 +45,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  // Concurrently fetch all executive dashboard data
-  const [metricsRes, ordersRes, lowStockRes] = await Promise.all([
-    getAdminDashboardMetrics(),
-    getAdminOrders({ page: 1, pageSize: 5 }),
-    getAdminLowStockAlertsAction(5),
+  // Concurrently fetch all executive dashboard data in parallel
+  const [metricsRes, ordersRes, lowStockAlerts, trafficMetrics] = await Promise.all([
+    getCachedAdminDashboardMetrics(),
+    getCachedAdminRecentOrders(5),
+    getCachedAdminLowStockAlerts(5),
+    getStoreTrafficMetrics(0),
   ]);
 
   const metrics =
@@ -64,11 +65,6 @@ export default async function AdminDashboardPage() {
 
   const recentOrders =
     ordersRes.success && ordersRes.data ? ordersRes.data.orders : [];
-
-  const lowStockAlerts =
-    lowStockRes.success && lowStockRes.data ? lowStockRes.data : [];
-
-  const trafficMetrics = await getStoreTrafficMetrics(metrics.totalOrders);
 
   return (
     <div className="space-y-6 sm:space-y-8 font-bengali">

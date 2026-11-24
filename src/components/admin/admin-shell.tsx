@@ -77,6 +77,11 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggingOut, startLogoutTransition] = useTransition();
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setNavigatingTo(null);
+  }, [pathname]);
 
   const handleLogout = () => {
     startLogoutTransition(async () => {
@@ -86,6 +91,15 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
 
   return (
     <div className="min-h-screen bg-[#F4EFE6]/40 flex font-bengali text-charcoal-900">
+      {/* Top Instant Navigation Progress Bar */}
+      {navigatingTo && (
+        <div
+          role="progressbar"
+          aria-label="পৃষ্ঠা লোড হচ্ছে"
+          className="fixed top-0 left-0 right-0 z-[100] h-1 bg-gradient-to-r from-accent-amber via-amber-300 to-amber-500 animate-pulse shadow-md"
+        />
+      )}
+
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div
@@ -152,25 +166,37 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
                 item.href === "/admin"
                   ? pathname === "/admin"
                   : pathname.startsWith(item.href);
+              const isPendingThis = navigatingTo === item.href;
 
               return (
                 <Link
                   key={item.nameEn}
                   href={item.href}
                   prefetch={true}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (item.href !== pathname) {
+                      setNavigatingTo(item.href);
+                    }
+                  }}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
                     isActive
                       ? "bg-brand-700 text-white shadow-md border-l-4 border-accent-amber"
+                      : isPendingThis
+                      ? "bg-brand-800 text-white border-l-4 border-amber-300"
                       : "text-stone-300 hover:bg-brand-800/80 hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 ${
-                        isActive ? "text-accent-amber" : "text-stone-400"
-                      }`}
-                    />
+                    {isPendingThis ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-accent-amber" />
+                    ) : (
+                      <Icon
+                        className={`w-4 h-4 ${
+                          isActive ? "text-accent-amber" : "text-stone-400"
+                        }`}
+                      />
+                    )}
                     <span>{item.nameBn}</span>
                   </div>
 

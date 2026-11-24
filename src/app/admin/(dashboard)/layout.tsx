@@ -1,7 +1,7 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { checkIsAdmin } from "@/lib/auth/admin-guard";
+import { verifyAdminSession } from "@/lib/auth/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import type { Metadata } from "next";
 
@@ -21,11 +21,7 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, isAdmin } = await verifyAdminSession();
 
   // 1. Guard: Check authentication
   if (!user) {
@@ -33,10 +29,9 @@ export default async function AdminDashboardLayout({
   }
 
   // 2. Guard: Check admin authorization
-  const isAdmin = await checkIsAdmin(user, supabase);
-
   if (!isAdmin) {
     // Logged-in non-admin user must NOT receive admin access
+    const supabase = await createClient();
     await supabase.auth.signOut();
     redirect("/admin/login?error=unauthorized");
   }

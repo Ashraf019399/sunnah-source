@@ -1,7 +1,8 @@
 "use server";
 
+import { cache } from "react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { checkIsAdmin } from "@/lib/auth/admin-guard";
+import { checkIsAdmin, verifyAdminSession } from "@/lib/auth/admin-guard";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import {
   AdminOrder,
@@ -13,52 +14,51 @@ import {
   PaymentStatus,
 } from "@/types/orders.types";
 import { OrderStatus } from "@/types/commerce.types";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 import { sendMetaCapiPurchaseEvent } from "@/lib/services/facebook-conversions-api";
 
 /**
  * Ensures the requesting user has valid admin authorization.
- * Returns the session Supabase client and verified admin user.
+ * Wrapped in React cache() so within a single request it runs once.
  */
-export async function getAuthenticatedAdminClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+export const getAuthenticatedAdminClient = cache(async () => {
+  const { user, isAdmin } = await verifyAdminSession();
 
-  if (authError || !user) {
+  if (!user) {
     throw new Error("UNAUTHORIZED");
   }
 
-  const isAdmin = await checkIsAdmin(user, supabase);
   if (!isAdmin) {
     throw new Error("FORBIDDEN");
   }
 
+  const supabase = await createClient();
   return { supabase, user };
-}
+});
 
 /**
- * Executes a query with the authenticated session client first.
- * If RLS blocks access and service role key is available on server,
- * falls back to service role client securely on the server.
+ * Server-only service role client accessor, pre-verified for admin identity.
+ */
+export const getVerifiedAdminServiceClient = cache(async () => {
+  await getAuthenticatedAdminClient();
+  return await createAdminClient();
+});
+
+/**
+ * Executes a query with the verified admin client directly when service role key
+ * is available (bypassing RLS latency overhead), or falls back to session client.
  */
 async function executeAdminDbQuery<T>(
   queryFn: (client: SupabaseClient) => Promise<{ data: T | null; error: any; count?: number | null }>
 ) {
-  const { supabase } = await getAuthenticatedAdminClient();
+  await getAuthenticatedAdminClient();
 
-  // 1. Try with session client first (RLS compliant)
-  const res = await queryFn(supabase);
-  if (!res.error) {
-    return res;
-  }
-
-  // 2. Server-side fallback if session query was blocked by RLS
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
+  ) {
     try {
       const adminClient = await createAdminClient();
       const adminRes = await queryFn(adminClient);
@@ -66,11 +66,12 @@ async function executeAdminDbQuery<T>(
         return adminRes;
       }
     } catch {
-      // Fallback failed, return initial error
+      // Fallback
     }
   }
 
-  return res;
+  const { supabase } = await getAuthenticatedAdminClient();
+  return await queryFn(supabase);
 }
 
 /**
@@ -287,16 +288,7 @@ export async function getAdminOrderById(
   }
 }
 
-/**
- * Ensures the requesting user has valid admin authorization,
- * then returns the server-only service_role admin client.
- * Used for calling service-role-restricted database RPCs directly without
- * encountering predictable 42501 permission-denied roundtrips against the session client.
- */
-async function getVerifiedAdminServiceClient() {
-  await getAuthenticatedAdminClient();
-  return await createAdminClient();
-}
+
 
 /**
  * Server action to update an order's status.
@@ -414,6 +406,9 @@ export async function updateOrderStatusAction(
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidateTag("admin-dashboard-metrics");
+    revalidateTag("admin-recent-orders");
+    revalidateTag("orders");
 
     return {
       success: true,
@@ -498,6 +493,9 @@ export async function updatePaymentStatusAction(
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidateTag("admin-dashboard-metrics");
+    revalidateTag("admin-recent-orders");
+    revalidateTag("orders");
 
     return {
       success: true,
@@ -519,10 +517,9 @@ export async function updatePaymentStatusAction(
 }
 
 /**
- * Get high-level dashboard metrics for orders.
- * Accurately excludes cancelled, returned, and uncollected unpaid orders from realized revenue.
+ * Internal computation of dashboard metrics using admin client directly.
  */
-export async function getAdminDashboardMetrics(): Promise<{
+async function fetchAdminDashboardMetricsInternal(): Promise<{
   success: boolean;
   data?: {
     totalOrders: number;
@@ -533,30 +530,44 @@ export async function getAdminDashboardMetrics(): Promise<{
   message?: string;
 }> {
   try {
-    const ordersResult = await executeAdminDbQuery<{
-      grand_total: number;
-      order_status: OrderStatus;
-      payment_status: PaymentStatus;
-    }[]>(async (client) => {
-      return (await client
-        .from("orders")
-        .select("grand_total, order_status, payment_status")) as any;
-    });
+    let rows: { grand_total: number; order_status: OrderStatus; payment_status: PaymentStatus }[] = [];
 
-    if (ordersResult.error) {
-      return { success: false, message: ordersResult.error.message };
+    if (
+      process.env.SUPABASE_SERVICE_ROLE_KEY &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
+    ) {
+      const adminClient = await createAdminClient();
+      const { data, error } = await adminClient
+        .from("orders")
+        .select("grand_total, order_status, payment_status");
+
+      if (error) {
+        return { success: false, message: error.message };
+      }
+      rows = data || [];
+    } else {
+      const ordersResult = await executeAdminDbQuery<{
+        grand_total: number;
+        order_status: OrderStatus;
+        payment_status: PaymentStatus;
+      }[]>(async (client) => {
+        return (await client
+          .from("orders")
+          .select("grand_total, order_status, payment_status")) as any;
+      });
+
+      if (ordersResult.error) {
+        return { success: false, message: ordersResult.error.message };
+      }
+      rows = ordersResult.data || [];
     }
 
-    const list = ordersResult.data || [];
-    const totalOrders = list.length;
+    const totalOrders = rows.length;
     let totalRevenue = 0;
     let pendingOrders = 0;
     let deliveredOrders = 0;
 
-    for (const item of list) {
-      // Realized revenue policy:
-      // Strictly excludes cancelled, returned, and refunded orders.
-      // Uncollected COD orders (pending/confirmed/processing/shipped) are not realized revenue until delivered.
+    for (const item of rows) {
       const isDeliveredNotRefunded =
         item.order_status === "delivered" && item.payment_status !== "refunded";
       const isPrepaidActive =
@@ -584,9 +595,108 @@ export async function getAdminDashboardMetrics(): Promise<{
       },
     };
   } catch (err: any) {
-    return { success: false, message: err.message };
+    return { success: false, message: err?.message || "মেট্রিক্স লোড করা যায়নি।" };
   }
 }
+
+/**
+ * Fast cached accessor for dashboard metrics.
+ * Revalidates in background every 15s or instantly when orders change.
+ */
+export const getCachedAdminDashboardMetrics = unstable_cache(
+  async () => {
+    return await fetchAdminDashboardMetricsInternal();
+  },
+  ["admin-dashboard-metrics"],
+  {
+    revalidate: 15,
+    tags: ["admin-dashboard-metrics", "orders"],
+  }
+);
+
+/**
+ * Get high-level dashboard metrics for orders.
+ */
+export async function getAdminDashboardMetrics() {
+  await getAuthenticatedAdminClient();
+  return await getCachedAdminDashboardMetrics();
+}
+
+/**
+ * Internal computation of top recent orders with items count.
+ */
+async function fetchAdminRecentOrdersInternal(limit: number = 5) {
+  try {
+    let orders: AdminOrder[] = [];
+    let adminClient: any = null;
+
+    if (
+      process.env.SUPABASE_SERVICE_ROLE_KEY &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
+    ) {
+      adminClient = await createAdminClient();
+    } else {
+      adminClient = (await getAuthenticatedAdminClient()).supabase;
+    }
+
+    const { data: dbOrders, error } = await adminClient
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !dbOrders) {
+      return { success: false, data: { orders: [], totalCount: 0, totalPages: 1 } };
+    }
+
+    orders = dbOrders as AdminOrder[];
+
+    if (orders.length > 0) {
+      const orderIds = orders.map((o) => o.id);
+      const { data: items } = await adminClient
+        .from("order_items")
+        .select("order_id, quantity")
+        .in("order_id", orderIds);
+
+      if (items && Array.isArray(items)) {
+        const countMap: Record<string, number> = {};
+        for (const it of items) {
+          countMap[it.order_id] = (countMap[it.order_id] || 0) + (it.quantity || 1);
+        }
+        orders = orders.map((o) => ({
+          ...o,
+          items_count: countMap[o.id] || 1,
+        }));
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        orders,
+        totalCount: orders.length,
+        totalPages: 1,
+      },
+    };
+  } catch (err: any) {
+    return { success: false, message: err?.message || "অর্ডার লোড করা যায়নি" };
+  }
+}
+
+/**
+ * Fast cached accessor for recent orders in dashboard.
+ * Serves top recent orders in 0-2ms.
+ */
+export const getCachedAdminRecentOrders = unstable_cache(
+  async (limit: number = 5) => {
+    return await fetchAdminRecentOrdersInternal(limit);
+  },
+  ["admin-recent-orders-top"],
+  {
+    revalidate: 10,
+    tags: ["admin-recent-orders", "orders"],
+  }
+);
 
 /**
  * Server action to manually trigger Meta CAPI Purchase event from Admin Order Details.

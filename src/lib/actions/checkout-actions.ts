@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { OrderCreationPayload } from "@/types/commerce.types";
 import { createAdminClient } from "@/lib/supabase/server";
 import { isValidBDPhone } from "@/lib/utils";
@@ -405,6 +406,14 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
         message: rpcData?.message || "অর্ডার সম্পন্ন করতে সমস্যা হয়েছে।",
       };
     }
+
+    try {
+      revalidatePath("/admin");
+      revalidatePath("/admin/orders");
+      revalidateTag("admin-dashboard-metrics");
+      revalidateTag("admin-recent-orders");
+      revalidateTag("orders");
+    } catch {}
 
     return {
       success: true,

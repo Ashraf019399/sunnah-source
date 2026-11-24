@@ -1,7 +1,8 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { checkIsAdmin } from "@/lib/auth/admin-guard";
+import { checkIsAdmin, verifyAdminSession } from "@/lib/auth/admin-guard";
 import { ALL_PRODUCTS } from "@/lib/data/products";
 import { CATEGORIES_DATA } from "@/lib/data/categories";
 import { VARIANT_ID_MAP } from "@/lib/data/catalog-mapping";
@@ -142,6 +143,94 @@ export interface AdminLowStockAlert {
  * Server action to fetch low-stock variant alerts for executive dashboard.
  * Queries live database stock <= threshold, sorted by lowest stock first.
  */
+/**
+ * Internal computation of low stock alert items.
+ */
+async function fetchLowStockAlertsInternal(threshold: number = 5): Promise<AdminLowStockAlert[]> {
+  let lowStockItems: AdminLowStockAlert[] = [];
+  const hasServiceKey = Boolean(
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
+  );
+
+  if (hasServiceKey) {
+    try {
+      const adminClient = await createAdminClient();
+      const { data: dbVariants, error: dbError } = await adminClient
+        .from("product_variants")
+        .select("id, sku, display_name, stock_quantity, low_stock_threshold, product_id")
+        .lte("stock_quantity", threshold)
+        .order("stock_quantity", { ascending: true });
+
+      if (!dbError && Array.isArray(dbVariants)) {
+        lowStockItems = dbVariants.map((dbv) => {
+          const matchedProduct = ALL_PRODUCTS.find((p) =>
+            p.variants.some(
+              (v) => VARIANT_ID_MAP[v.id] === dbv.id || v.id === dbv.id || v.sku === dbv.sku
+            )
+          );
+          const matchedVariant = matchedProduct?.variants.find(
+            (v) => VARIANT_ID_MAP[v.id] === dbv.id || v.id === dbv.id || v.sku === dbv.sku
+          );
+
+          return {
+            variantId: matchedVariant?.id || dbv.id,
+            dbId: dbv.id,
+            sku: dbv.sku,
+            productTitle: matchedProduct?.titleBn || matchedProduct?.titleEn || "পণ্য",
+            variantDisplayName: dbv.display_name || matchedVariant?.displayName || "সাধারণ ভ্যারিয়েন্ট",
+            stockQuantity: Number(dbv.stock_quantity) || 0,
+            lowStockThreshold: Number(dbv.low_stock_threshold) || threshold,
+            productSlug: matchedProduct?.slug,
+            productImage: matchedProduct?.images?.[0],
+          };
+        });
+      }
+    } catch (dbQueryErr) {
+      console.error("[fetchLowStockAlertsInternal] DB error:", dbQueryErr);
+    }
+  }
+
+  // Fallback to catalog definition if service-role key is unavailable or returned 0
+  if (lowStockItems.length === 0 && !hasServiceKey) {
+    for (const p of ALL_PRODUCTS) {
+      for (const v of p.variants) {
+        if (v.stockQuantity <= threshold) {
+          lowStockItems.push({
+            variantId: v.id,
+            dbId: VARIANT_ID_MAP[v.id],
+            sku: v.sku,
+            productTitle: p.titleBn || p.titleEn,
+            variantDisplayName: v.displayName,
+            stockQuantity: v.stockQuantity,
+            lowStockThreshold: v.lowStockThreshold || threshold,
+            productSlug: p.slug,
+            productImage: p.images?.[0],
+          });
+        }
+      }
+    }
+    lowStockItems.sort((a, b) => a.stockQuantity - b.stockQuantity);
+  }
+
+  return lowStockItems;
+}
+
+/**
+ * Fast cached accessor for low-stock alerts.
+ * Caches in memory for 30s; revalidates on tags ["admin-low-stock-alerts", "products"].
+ */
+export const getCachedAdminLowStockAlerts = unstable_cache(
+  async (threshold: number = 5) => {
+    return await fetchLowStockAlertsInternal(threshold);
+  },
+  ["admin-low-stock-alerts"],
+  {
+    revalidate: 30,
+    tags: ["admin-low-stock-alerts", "products"],
+  }
+);
+
 export async function getAdminLowStockAlertsAction(
   threshold: number = 5
 ): Promise<{
@@ -150,86 +239,12 @@ export async function getAdminLowStockAlertsAction(
   message?: string;
 }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    const { isAdmin } = await verifyAdminSession();
+    if (!isAdmin) {
       return { success: false, message: "UNAUTHORIZED" };
     }
 
-    const isAdmin = await checkIsAdmin(user, supabase);
-    if (!isAdmin) {
-      return { success: false, message: "FORBIDDEN" };
-    }
-
-    let lowStockItems: AdminLowStockAlert[] = [];
-    const hasServiceKey = Boolean(
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY !== "placeholder-service-key"
-    );
-
-    if (hasServiceKey) {
-      try {
-        const adminClient = await createAdminClient();
-        const { data: dbVariants, error: dbError } = await adminClient
-          .from("product_variants")
-          .select("id, sku, display_name, stock_quantity, low_stock_threshold, product_id")
-          .lte("stock_quantity", threshold)
-          .order("stock_quantity", { ascending: true });
-
-        if (!dbError && Array.isArray(dbVariants)) {
-          lowStockItems = dbVariants.map((dbv) => {
-            const matchedProduct = ALL_PRODUCTS.find((p) =>
-              p.variants.some(
-                (v) => VARIANT_ID_MAP[v.id] === dbv.id || v.id === dbv.id || v.sku === dbv.sku
-              )
-            );
-            const matchedVariant = matchedProduct?.variants.find(
-              (v) => VARIANT_ID_MAP[v.id] === dbv.id || v.id === dbv.id || v.sku === dbv.sku
-            );
-
-            return {
-              variantId: matchedVariant?.id || dbv.id,
-              dbId: dbv.id,
-              sku: dbv.sku,
-              productTitle: matchedProduct?.titleBn || matchedProduct?.titleEn || "পণ্য",
-              variantDisplayName: dbv.display_name || matchedVariant?.displayName || "সাধারণ ভ্যারিয়েন্ট",
-              stockQuantity: Number(dbv.stock_quantity) || 0,
-              lowStockThreshold: Number(dbv.low_stock_threshold) || threshold,
-              productSlug: matchedProduct?.slug,
-              productImage: matchedProduct?.images?.[0],
-            };
-          });
-        }
-      } catch (dbQueryErr) {
-        console.error("[getAdminLowStockAlertsAction] Live query error:", dbQueryErr);
-      }
-    }
-
-    // Fallback to catalog definition if service-role key is unavailable or returned 0
-    if (lowStockItems.length === 0 && !hasServiceKey) {
-      for (const p of ALL_PRODUCTS) {
-        for (const v of p.variants) {
-          if (v.stockQuantity <= threshold) {
-            lowStockItems.push({
-              variantId: v.id,
-              dbId: VARIANT_ID_MAP[v.id],
-              sku: v.sku,
-              productTitle: p.titleBn || p.titleEn,
-              variantDisplayName: v.displayName,
-              stockQuantity: v.stockQuantity,
-              lowStockThreshold: v.lowStockThreshold || threshold,
-              productSlug: p.slug,
-              productImage: p.images?.[0],
-            });
-          }
-        }
-      }
-      lowStockItems.sort((a, b) => a.stockQuantity - b.stockQuantity);
-    }
+    const lowStockItems = await getCachedAdminLowStockAlerts(threshold);
 
     return {
       success: true,
