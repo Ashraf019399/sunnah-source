@@ -8,6 +8,7 @@ import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 import { getCourierSettings } from "@/lib/actions/admin-courier-actions";
 import { getOrderSecuritySettings } from "@/lib/actions/admin-security-actions";
+import { verifyAdminSession } from "@/lib/auth/admin-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -17,33 +18,46 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminSettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Concurrently fetch all settings, session & integrations in parallel
+  const [
+    courierSettings,
+    securitySettings,
+    deliveryRules,
+    marketing,
+    adminSession,
+    dbCheck,
+  ] = await Promise.all([
+    getCourierSettings({ checkLiveBalance: false }),
+    getOrderSecuritySettings(),
+    getAdminDeliverySettings(),
+    getMarketingSettings(),
+    verifyAdminSession(),
+    (async () => {
+      try {
+        const adminClient = await createAdminClient();
+        const { error } = await adminClient.from("categories").select("id").limit(1);
+        if (error) {
+          return { status: "error" as const, label: "সংযোগ সমস্যা", notes: error.message };
+        }
+        return {
+          status: "connected" as const,
+          label: "সংযুক্ত (সরাসরি ডেটাবেস সক্রিয়)",
+          notes: "PostgreSQL কোয়েরি সফলভাবে নির্বাহ হয়েছে।",
+        };
+      } catch (err: any) {
+        return {
+          status: "error" as const,
+          label: "সংযোগ ব্যর্থ",
+          notes: err?.message || "সার্ভার রেসপন্স দেয়নি।",
+        };
+      }
+    })(),
+  ]);
 
-  // 1. Verify Database read access safely
-  let dbStatus: "connected" | "error" = "connected";
-  let dbStatusLabel = "সংযুক্ত (সরাসরি ডেটাবেস সক্রিয়)";
-  let dbNotes = "PostgreSQL কোয়েরি সফলভাবে নির্বাহ হয়েছে।";
-
-  try {
-    const adminClient = await createAdminClient();
-    const { error } = await adminClient.from("categories").select("id").limit(1);
-    if (error) {
-      dbStatus = "error";
-      dbStatusLabel = "সংযোগ সমস্যা";
-      dbNotes = error.message;
-    }
-  } catch (err: any) {
-    dbStatus = "error";
-    dbStatusLabel = "সংযোগ ব্যর্থ";
-    dbNotes = err?.message || "সার্ভার রেসপন্স দেয়নি।";
-  }
-
-  // 2. Integration Services Health & Courier Settings
-  const courierSettings = await getCourierSettings({ checkLiveBalance: true });
-  const securitySettings = await getOrderSecuritySettings();
+  const user = adminSession.user;
+  const dbStatus = dbCheck.status;
+  const dbStatusLabel = dbCheck.label;
+  const dbNotes = dbCheck.notes;
 
   const integrations: IntegrationServiceItem[] = [
     {
@@ -133,11 +147,6 @@ export default async function AdminSettingsPage() {
   ];
 
   // 3. Consolidated View Data
-  const [deliveryRules, marketing] = await Promise.all([
-    getAdminDeliverySettings(),
-    getMarketingSettings(),
-  ]);
-
   const viewData: SettingsViewData = {
     storeProfile: {
       nameBn: "সুন্নাহ সোর্স",

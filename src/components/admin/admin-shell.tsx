@@ -83,6 +83,22 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
     setNavigatingTo(null);
   }, [pathname]);
 
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const link = (e.target as HTMLElement).closest("a");
+    if (!link) return;
+    const href = link.getAttribute("href");
+    const target = link.getAttribute("target");
+    if (
+      href &&
+      href.startsWith("/admin") &&
+      !href.startsWith("/admin/invoice") &&
+      target !== "_blank" &&
+      href !== pathname
+    ) {
+      setNavigatingTo(href);
+    }
+  };
+
   const handleLogout = () => {
     startLogoutTransition(async () => {
       await adminLogoutAction();
@@ -90,7 +106,10 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4EFE6]/40 flex font-bengali text-charcoal-900">
+    <div
+      onClick={handleContainerClick}
+      className="min-h-screen bg-[#F4EFE6]/40 flex font-bengali text-charcoal-900"
+    >
       {/* Top Instant Navigation Progress Bar */}
       {navigatingTo && (
         <div

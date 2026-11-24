@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { checkIsAdmin } from "@/lib/auth/admin-guard";
+import { checkIsAdmin, verifyAdminSession } from "@/lib/auth/admin-guard";
 import {
   AdminCouponsResult,
   AdminCouponMutationResult,
@@ -9,7 +9,7 @@ import {
 } from "@/types/coupons.types";
 import { mapDbCouponToCoupon } from "@/lib/data/coupons";
 import { PROMOTIONAL_COUPONS } from "@/lib/services/coupons";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 /**
  * Helper: verify admin access and return supabase admin client.
@@ -79,25 +79,10 @@ async function couponsTableExists(
 }
 
 /**
- * Fetch all coupons for the admin panel.
+ * Internal computation of coupons list.
  */
-export async function getAdminCoupons(): Promise<AdminCouponsResult> {
+async function fetchAdminCouponsInternal(): Promise<AdminCouponsResult> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
-    }
-
-    const isAdmin = await checkIsAdmin(user, supabase);
-    if (!isAdmin) {
-      return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
-    }
-
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return {
         success: true,
@@ -161,6 +146,32 @@ export async function getAdminCoupons(): Promise<AdminCouponsResult> {
       message: errorMsg || "কুপন লোড করতে সমস্যা হয়েছে।",
     };
   }
+}
+
+/**
+ * Fast cached accessor for coupons.
+ * Caches in memory for 60s; revalidates on tags ["admin-coupons", "coupons"].
+ */
+export const getCachedAdminCoupons = unstable_cache(
+  async () => {
+    return await fetchAdminCouponsInternal();
+  },
+  ["admin-coupons-list"],
+  {
+    revalidate: 60,
+    tags: ["admin-coupons", "coupons"],
+  }
+);
+
+/**
+ * Fetch all coupons for the admin panel.
+ */
+export async function getAdminCoupons(): Promise<AdminCouponsResult> {
+  const { isAdmin } = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
+  }
+  return await getCachedAdminCoupons();
 }
 
 /**
@@ -276,6 +287,8 @@ export async function addAdminCoupon(
     }
 
     revalidatePath("/admin/coupons");
+    revalidateTag("admin-coupons");
+    revalidateTag("coupons");
     return { success: true, message: "কুপন সফলভাবে তৈরি করা হয়েছে।" };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -357,6 +370,8 @@ export async function updateAdminCoupon(
     }
 
     revalidatePath("/admin/coupons");
+    revalidateTag("admin-coupons");
+    revalidateTag("coupons");
     return { success: true, message: "কুপন সফলভাবে আপডেট করা হয়েছে।" };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -393,6 +408,8 @@ export async function toggleCouponStatus(
     }
 
     revalidatePath("/admin/coupons");
+    revalidateTag("admin-coupons");
+    revalidateTag("coupons");
     return {
       success: true,
       message: isActive ? "কুপন সক্রিয় করা হয়েছে।" : "কুপন নিষ্ক্রিয় করা হয়েছে।",
@@ -425,6 +442,8 @@ export async function deleteAdminCoupon(id: string): Promise<AdminCouponMutation
     }
 
     revalidatePath("/admin/coupons");
+    revalidateTag("admin-coupons");
+    revalidateTag("coupons");
     return { success: true, message: "কুপন সফলভাবে মুছে ফেলা হয়েছে।" };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);

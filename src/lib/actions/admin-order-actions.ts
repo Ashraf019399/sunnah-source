@@ -75,9 +75,9 @@ async function executeAdminDbQuery<T>(
 }
 
 /**
- * Fetch paginated orders with optional search and filters.
+ * Internal computation for fetching paginated orders.
  */
-export async function getAdminOrders(
+async function fetchAdminOrdersInternal(
   params: OrdersFilterParams = {}
 ): Promise<{ success: boolean; data?: PaginatedOrdersResult; message?: string }> {
   try {
@@ -202,11 +202,50 @@ export async function getAdminOrders(
 }
 
 /**
- * Fetch a single order by ID or order number, including its line items.
+ * Fast cached accessor for default initial page 1 of orders.
+ * Revalidates in background every 10s or immediately on order mutations.
  */
-export async function getAdminOrderById(
+export const getCachedDefaultAdminOrdersPage = unstable_cache(
+  async () => {
+    return await fetchAdminOrdersInternal({ page: 1, pageSize: 20 });
+  },
+  ["admin-orders-default-p1"],
+  {
+    revalidate: 10,
+    tags: ["admin-orders", "orders"],
+  }
+);
+
+/**
+ * Fetch paginated orders with optional search and filters.
+ */
+export async function getAdminOrders(
+  params: OrdersFilterParams = {}
+): Promise<{ success: boolean; data?: PaginatedOrdersResult; message?: string }> {
+  const page = Math.max(1, Number(params.page) || 1);
+  const pageSize = Math.max(1, Math.min(100, Number(params.pageSize) || 20));
+  const isDefaultFirstPage =
+    page === 1 &&
+    pageSize === 20 &&
+    (!params.searchQuery || params.searchQuery.trim().length === 0) &&
+    (!params.status || params.status === "all") &&
+    (!params.paymentStatus || params.paymentStatus === "all") &&
+    (!params.zone || params.zone === "all");
+
+  if (isDefaultFirstPage) {
+    return await getCachedDefaultAdminOrdersPage();
+  }
+
+  return await fetchAdminOrdersInternal(params);
+}
+
+/**
+ * Fetch a single order by ID or order number, including its line items.
+ * Wrapped in React cache() so metadata and page components share 1 single DB fetch.
+ */
+export const getAdminOrderById = cache(async (
   orderId: string
-): Promise<{ success: boolean; data?: AdminOrderWithItems; message?: string }> {
+): Promise<{ success: boolean; data?: AdminOrderWithItems; message?: string }> => {
   try {
     if (!orderId || typeof orderId !== "string") {
       return { success: false, message: "অর্ডার আইডি প্রদান করা হয়নি।" };
@@ -286,7 +325,7 @@ export async function getAdminOrderById(
       message: err.message || "সার্ভার এরর ঘটেছে।",
     };
   }
-}
+});
 
 
 

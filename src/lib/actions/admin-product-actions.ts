@@ -25,67 +25,39 @@ export interface AdminProductView extends Omit<Product, "variants"> {
  * Queries live stock from public.product_variants and explicitly tags
  * whether each variant is using live database stock or fallback catalog stock.
  */
-export async function getAdminProducts(): Promise<{
+/**
+ * Internal computation of products with live inventory.
+ */
+async function fetchAdminProductsInternal(): Promise<{
   success: boolean;
   data?: AdminProductView[];
   hasLiveInventory?: boolean;
   message?: string;
 }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, message: "অননুমোদিত প্রবেশাধিকার। অ্যাডমিন লগইন প্রয়োজন।" };
-    }
-
-    const isAdmin = await checkIsAdmin(user, supabase);
-    if (!isAdmin) {
-      return { success: false, message: "অননুমোদিত প্রবেশাধিকার। এই তথ্যের অনুমতি নেই।" };
-    }
-
-    // Query live stock from Supabase public.product_variants using service-role
     const liveStockMap = new Map<string, number>();
     let isLiveConnected = false;
 
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn(
-        "[getAdminProducts] SUPABASE_SERVICE_ROLE_KEY is missing in server environment. Cannot safely read live inventory without service-role privileges."
-      );
-    } else {
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const adminClient = await createAdminClient();
         const { data: dbVariants, error: dbError } = await adminClient
           .from("product_variants")
           .select("id, stock_quantity");
 
-        if (dbError) {
-          const errCode = dbError.code || "NO_CODE";
-          const errMsg = dbError.message || dbError.details || "No message provided";
-          const errDetails = dbError.details ? ` | details: ${dbError.details}` : "";
-          const errHint = dbError.hint ? ` | hint: ${dbError.hint}` : "";
-          console.error(
-            `[getAdminProducts] Failed to fetch live variant stock via service-role: code=${errCode} message=${errMsg}${errDetails}${errHint}`
-          );
-        } else if (Array.isArray(dbVariants)) {
+        if (!dbError && Array.isArray(dbVariants)) {
           isLiveConnected = true;
           for (const v of dbVariants) {
             if (v.id && typeof v.stock_quantity === "number") {
               liveStockMap.set(v.id, v.stock_quantity);
             }
           }
-        } else {
-          console.warn("[getAdminProducts] Service-role query returned unexpected non-array data:", dbVariants);
         }
       } catch (err: any) {
-        console.error("[getAdminProducts] Unexpected error invoking createAdminClient:", err?.message || err);
+        console.error("[fetchAdminProductsInternal] Error creating adminClient:", err?.message || err);
       }
     }
 
-    // Merge live stock and category information with catalog products
     const products: AdminProductView[] = ALL_PRODUCTS.map((prod) => {
       const category = CATEGORIES_DATA.find((c) => c.slug === prod.categorySlug);
 
@@ -119,12 +91,43 @@ export async function getAdminProducts(): Promise<{
       hasLiveInventory: isLiveConnected,
     };
   } catch (err: any) {
-    console.error("[getAdminProducts] Server error:", err);
+    console.error("[fetchAdminProductsInternal] Server error:", err);
     return {
       success: false,
       message: "পণ্য তালিকা লোড করতে সমস্যা হয়েছে।",
     };
   }
+}
+
+/**
+ * Fast cached accessor for products in admin panel.
+ * Caches in memory for 30s; revalidates on tags ["admin-products", "products"].
+ */
+export const getCachedAdminProducts = unstable_cache(
+  async () => {
+    return await fetchAdminProductsInternal();
+  },
+  ["admin-products-list"],
+  {
+    revalidate: 30,
+    tags: ["admin-products", "products"],
+  }
+);
+
+/**
+ * Server action to fetch all products for the admin dashboard.
+ */
+export async function getAdminProducts(): Promise<{
+  success: boolean;
+  data?: AdminProductView[];
+  hasLiveInventory?: boolean;
+  message?: string;
+}> {
+  const { isAdmin } = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
+  }
+  return await getCachedAdminProducts();
 }
 
 export interface AdminLowStockAlert {

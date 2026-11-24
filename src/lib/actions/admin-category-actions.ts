@@ -1,9 +1,9 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { checkIsAdmin } from "@/lib/auth/admin-guard";
+import { checkIsAdmin, verifyAdminSession } from "@/lib/auth/admin-guard";
 import { CATEGORIES_DATA, getCategoryDisplayImage, type Category } from "@/lib/data/categories";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 export interface AdminCategoryResult {
   success: boolean;
@@ -83,26 +83,10 @@ async function categoriesTableExists(
 }
 
 /**
- * Fetch all categories for admin panel.
- * Tries Supabase `categories` table first; falls back to catalog data.
+ * Internal computation of categories list.
  */
-export async function getAdminCategories(): Promise<AdminCategoryResult> {
+async function fetchAdminCategoriesInternal(): Promise<AdminCategoryResult> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
-    }
-
-    const isAdmin = await checkIsAdmin(user, supabase);
-    if (!isAdmin) {
-      return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
-    }
-
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const adminClient = await createAdminClient();
@@ -177,6 +161,32 @@ export async function getAdminCategories(): Promise<AdminCategoryResult> {
 }
 
 /**
+ * Fast cached accessor for categories list.
+ * Caches in memory for 60s; revalidates on tags ["admin-categories", "categories"].
+ */
+export const getCachedAdminCategories = unstable_cache(
+  async () => {
+    return await fetchAdminCategoriesInternal();
+  },
+  ["admin-categories-list"],
+  {
+    revalidate: 60,
+    tags: ["admin-categories", "categories"],
+  }
+);
+
+/**
+ * Fetch all categories for admin panel.
+ */
+export async function getAdminCategories(): Promise<AdminCategoryResult> {
+  const { isAdmin } = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false, message: "অননুমোদিত প্রবেশাধিকার।" };
+  }
+  return await getCachedAdminCategories();
+}
+
+/**
  * Add a new category.
  */
 export async function addAdminCategory(
@@ -229,6 +239,8 @@ export async function addAdminCategory(
 
     revalidatePath("/admin/categories");
     revalidatePath("/admin");
+    revalidateTag("admin-categories");
+    revalidateTag("categories");
     return { success: true, message: "ক্যাটাগরি সফলভাবে যোগ করা হয়েছে।" };
   } catch (err: any) {
     console.error("[addAdminCategory] Error:", err);
@@ -293,6 +305,8 @@ export async function updateAdminCategory(
 
     revalidatePath("/admin/categories");
     revalidatePath("/admin");
+    revalidateTag("admin-categories");
+    revalidateTag("categories");
     return { success: true, message: "ক্যাটাগরি সফলভাবে আপডেট করা হয়েছে।" };
   } catch (err: any) {
     console.error("[updateAdminCategory] Error:", err);
@@ -331,6 +345,8 @@ export async function deleteAdminCategory(
 
     revalidatePath("/admin/categories");
     revalidatePath("/admin");
+    revalidateTag("admin-categories");
+    revalidateTag("categories");
     return { success: true, message: "ক্যাটাগরি সফলভাবে মুছে ফেলা হয়েছে।" };
   } catch (err: any) {
     console.error("[deleteAdminCategory] Error:", err);
