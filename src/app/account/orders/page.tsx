@@ -739,7 +739,15 @@ export default function CustomerOrdersPage() {
 
                         {/* 2. Live Tracking Button */}
                         <Link
-                          href={`/track-order?id=${encodeURIComponent(order.order_number)}`}
+                          href={
+                            order.customer_phone
+                              ? `/track-order?orderNumber=${encodeURIComponent(
+                                  order.order_number
+                                )}&phone=${encodeURIComponent(order.customer_phone)}`
+                              : `/track-order?orderNumber=${encodeURIComponent(
+                                  order.order_number
+                                )}`
+                          }
                           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-brand-700/30 bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold text-xs shadow-xs transition-colors"
                         >
                           <Truck className="w-3.5 h-3.5 text-brand-700" />

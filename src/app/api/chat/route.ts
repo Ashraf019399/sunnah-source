@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -56,38 +54,47 @@ const SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION: আপনি হলেন স�
 - ঠিকানা: লালমনিরহাট, বাংলাদেশ
 - ওয়েবসাইট: sunnahsourcebd.com]`;
 
-const SERVER_BACKUP_KEY = "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";
-
 function getApiKey(): string {
   const envKey = process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-  if (envKey && envKey.trim().length > 0) {
-    return envKey.trim();
-  }
+  return envKey ? envKey.trim() : "";
+}
 
-  try {
-    const envPath = path.join(process.cwd(), ".env.local");
-    if (fs.existsSync(envPath)) {
-      const content = fs.readFileSync(envPath, "utf8");
-      const match = content.match(/OPENROUTER_API_KEY=([^\r\n]+)/);
-      if (match && match[1] && match[1].trim().length > 0) {
-        return match[1].trim();
-      }
+function getLastUserMessageText(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i] as { role?: unknown; content?: unknown } | undefined;
+    if (msg && msg.role !== "assistant" && typeof msg.content === "string" && msg.content.trim()) {
+      return msg.content.trim().slice(0, 1000);
     }
-  } catch {
-    // Ignore error in serverless environment
   }
-
-  return SERVER_BACKUP_KEY;
+  return "";
 }
 
 export async function POST(req: NextRequest) {
+  let lastUserMessage = "";
   try {
     const body = await req.json();
-    const messages: ChatMessage[] = body.messages || [];
+    const rawMessages: ChatMessage[] = Array.isArray(body?.messages) ? body.messages : [];
+    lastUserMessage = getLastUserMessageText(rawMessages);
 
-    if (!Array.isArray(messages) || messages.length === 0) {
+    if (rawMessages.length === 0) {
       return NextResponse.json(
         { error: "No messages provided." },
+        { status: 400 }
+      );
+    }
+
+    const boundedMessages = rawMessages
+      .slice(-20)
+      .filter((m) => m && typeof m.content === "string" && m.content.trim().length > 0)
+      .map((m) => ({
+        role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
+        content: m.content.trim().slice(0, 2000),
+      }));
+
+    if (boundedMessages.length === 0) {
+      return NextResponse.json(
+        { error: "No valid messages provided." },
         { status: 400 }
       );
     }
@@ -95,9 +102,9 @@ export async function POST(req: NextRequest) {
     const apiKey = getApiKey();
 
     if (!apiKey) {
-      console.error("[OpenRouter API Failure] OPENROUTER_API_KEY is not configured in environment variables.");
+      console.warn("[OpenRouter API] OPENROUTER_API_KEY is not configured; using local concierge fallback.");
       return NextResponse.json({
-        reply: "⚠️ [AI Configuration Error]: OPENROUTER_API_KEY is not configured in production environment variables. Please check Vercel settings.",
+        reply: generateLocalFallbackResponse(lastUserMessage),
       });
     }
 
@@ -118,12 +125,7 @@ export async function POST(req: NextRequest) {
 
     const openAiMessages = [
       { role: "system", content: SYSTEM_INSTRUCTION },
-      ...messages
-        .filter((m: any) => m && typeof m.content === "string" && m.content.trim().length > 0)
-        .map((m: any) => ({
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.content.trim(),
-        })),
+      ...boundedMessages,
     ];
 
     for (const model of CANDIDATE_MODELS) {
@@ -161,9 +163,9 @@ export async function POST(req: NextRequest) {
             lastErrorBody
           );
         }
-      } catch (callErr: any) {
+      } catch (callErr: unknown) {
         lastStatus = 500;
-        lastErrorBody = callErr?.message || String(callErr);
+        lastErrorBody = callErr instanceof Error ? callErr.message : String(callErr);
         console.error(`[OpenRouter API Exception] Failed calling model '${model}':`, lastErrorBody);
       }
     }
@@ -173,15 +175,18 @@ export async function POST(req: NextRequest) {
         `[OpenRouter API Failure] All candidate models failed. HTTP ${lastStatus}: ${lastErrorBody}`
       );
       return NextResponse.json({
-        reply: `⚠️ [OpenRouter API Error ${lastStatus}]: ${lastErrorBody}`,
+        reply: generateLocalFallbackResponse(lastUserMessage),
       });
     }
 
     return NextResponse.json({ reply: generatedText });
-  } catch (error: any) {
-    console.error("[Chat Route Critical Error]:", error?.message || error);
+  } catch (error: unknown) {
+    console.error(
+      "[Chat Route Critical Error]:",
+      error instanceof Error ? error.message : error
+    );
     return NextResponse.json({
-      reply: `⚠️ [Chat Route Error]: ${error?.message || "Internal server error"}`,
+      reply: generateLocalFallbackResponse(lastUserMessage),
     });
   }
 }

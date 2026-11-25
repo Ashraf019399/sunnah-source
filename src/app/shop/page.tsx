@@ -7,9 +7,22 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ShopContent } from "./shop-content";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "সব পণ্য | Sunnah Source",
   description: "সুন্নাহ সোর্সের খাঁটি ও প্রাকৃতিক খাদ্যপণ্যসমূহ দেখুন।",
+  alternates: {
+    canonical: "https://sunnahsourcebd.com/shop",
+  },
+  openGraph: {
+    title: "সব পণ্য | সুন্নাহ সোর্স (Sunnah Source)",
+    description: "সুন্নাহ সোর্সের খাঁটি মধু, ঘি, তেল, খেজুর ও প্রাকৃতিক খাদ্যপণ্যসমূহ দেখুন।",
+    url: "https://sunnahsourcebd.com/shop",
+    siteName: "সুন্নাহ সোর্স | Sunnah Source",
+    locale: "bn_BD",
+    type: "website",
+  },
 };
 
 export default function ShopPage() {

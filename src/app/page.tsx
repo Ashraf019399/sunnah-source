@@ -15,6 +15,8 @@ import { HeroSection } from "@/components/home/hero-section";
 import { FeaturedCategoriesBubbleStrip } from "@/components/home/featured-categories-bubble-strip";
 import { MobilePromoBanners } from "@/components/home/mobile-promo-banners";
 
+export const revalidate = 300;
+
 // Top 8 Sunnah Source Best Selling products
 const BEST_SELLER_SLUGS = [
   "sundarban-raw-wild-honey",

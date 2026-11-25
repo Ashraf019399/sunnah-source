@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useTransition, useCallback } from "react";
+import React, { useState, useTransition, useCallback, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   FolderTree,
   Plus,
@@ -594,7 +595,7 @@ function CategoryRow({ category, index, total, onEdit, onDelete }: CategoryRowPr
 
       {/* Actions */}
       <td className="px-3 py-3 w-24">
-        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
             type="button"
             onClick={() => onEdit(category)}
@@ -625,12 +626,17 @@ interface CategoriesManagerProps {
 }
 
 export function CategoriesManager({ initialCategories, isUsingLiveDb }: CategoriesManagerProps) {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
 
   const toastIdRef = React.useRef(0);
 
@@ -647,10 +653,9 @@ export function CategoriesManager({ initialCategories, isUsingLiveDb }: Categori
   const handleSuccess = useCallback(
     (msg: string) => {
       addToast("success", msg);
-      // Refresh categories from the server by reloading the page
-      window.location.reload();
+      router.refresh();
     },
-    [addToast]
+    [addToast, router]
   );
 
   const handleError = useCallback(
@@ -662,14 +667,17 @@ export function CategoriesManager({ initialCategories, isUsingLiveDb }: Categori
 
   const handleDeleteConfirm = () => {
     if (!deletingCategory) return;
+    const targetSlug = deletingCategory.slug;
     startDeleteTransition(async () => {
       try {
-        const result = await deleteAdminCategory(deletingCategory.slug);
-        setDeletingCategory(null);
+        const result = await deleteAdminCategory(targetSlug);
         if (result.success) {
+          setDeletingCategory(null);
           addToast("success", result.message || "ক্যাটাগরি মুছে ফেলা হয়েছে।");
-          setCategories((prev) => prev.filter((c) => c.slug !== deletingCategory.slug));
+          setCategories((prev) => prev.filter((c) => c.slug !== targetSlug));
+          router.refresh();
         } else {
+          setDeletingCategory(null);
           addToast("error", result.message || "মুছতে ব্যর্থ হয়েছে।");
         }
       } catch {
@@ -786,7 +794,8 @@ export function CategoriesManager({ initialCategories, isUsingLiveDb }: Categori
               type="button"
               id="add-category-btn"
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl bg-brand-900 hover:bg-brand-800 text-white transition-all hover:shadow-md"
+              disabled={isDeleting}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl bg-brand-900 hover:bg-brand-800 text-white transition-all hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Plus className="w-3.5 h-3.5" />
               নতুন ক্যাটাগরি

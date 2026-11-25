@@ -28,7 +28,9 @@ const CATEGORY_NAMES: Record<string, string> = {
   honey: "প্রাকৃতিক মধু",
   "ghee-oil": "গাওয়া ঘি ও তেল",
   dates: "প্রিমিয়াম খেজুর",
+  "organic-seeds": "অর্গানিক বীজ ও সুপারফুড",
   seeds: "অর্গানিক সিডস",
+  "dry-fruits": "প্রিমিয়াম ড্রাই ফ্রুটস",
   combos: "কম্বো অফার",
 };
 

@@ -14,10 +14,18 @@ import {
   PaymentStatus,
 } from "@/types/orders.types";
 import { OrderStatus } from "@/types/commerce.types";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_noStore as noStore } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 import { sendMetaCapiPurchaseEvent } from "@/lib/services/facebook-conversions-api";
+
+const ADMIN_ORDER_LIST_COLUMNS =
+  "id, order_number, user_id, guest_name, guest_phone, shipping_address, subtotal, delivery_fee, discount_amount, coupon_code, grand_total, payment_method, payment_status, order_status, courier_partner, courier_tracking_code, admin_notes, created_at, updated_at";
+
+const ADMIN_ORDER_DETAIL_COLUMNS = `${ADMIN_ORDER_LIST_COLUMNS}, customer_notes`;
+
+const ADMIN_ORDER_ITEM_COLUMNS =
+  "id, order_id, product_id, variant_id, product_title, variant_name, unit_price, quantity, line_total, created_at";
 
 /**
  * Ensures the requesting user has valid admin authorization.
@@ -91,7 +99,7 @@ async function fetchAdminOrdersInternal(
 
     let query = client
       .from("orders")
-      .select("*", { count: "exact" });
+      .select(ADMIN_ORDER_LIST_COLUMNS, { count: "exact" });
 
     // Search by Order number, Customer name, or Phone
     if (params.searchQuery && params.searchQuery.trim().length > 0) {
@@ -193,20 +201,12 @@ async function fetchAdminOrdersInternal(
 }
 
 /**
- * Fast cached accessor for default initial page 1 of orders.
- * Runs with createAdminClient() without touching cookies.
- * Revalidates in background every 10s or immediately on order mutations.
+ * Real-time accessor for default initial page 1 of orders in Admin Panel (no-store).
  */
-export const getCachedDefaultAdminOrdersPage = unstable_cache(
-  async () => {
-    return await fetchAdminOrdersInternal({ page: 1, pageSize: 20 });
-  },
-  ["admin-orders-default-p1"],
-  {
-    revalidate: 10,
-    tags: ["admin-orders", "orders"],
-  }
-);
+export async function getCachedDefaultAdminOrdersPage() {
+  noStore();
+  return await fetchAdminOrdersInternal({ page: 1, pageSize: 20 });
+}
 
 /**
  * Fetch paginated orders with optional search and filters.
@@ -263,7 +263,7 @@ export const getAdminOrderById = cache(async (
     // 1. Fetch order record
     const orderResult = await executeAdminDbQuery<AdminOrder>(async (client) => {
       // Check if orderId is UUID or order_number
-      let query = client.from("orders").select("*");
+      let query = client.from("orders").select(ADMIN_ORDER_DETAIL_COLUMNS);
       if (orderId.startsWith("SS-")) {
         query = query.eq("order_number", orderId);
       } else {
@@ -287,7 +287,7 @@ export const getAdminOrderById = cache(async (
     const itemsResult = await executeAdminDbQuery<AdminOrderItem[]>(async (client) => {
       return (await client
         .from("order_items")
-        .select("*")
+        .select(ADMIN_ORDER_ITEM_COLUMNS)
         .eq("order_id", order.id)
         .order("created_at", { ascending: true })) as any;
     });
@@ -450,13 +450,17 @@ export async function updateOrderStatusAction(
       }
     }
 
-    // Revalidate paths for instant consistency
+    // Revalidate paths for instant consistency (including stock when cancelled/returned)
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath("/admin/products");
     revalidateTag("admin-dashboard-metrics");
     revalidateTag("admin-recent-orders");
     revalidateTag("orders");
+    revalidateTag("admin-products");
+    revalidateTag("admin-low-stock-alerts");
+    revalidateTag("products");
 
     return {
       success: true,
@@ -537,13 +541,17 @@ export async function updatePaymentStatusAction(
       };
     }
 
-    // Revalidate paths for instant consistency
+    // Revalidate paths for instant consistency (including stock when cancelled/returned)
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath("/admin/products");
     revalidateTag("admin-dashboard-metrics");
     revalidateTag("admin-recent-orders");
     revalidateTag("orders");
+    revalidateTag("admin-products");
+    revalidateTag("admin-low-stock-alerts");
+    revalidateTag("products");
 
     return {
       success: true,
@@ -627,19 +635,12 @@ async function fetchAdminDashboardMetricsInternal(): Promise<{
 }
 
 /**
- * Fast cached accessor for dashboard metrics.
- * Revalidates in background every 15s or instantly when orders change.
+ * Real-time accessor for Admin Dashboard metrics (no-store).
  */
-export const getCachedAdminDashboardMetrics = unstable_cache(
-  async () => {
-    return await fetchAdminDashboardMetricsInternal();
-  },
-  ["admin-dashboard-metrics"],
-  {
-    revalidate: 15,
-    tags: ["admin-dashboard-metrics", "orders"],
-  }
-);
+export async function getCachedAdminDashboardMetrics() {
+  noStore();
+  return await fetchAdminDashboardMetricsInternal();
+}
 
 /**
  * Get high-level dashboard metrics for orders.
@@ -655,13 +656,14 @@ export async function getAdminDashboardMetrics() {
 async function fetchAdminRecentOrdersInternal(limit: number = 5) {
   try {
     let orders: AdminOrder[] = [];
+    const safeLimit = Math.min(20, Math.max(1, limit));
     const adminClient = await createAdminClient();
 
     const { data: dbOrders, error } = await adminClient
       .from("orders")
-      .select("*")
+      .select(ADMIN_ORDER_LIST_COLUMNS)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(safeLimit);
 
     if (error || !dbOrders) {
       return { success: false, data: { orders: [], totalCount: 0, totalPages: 1 } };
@@ -702,19 +704,12 @@ async function fetchAdminRecentOrdersInternal(limit: number = 5) {
 }
 
 /**
- * Fast cached accessor for recent orders in dashboard.
- * Serves top recent orders in 0-2ms.
+ * Real-time accessor for recent orders on Admin Dashboard (no-store).
  */
-export const getCachedAdminRecentOrders = unstable_cache(
-  async (limit: number = 5) => {
-    return await fetchAdminRecentOrdersInternal(limit);
-  },
-  ["admin-recent-orders-top"],
-  {
-    revalidate: 10,
-    tags: ["admin-recent-orders", "orders"],
-  }
-);
+export async function getCachedAdminRecentOrders(limit: number = 5) {
+  noStore();
+  return await fetchAdminRecentOrdersInternal(limit);
+}
 
 /**
  * Server action to manually trigger Meta CAPI Purchase event from Admin Order Details.

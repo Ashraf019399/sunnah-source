@@ -27,88 +27,87 @@ const checkIsAdminMemoized = cache(
       return true;
     }
 
-    // 2. Primary check: Query public.users via service-role or session client
+    // 2. Primary check: Query role tables in parallel via service-role client
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const adminClient = await createAdminClient();
 
-        // Check 'users' table via service client
-        try {
-          const { data: userRow } = await adminClient
-            .from("users")
-            .select("id, role")
-            .eq("id", userId)
-            .maybeSingle();
-
-          if (userRow) {
-            const role = (userRow.role || "").toLowerCase();
-            if (role === "admin" || role === "superadmin") {
-              return true;
-            }
-          }
-        } catch {}
-
-        // Check 'admins' table by id, user_id, or email
-        try {
-          const { data: adminById } = await adminClient
-            .from("admins")
-            .select("id")
-            .eq("id", userId)
-            .maybeSingle();
-          if (adminById) return true;
-        } catch {}
-
-        try {
-          const { data: adminByUserId } = await adminClient
-            .from("admins")
-            .select("id")
-            .eq("user_id", userId)
-            .maybeSingle();
-          if (adminByUserId) return true;
-        } catch {}
-
-        if (userEmail) {
-          try {
-            const { data: adminByEmail } = await adminClient
+        const checks: Array<Promise<boolean>> = [
+          Promise.resolve(
+            adminClient
+              .from("users")
+              .select("id, role")
+              .eq("id", userId)
+              .maybeSingle()
+          )
+            .then(({ data }) => {
+              const role = String(data?.role || "").toLowerCase();
+              return role === "admin" || role === "superadmin";
+            })
+            .catch(() => false),
+          Promise.resolve(
+            adminClient
               .from("admins")
               .select("id")
-              .eq("email", userEmail)
-              .maybeSingle();
-            if (adminByEmail) return true;
-          } catch {}
+              .eq("id", userId)
+              .maybeSingle()
+          )
+            .then(({ data }) => Boolean(data))
+            .catch(() => false),
+          Promise.resolve(
+            adminClient
+              .from("admins")
+              .select("id")
+              .eq("user_id", userId)
+              .maybeSingle()
+          )
+            .then(({ data }) => Boolean(data))
+            .catch(() => false),
+          Promise.resolve(
+            adminClient
+              .from("profiles")
+              .select("id, role, is_admin")
+              .eq("id", userId)
+              .maybeSingle()
+          )
+            .then(({ data }) => {
+              if (!data) return false;
+              const pRole = String(data.role || "").toLowerCase();
+              return pRole === "admin" || pRole === "superadmin" || data.is_admin === true;
+            })
+            .catch(() => false),
+          Promise.resolve(
+            adminClient
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", userId)
+              .maybeSingle()
+          )
+            .then(({ data }) => {
+              const urRole = String(data?.role || "").toLowerCase();
+              return urRole === "admin" || urRole === "superadmin";
+            })
+            .catch(() => false),
+        ];
+
+        if (userEmail) {
+          checks.push(
+            Promise.resolve(
+              adminClient
+                .from("admins")
+                .select("id")
+                .eq("email", userEmail)
+                .maybeSingle()
+            )
+              .then(({ data }) => Boolean(data))
+              .catch(() => false)
+          );
         }
 
-        // Check 'profiles' table
-        try {
-          const { data: profile } = await adminClient
-            .from("profiles")
-            .select("id, role, is_admin")
-            .eq("id", userId)
-            .maybeSingle();
-
-          if (profile) {
-            const pRole = (profile.role || "").toLowerCase();
-            if (pRole === "admin" || pRole === "superadmin" || profile.is_admin === true) {
-              return true;
-            }
-          }
-        } catch {}
-
-        // Check 'user_roles' table
-        try {
-          const { data: userRoleRec } = await adminClient
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          if (userRoleRec) {
-            const urRole = (userRoleRec.role || "").toLowerCase();
-            if (urRole === "admin" || urRole === "superadmin") {
-              return true;
-            }
-          }
-        } catch {}
+        const results = await Promise.all(checks);
+        if (results.some(Boolean)) {
+          return true;
+        }
       } catch {
         // Fallback
       }

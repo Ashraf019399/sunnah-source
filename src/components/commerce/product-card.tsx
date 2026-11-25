@@ -119,7 +119,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
         <Link
           href={`/product/${product.slug}`}
           prefetch={true}
-          className="block w-full h-full cursor-pointer"
+          className="relative block w-full h-full cursor-pointer"
           aria-label={`${product.titleBn} এর বিস্তারিত দেখুন`}
         >
           {product.images?.[0] ? (

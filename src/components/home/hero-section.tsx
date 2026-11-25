@@ -256,6 +256,7 @@ export function HeroSection() {
                   fill
                   draggable={false}
                   priority={idx === 0}
+                  quality={85}
                   sizes="(max-width: 1024px) 100vw, 68vw"
                   className="object-cover rounded-2xl sm:rounded-3xl transition-transform duration-500 ease-out hover:scale-[1.01] pointer-events-none select-none"
                 />
@@ -327,6 +328,8 @@ export function HeroSection() {
                 src={promo.image}
                 alt={promo.alt}
                 fill
+                priority
+                quality={85}
                 draggable={false}
                 sizes="(max-width: 1024px) 100vw, 34vw"
                 className="object-cover rounded-2xl sm:rounded-3xl transition-transform duration-300 group-hover:scale-[1.02] pointer-events-none select-none"

@@ -135,16 +135,22 @@ export const Header: React.FC = () => {
     const checkAuth = async () => {
       try {
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (user) {
-          setCurrentUser({
-            email: user.email,
-            phone: user.phone || user.user_metadata?.phone,
-            name: user.user_metadata?.full_name,
-          });
-          return;
+        if (session?.user) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (user) {
+            setCurrentUser({
+              email: user.email,
+              phone: user.phone || user.user_metadata?.phone,
+              name: user.user_metadata?.full_name,
+            });
+            return;
+          }
         }
       } catch {
         // Ignore network / supabase error

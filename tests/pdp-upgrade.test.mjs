@@ -98,11 +98,25 @@ test("Product Detail Page (PDP) Naturo & Ghorer-Bazar Upgrade Suite", async (t) 
     assert.ok(content.includes("Minus"), "Has minus button");
     assert.ok(content.includes("Plus"), "Has plus button");
 
-    // Delivery Area Selector with ৳৬০ and ৳১২০
+    // Delivery Area Selector dynamically synced with store delivery settings
     assert.ok(content.includes("ঢাকার ভেতরে"), "Has inside Dhaka option");
     assert.ok(content.includes("ঢাকার বাইরে"), "Has outside Dhaka option");
-    assert.ok(content.includes("৬০"), "Has 60 BDT inside Dhaka fee");
-    assert.ok(content.includes("১২০"), "Has 120 BDT outside Dhaka fee");
+    assert.ok(
+      content.includes("getPublicDeliverySettingsAction"),
+      "Syncs delivery charges from public store settings action"
+    );
+    assert.ok(
+      content.includes("deliveryConfig.insideDhakaFee"),
+      "Displays inside Dhaka fee from live config"
+    );
+    assert.ok(
+      content.includes("deliveryConfig.outsideDhakaFee"),
+      "Displays outside Dhaka fee from live config"
+    );
+    assert.ok(
+      content.includes("deliveryConfig.freeDeliveryThreshold"),
+      "Enforces free delivery threshold from live config"
+    );
 
     // Ultra-Simple Form
     assert.ok(content.includes("আপনার নাম"), "Has Full Name field");

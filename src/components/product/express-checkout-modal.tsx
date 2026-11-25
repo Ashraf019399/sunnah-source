@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import { Product, ProductVariant, CartItem, OrderCreationPayload, DeliveryZone } from "@/types/commerce.types";
 import { formatBanglaBDT, toBanglaDigits, isValidBDPhone, cn } from "@/lib/utils";
-import { submitOrderServerAction, getMarketingPixelConfigAction } from "@/lib/actions/checkout-actions";
+import {
+  submitOrderServerAction,
+  getMarketingPixelConfigAction,
+  getPublicDeliverySettingsAction,
+} from "@/lib/actions/checkout-actions";
 import { fbPurchase } from "@/lib/services/facebook-pixel";
 import { formatVariantWeightLabel } from "./product-info";
 
@@ -57,6 +61,15 @@ export function ExpressCheckoutModal({
     isEnabled: boolean;
     fireOnOrderConfirmationOnly: boolean;
   } | null>(null);
+  const [deliveryConfig, setDeliveryConfig] = useState<{
+    insideDhakaFee: number;
+    outsideDhakaFee: number;
+    freeDeliveryThreshold: number;
+  }>({
+    insideDhakaFee: 70,
+    outsideDhakaFee: 130,
+    freeDeliveryThreshold: 2000,
+  });
   const [confirmedOrder, setConfirmedOrder] = useState<{
     orderNumber: string;
     grandTotal: number;
@@ -66,8 +79,15 @@ export function ExpressCheckoutModal({
   useEffect(() => {
     getMarketingPixelConfigAction()
       .then(setPixelConfig)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getPublicDeliverySettingsAction()
+      .then(setDeliveryConfig)
+      .catch(() => { });
+  }, [isOpen]);
 
   // Sync initialQuantity on open
   useEffect(() => {
@@ -110,15 +130,15 @@ export function ExpressCheckoutModal({
   // Pricing calculations
   const unitPrice =
     selectedVariant.salePrice &&
-    selectedVariant.salePrice > 0 &&
-    selectedVariant.salePrice < selectedVariant.regularPrice
+      selectedVariant.salePrice > 0 &&
+      selectedVariant.salePrice < selectedVariant.regularPrice
       ? selectedVariant.salePrice
       : selectedVariant.regularPrice;
 
   const subtotal = unitPrice * quantity;
-  const isFreeDelivery = subtotal >= 2000;
-  const insideFee = isFreeDelivery ? 0 : 60;
-  const outsideFee = isFreeDelivery ? 0 : 120;
+  const isFreeDelivery = subtotal >= deliveryConfig.freeDeliveryThreshold;
+  const insideFee = isFreeDelivery ? 0 : deliveryConfig.insideDhakaFee;
+  const outsideFee = isFreeDelivery ? 0 : deliveryConfig.outsideDhakaFee;
   const deliveryFee = zone === "inside_dhaka" ? insideFee : outsideFee;
   const grandTotal = subtotal + deliveryFee;
 
@@ -450,7 +470,9 @@ export function ExpressCheckoutModal({
                         zone === "inside_dhaka" ? "text-brand-800" : "text-stone-300"
                       )}
                     />
-                    <span>ঢাকার ভেতরে ({isFreeDelivery ? "ফ্রি" : "৳৬০"})</span>
+                    <span>
+                      ঢাকার ভেতরে ({isFreeDelivery ? "ফ্রি" : formatBanglaBDT(deliveryConfig.insideDhakaFee)})
+                    </span>
                   </button>
 
                   <button
@@ -469,7 +491,9 @@ export function ExpressCheckoutModal({
                         zone === "outside_dhaka" ? "text-brand-800" : "text-stone-300"
                       )}
                     />
-                    <span>ঢাকার বাইরে ({isFreeDelivery ? "ফ্রি" : "৳১২০"})</span>
+                    <span>
+                      ঢাকার বাইরে ({isFreeDelivery ? "ফ্রি" : formatBanglaBDT(deliveryConfig.outsideDhakaFee)})
+                    </span>
                   </button>
                 </div>
               </div>

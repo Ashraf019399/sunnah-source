@@ -46,11 +46,10 @@ export const metadata: Metadata = {
 
 export default async function AdminDashboardPage() {
   // Concurrently fetch all executive dashboard data in parallel
-  const [metricsRes, ordersRes, lowStockAlerts, trafficMetrics] = await Promise.all([
+  const [metricsRes, ordersRes, lowStockAlerts] = await Promise.all([
     getCachedAdminDashboardMetrics(),
     getCachedAdminRecentOrders(5),
     getCachedAdminLowStockAlerts(5),
-    getStoreTrafficMetrics(0),
   ]);
 
   const metrics =
@@ -62,6 +61,8 @@ export default async function AdminDashboardPage() {
           pendingOrders: 0,
           deliveredOrders: 0,
         };
+
+  const trafficMetrics = await getStoreTrafficMetrics(metrics.totalOrders);
 
   const recentOrders =
     ordersRes.success && ordersRes.data ? ordersRes.data.orders : [];

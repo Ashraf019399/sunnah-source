@@ -31,8 +31,12 @@ export default async function AdminDashboardLayout({
   // 2. Guard: Check admin authorization
   if (!isAdmin) {
     // Logged-in non-admin user must NOT receive admin access
-    const supabase = await createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = await createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Cookie clearing inside Server Components may be restricted; middleware guards ?error=unauthorized
+    }
     redirect("/admin/login?error=unauthorized");
   }
 

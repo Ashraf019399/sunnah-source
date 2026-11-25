@@ -29,9 +29,11 @@ export function ShopContent() {
 
   const categoryParam = searchParams.get("category") || "all";
   const queryParam = searchParams.get("q") || "";
+  const filterParam = searchParams.get("filter") || "";
 
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam);
   const [searchInput, setSearchInput] = useState<string>(queryParam);
+  const [offerOnly, setOfferOnly] = useState<boolean>(filterParam === "offer");
 
   // Sync state if URL query params change (e.g. browser back/forward or external link)
   useEffect(() => {
@@ -42,14 +44,21 @@ export function ShopContent() {
     setSearchInput(queryParam);
   }, [queryParam]);
 
+  useEffect(() => {
+    setOfferOnly(filterParam === "offer");
+  }, [filterParam]);
+
   // Synchronize URL query parameters
-  const updateUrl = (newCategory: string, newQuery: string) => {
+  const updateUrl = (newCategory: string, newQuery: string, isOffer: boolean = offerOnly) => {
     const params = new URLSearchParams();
     if (newCategory && newCategory !== "all") {
       params.set("category", newCategory);
     }
     if (newQuery.trim()) {
       params.set("q", newQuery.trim());
+    }
+    if (isOffer) {
+      params.set("filter", "offer");
     }
     const queryString = params.toString();
     startTransition(() => {
@@ -59,25 +68,32 @@ export function ShopContent() {
 
   const handleCategorySelect = (slug: string) => {
     setSelectedCategory(slug);
-    updateUrl(slug, searchInput);
+    updateUrl(slug, searchInput, offerOnly);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUrl(selectedCategory, searchInput);
+    updateUrl(selectedCategory, searchInput, offerOnly);
   };
 
   const handleSearchInputChange = (val: string) => {
     setSearchInput(val);
     if (val === "") {
-      updateUrl(selectedCategory, "");
+      updateUrl(selectedCategory, "", offerOnly);
     }
+  };
+
+  const handleToggleOfferFilter = () => {
+    const next = !offerOnly;
+    setOfferOnly(next);
+    updateUrl(selectedCategory, searchInput, next);
   };
 
   const handleClearAllFilters = () => {
     setSelectedCategory("all");
     setSearchInput("");
-    updateUrl("all", "");
+    setOfferOnly(false);
+    updateUrl("all", "", false);
   };
 
   // Find active category object if selected
@@ -86,17 +102,30 @@ export function ShopContent() {
     return CATEGORIES_DATA.find((c) => c.slug === selectedCategory) || null;
   }, [selectedCategory]);
 
-  // Filter products based on category and search query
+  // Filter products based on category, offer status, and search query
   const filteredProducts = useMemo(() => {
     return ALL_PRODUCTS.filter((product) => {
-      // 1. Category Filter
+      // 1. Offer Zone Filter (?filter=offer)
+      if (offerOnly) {
+        const hasDiscountedVariant = product.variants.some(
+          (v) =>
+            typeof v.salePrice === "number" &&
+            v.salePrice > 0 &&
+            v.salePrice < v.regularPrice
+        );
+        if (!hasDiscountedVariant && !product.isCombo) {
+          return false;
+        }
+      }
+
+      // 2. Category Filter
       if (selectedCategory && selectedCategory !== "all") {
         if (product.categorySlug !== selectedCategory) {
           return false;
         }
       }
 
-      // 2. Search Query Filter (case-insensitive across titleBn, titleEn, shortDescriptionBn, categorySlug)
+      // 3. Search Query Filter (case-insensitive across titleBn, titleEn, shortDescriptionBn, categorySlug)
       if (searchInput.trim()) {
         const q = searchInput.toLowerCase().trim();
         const matchTitleBn = product.titleBn.toLowerCase().includes(q);
@@ -113,7 +142,7 @@ export function ShopContent() {
 
       return true;
     });
-  }, [selectedCategory, searchInput]);
+  }, [selectedCategory, searchInput, offerOnly]);
 
   // Product counts per category from actual data
   const categoryCounts = useMemo(() => {
@@ -124,7 +153,8 @@ export function ShopContent() {
     return counts;
   }, []);
 
-  const hasActiveFilters = selectedCategory !== "all" || searchInput.trim() !== "";
+  const hasActiveFilters =
+    selectedCategory !== "all" || searchInput.trim() !== "" || offerOnly;
 
   return (
     <div className="space-y-8 font-bengali">
@@ -170,7 +200,13 @@ export function ShopContent() {
                 <span>১০০% খাঁটি ও প্রাকৃতিক পণ্যের সমাহার</span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-charcoal-900 tracking-tight">
-                {activeCategoryObj ? activeCategoryObj.nameBn : "সব পণ্য"}
+                {offerOnly
+                  ? activeCategoryObj
+                    ? `${activeCategoryObj.nameBn} — অফার জোন`
+                    : "অফার জোন — বিশেষ ছাড়ের পণ্য"
+                  : activeCategoryObj
+                  ? activeCategoryObj.nameBn
+                  : "সব পণ্য"}
               </h1>
               <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed">
                 {activeCategoryObj?.taglineBn ||
@@ -295,6 +331,20 @@ export function ShopContent() {
           {/* Active filter badges */}
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2">
+              {offerOnly && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] bg-rose-50 border border-rose-200 text-rose-700 font-bold px-3 py-1 rounded-full">
+                  <span>অফার জোন (বিশেষ ছাড়)</span>
+                  <button
+                    type="button"
+                    onClick={handleToggleOfferFilter}
+                    className="hover:text-red-800 transition-colors cursor-pointer"
+                    aria-label="অফার ফিল্টার মুছুন"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
               {selectedCategory !== "all" && activeCategoryObj && (
                 <span className="inline-flex items-center gap-1.5 text-[11px] bg-brand-50 border border-brand-200 text-brand-800 font-bold px-3 py-1 rounded-full">
                   <span>ক্যাটাগরি: {activeCategoryObj.nameBn}</span>

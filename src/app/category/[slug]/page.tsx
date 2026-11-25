@@ -14,6 +14,8 @@ interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export const revalidate = 300;
+
 export async function generateStaticParams() {
   return CATEGORIES_DATA.map((cat) => ({
     slug: cat.slug,
@@ -36,13 +38,21 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     category.descriptionBn ||
     category.taglineBn ||
     `${category.nameBn} - ১০০% খাঁটি ও প্রাকৃতিক পণ্যসমূহ। সুন্নাহ সোর্স থেকে অর্ডার করুন।`;
+  const canonicalUrl = `https://sunnahsourcebd.com/category/${slug}`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title,
       description,
+      url: canonicalUrl,
+      siteName: "সুন্নাহ সোর্স | Sunnah Source",
+      locale: "bn_BD",
+      type: "website",
       images: category.imageUrl ? [{ url: category.imageUrl }] : [],
     },
   };

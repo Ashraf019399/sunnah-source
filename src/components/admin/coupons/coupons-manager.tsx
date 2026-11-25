@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useTransition, useMemo, useCallback } from "react";
+import React, { useState, useTransition, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Tag,
   Plus,
@@ -63,10 +64,15 @@ export function CouponsManager({
   initialCoupons,
   isUsingLiveDb,
 }: CouponsManagerProps) {
+  const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "expired">("all");
   const [typeFilter, setTypeFilter] = useState<"all" | "percentage" | "fixed" | "free_shipping">("all");
+
+  useEffect(() => {
+    setCoupons(initialCoupons);
+  }, [initialCoupons]);
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -229,50 +235,55 @@ export function CouponsManager({
     };
 
     startTransition(async () => {
-      if (formMode === "add") {
-        const res = await addAdminCoupon(payload);
-        if (res.success) {
-          addToast("success", res.message || "কুপন তৈরি সফল হয়েছে!");
-          setModalOpen(false);
-          // Optimistically append if not in live DB or refresh
-          const newCoupon: Coupon = {
-            id: "cpn-" + Date.now(),
-            code: payload.code,
-            discountType: payload.discountType,
-            discountValue: payload.discountValue,
-            minOrderAmount: payload.minOrderAmount,
-            maxDiscountAmount: payload.maxDiscountAmount,
-            usageLimit: payload.usageLimit,
-            usedCount: 0,
-            startDate: payload.startDate,
-            expiryDate: payload.expiryDate,
-            isActive: payload.isActive,
-            description: payload.description,
-            createdAt: new Date().toISOString(),
-          };
-          setCoupons((prev) => [newCoupon, ...prev]);
-        } else {
-          addToast("error", res.message || "কুপন তৈরিতে সমস্যা হয়েছে।");
+      try {
+        if (formMode === "add") {
+          const res = await addAdminCoupon(payload);
+          if (res.success) {
+            addToast("success", res.message || "কুপন তৈরি সফল হয়েছে!");
+            setModalOpen(false);
+            const createdCoupon: Coupon = res.data || {
+              id: "cpn-" + Date.now(),
+              code: payload.code,
+              discountType: payload.discountType,
+              discountValue: payload.discountValue,
+              minOrderAmount: payload.minOrderAmount,
+              maxDiscountAmount: payload.maxDiscountAmount,
+              usageLimit: payload.usageLimit,
+              usedCount: 0,
+              startDate: payload.startDate,
+              expiryDate: payload.expiryDate,
+              isActive: payload.isActive,
+              description: payload.description,
+              createdAt: new Date().toISOString(),
+            };
+            setCoupons((prev) => [createdCoupon, ...prev]);
+            router.refresh();
+          } else {
+            addToast("error", res.message || "কুপন তৈরিতে সমস্যা হয়েছে।");
+          }
+        } else if (formMode === "edit" && editingCouponId) {
+          const res = await updateAdminCoupon(editingCouponId, payload);
+          if (res.success) {
+            addToast("success", res.message || "কুপন আপডেট সফল হয়েছে!");
+            setModalOpen(false);
+            setCoupons((prev) =>
+              prev.map((c) =>
+                c.id === editingCouponId
+                  ? {
+                      ...c,
+                      ...payload,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : c
+              )
+            );
+            router.refresh();
+          } else {
+            addToast("error", res.message || "কুপন আপডেটে সমস্যা হয়েছে।");
+          }
         }
-      } else if (formMode === "edit" && editingCouponId) {
-        const res = await updateAdminCoupon(editingCouponId, payload);
-        if (res.success) {
-          addToast("success", res.message || "কুপন আপডেট সফল হয়েছে!");
-          setModalOpen(false);
-          setCoupons((prev) =>
-            prev.map((c) =>
-              c.id === editingCouponId
-                ? {
-                    ...c,
-                    ...payload,
-                    updatedAt: new Date().toISOString(),
-                  }
-                : c
-            )
-          );
-        } else {
-          addToast("error", res.message || "কুপন আপডেটে সমস্যা হয়েছে।");
-        }
+      } catch {
+        addToast("error", "সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে। আবার চেষ্টা করুন।");
       }
     });
   };
@@ -287,15 +298,23 @@ export function CouponsManager({
     );
 
     startTransition(async () => {
-      const res = await toggleCouponStatus(coupon.id, newStatus);
-      if (res.success) {
-        addToast("success", res.message || "স্ট্যাটাস পরিবর্তন সফল হয়েছে।");
-      } else {
-        // Rollback
+      try {
+        const res = await toggleCouponStatus(coupon.id, newStatus);
+        if (res.success) {
+          addToast("success", res.message || "স্ট্যাটাস পরিবর্তন সফল হয়েছে।");
+          router.refresh();
+        } else {
+          // Rollback
+          setCoupons((prev) =>
+            prev.map((c) => (c.id === coupon.id ? { ...c, isActive: coupon.isActive } : c))
+          );
+          addToast("error", res.message || "স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে।");
+        }
+      } catch {
         setCoupons((prev) =>
           prev.map((c) => (c.id === coupon.id ? { ...c, isActive: coupon.isActive } : c))
         );
-        addToast("error", res.message || "স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে।");
+        addToast("error", "স্ট্যাটাস পরিবর্তনে সমস্যা হয়েছে।");
       }
     });
   };
@@ -304,8 +323,9 @@ export function CouponsManager({
   const handleDeleteConfirm = () => {
     if (!couponToDelete) return;
 
-    const targetId = couponToDelete.id;
-    const targetCode = couponToDelete.code;
+    const deletedSnapshot = couponToDelete;
+    const targetId = deletedSnapshot.id;
+    const targetCode = deletedSnapshot.code;
 
     // Optimistic delete
     setCoupons((prev) => prev.filter((c) => c.id !== targetId));
@@ -313,15 +333,18 @@ export function CouponsManager({
     setCouponToDelete(null);
 
     startTransition(async () => {
-      const res = await deleteAdminCoupon(targetId);
-      if (res.success) {
-        addToast("success", `কুপন "${targetCode}" মুছে ফেলা হয়েছে।`);
-      } else {
-        // Rollback
-        if (couponToDelete) {
-          setCoupons((prev) => [couponToDelete, ...prev]);
+      try {
+        const res = await deleteAdminCoupon(targetId);
+        if (res.success) {
+          addToast("success", `কুপন "${targetCode}" মুছে ফেলা হয়েছে।`);
+          router.refresh();
+        } else {
+          setCoupons((prev) => [deletedSnapshot, ...prev]);
+          addToast("error", res.message || "কুপন মুছে ফেলা যায়নি।");
         }
-        addToast("error", res.message || "কুপন মুছে ফেলা যায়নি।");
+      } catch {
+        setCoupons((prev) => [deletedSnapshot, ...prev]);
+        addToast("error", "কুপন মুছতে অপ্রত্যাশিত ত্রুটি হয়েছে।");
       }
     });
   };

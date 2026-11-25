@@ -17,9 +17,22 @@ import {
   PackageCheck,
 } from "lucide-react";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "কম্বো অফার | Sunnah Source",
   description: "সুন্নাহ সোর্সের সাশ্রয়ী মূল্যের বিশেষ কম্বো প্যাক ও গিফট বক্স। খাঁটি মধু, ঘি, তেল ও খেজুরের অসাধারণ সমাহার।",
+  alternates: {
+    canonical: "https://sunnahsourcebd.com/combos",
+  },
+  openGraph: {
+    title: "কম্বো অফার | সুন্নাহ সোর্স (Sunnah Source)",
+    description: "সুন্নাহ সোর্সের সাশ্রয়ী মূল্যের বিশেষ কম্বো প্যাক ও গিফট বক্স।",
+    url: "https://sunnahsourcebd.com/combos",
+    siteName: "সুন্নাহ সোর্স | Sunnah Source",
+    locale: "bn_BD",
+    type: "website",
+  },
 };
 
 function toBengaliNumber(num: number): string {

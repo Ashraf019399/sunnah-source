@@ -10,7 +10,7 @@ import { FacebookPixel } from "@/components/analytics/facebook-pixel";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 
 const hindSiliguri = Hind_Siliguri({
-  subsets: ["bengali"],
+  subsets: ["bengali", "latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-hind-siliguri",
   display: "swap",

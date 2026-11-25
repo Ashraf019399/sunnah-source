@@ -13,7 +13,7 @@ import {
   resolveVariantDbId,
 } from "@/lib/data/catalog-mapping";
 import { processOrderCouponServerSide } from "@/lib/actions/coupon-actions";
-import { getAdminDeliverySettings } from "@/lib/actions/admin-settings-actions";
+import { getCachedDeliverySettings } from "@/lib/actions/admin-settings-actions";
 import { getOrderSecuritySettings } from "@/lib/actions/admin-security-actions";
 import { getMarketingSettings } from "@/lib/actions/admin-marketing-actions";
 import {
@@ -48,8 +48,11 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
       };
     }
 
-    // 1. Fetch Order Security & Fraud Settings
-    const securitySettings = await getOrderSecuritySettings();
+    // 1. Fetch Order Security & Cached Delivery Settings in parallel
+    const [securitySettings, deliverySettings] = await Promise.all([
+      getOrderSecuritySettings(),
+      getCachedDeliverySettings(),
+    ]);
 
     // 2. Customer validation & Fraud Guard checks
     if (!customer?.fullName?.trim() || !customer?.phone?.trim() || !customer?.fullAddress?.trim()) {
@@ -104,26 +107,28 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
 
     const cleanPhone = customer.phone.replace(/\D/g, "").slice(-11);
 
-    // 3. 24-Hour Phone Limit & Duplicate Protection
-    if (securitySettings.blockDuplicate24hPhone) {
-      const phoneCheck = await checkRecentCustomerOrders(cleanPhone, securitySettings);
-      if (phoneCheck.isBlocked) {
-        return {
-          success: false,
-          message: phoneCheck.message || "এই মোবাইল নম্বর দিয়ে গত ২৪ ঘণ্টার মধ্যে ইতোমধ্যে অর্ডার গৃহীত হয়েছে।",
-        };
-      }
+    // 3 & 4. Run 24-Hour Phone & IP Limit Protection concurrently
+    const [phoneCheck, ipCheck] = await Promise.all([
+      securitySettings.blockDuplicate24hPhone
+        ? checkRecentCustomerOrders(cleanPhone, securitySettings)
+        : Promise.resolve({ isBlocked: false, message: "" }),
+      securitySettings.blockDuplicate24hIp
+        ? checkIpOrderLimit(clientIp, securitySettings)
+        : Promise.resolve({ isAllowed: true, message: "" }),
+    ]);
+
+    if (phoneCheck.isBlocked) {
+      return {
+        success: false,
+        message: phoneCheck.message || "এই মোবাইল নম্বর দিয়ে গত ২৪ ঘণ্টার মধ্যে ইতোমধ্যে অর্ডার গৃহীত হয়েছে।",
+      };
     }
 
-    // 4. 24-Hour IP Limit Protection
-    if (securitySettings.blockDuplicate24hIp) {
-      const ipCheck = await checkIpOrderLimit(clientIp, securitySettings);
-      if (!ipCheck.isAllowed) {
-        return {
-          success: false,
-          message: ipCheck.message || "একই ডিভাইস/আইপি থেকে অতিরিক্ত অর্ডার অনুরোধ পরিলক্ষিত হয়েছে।",
-        };
-      }
+    if (!ipCheck.isAllowed) {
+      return {
+        success: false,
+        message: ipCheck.message || "একই ডিভাইস/আইপি থেকে অতিরিক্ত অর্ডার অনুরোধ পরিলক্ষিত হয়েছে।",
+      };
     }
 
     // 2. Validate and aggregate items by variant ID, verifying against trusted catalog
@@ -197,7 +202,6 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
 
     // 3. Trusted financial calculations based on dynamic store settings
     const trustedSubtotal = orderItems.reduce((sum, it) => sum + it.lineTotal, 0);
-    const deliverySettings = await getAdminDeliverySettings();
     const isFreeDelivery = trustedSubtotal >= deliverySettings.freeDeliveryThreshold;
     const trustedDeliveryFee = isFreeDelivery
       ? 0
@@ -410,8 +414,15 @@ export async function submitOrderServerAction(payload: OrderCreationPayload) {
     try {
       revalidatePath("/admin");
       revalidatePath("/admin/orders");
+      revalidatePath("/admin/products");
+      revalidatePath("/");
+      revalidatePath("/shop");
+      revalidatePath("/product", "layout");
       revalidateTag("admin-dashboard-metrics");
       revalidateTag("admin-recent-orders");
+      revalidateTag("admin-products");
+      revalidateTag("admin-low-stock-alerts");
+      revalidateTag("products");
       revalidateTag("orders");
     } catch {}
 
@@ -438,7 +449,7 @@ export async function getPublicDeliverySettingsAction(): Promise<{
   outsideDhakaFee: number;
   freeDeliveryThreshold: number;
 }> {
-  const settings = await getAdminDeliverySettings();
+  const settings = await getCachedDeliverySettings();
   return {
     insideDhakaFee: settings.insideDhakaFee,
     outsideDhakaFee: settings.outsideDhakaFee,

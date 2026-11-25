@@ -1,6 +1,6 @@
 "use server";
 
-import { unstable_cache } from "next/cache";
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkIsAdmin, verifyAdminSession } from "@/lib/auth/admin-guard";
 import { ALL_PRODUCTS } from "@/lib/data/products";
@@ -100,19 +100,12 @@ async function fetchAdminProductsInternal(): Promise<{
 }
 
 /**
- * Fast cached accessor for products in admin panel.
- * Caches in memory for 30s; revalidates on tags ["admin-products", "products"].
+ * Real-time accessor for products in admin panel (bypasses static caching).
  */
-export const getCachedAdminProducts = unstable_cache(
-  async () => {
-    return await fetchAdminProductsInternal();
-  },
-  ["admin-products-list"],
-  {
-    revalidate: 30,
-    tags: ["admin-products", "products"],
-  }
-);
+export async function getCachedAdminProducts() {
+  noStore();
+  return await fetchAdminProductsInternal();
+}
 
 /**
  * Server action to fetch all products for the admin dashboard.
@@ -163,7 +156,8 @@ async function fetchLowStockAlertsInternal(threshold: number = 5): Promise<Admin
         .from("product_variants")
         .select("id, sku, display_name, stock_quantity, low_stock_threshold, product_id")
         .lte("stock_quantity", threshold)
-        .order("stock_quantity", { ascending: true });
+        .order("stock_quantity", { ascending: true })
+        .limit(50);
 
       if (!dbError && Array.isArray(dbVariants)) {
         lowStockItems = dbVariants.map((dbv) => {
@@ -220,19 +214,12 @@ async function fetchLowStockAlertsInternal(threshold: number = 5): Promise<Admin
 }
 
 /**
- * Fast cached accessor for low-stock alerts.
- * Caches in memory for 30s; revalidates on tags ["admin-low-stock-alerts", "products"].
+ * Real-time accessor for low-stock alerts in admin panel (no-store).
  */
-export const getCachedAdminLowStockAlerts = unstable_cache(
-  async (threshold: number = 5) => {
-    return await fetchLowStockAlertsInternal(threshold);
-  },
-  ["admin-low-stock-alerts"],
-  {
-    revalidate: 30,
-    tags: ["admin-low-stock-alerts", "products"],
-  }
-);
+export async function getCachedAdminLowStockAlerts(threshold: number = 5) {
+  noStore();
+  return await fetchLowStockAlertsInternal(threshold);
+}
 
 export async function getAdminLowStockAlertsAction(
   threshold: number = 5

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -35,6 +36,7 @@ export function CustomerCourierHistoryCard({
   customerName,
   adminNotes,
 }: CustomerCourierHistoryCardProps) {
+  const router = useRouter();
   const [history, setHistory] = useState<CustomerCourierHistory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,11 +76,21 @@ export function CustomerCourierHistoryCard({
   const handleManualCapi = () => {
     setCapiFeedback(null);
     startFiringCapi(async () => {
-      const res = await fireMetaCapiPurchaseManualAction(orderId);
-      setCapiFeedback({
-        success: res.success,
-        message: res.message,
-      });
+      try {
+        const res = await fireMetaCapiPurchaseManualAction(orderId);
+        setCapiFeedback({
+          success: res.success,
+          message: res.message,
+        });
+        if (res.success) {
+          router.refresh();
+        }
+      } catch {
+        setCapiFeedback({
+          success: false,
+          message: "Meta CAPI পাঠাতে গিয়ে নেটওয়ার্ক ত্রুটি ঘটেছে।",
+        });
+      }
     });
   };
 

@@ -3,7 +3,34 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkIsAdmin, verifyAdminSession } from "@/lib/auth/admin-guard";
 import { CATEGORIES_DATA, getCategoryDisplayImage, type Category } from "@/lib/data/categories";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_noStore as noStore } from "next/cache";
+
+const ADMIN_CATEGORY_COLUMNS =
+  "id, slug, name_en, name_bn, tagline_bn, description_bn, sourcing_origin_bn, purity_promise_bn, image_url, display_order, is_active";
+
+function isMissingCategoriesTableError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  const code = error.code || "";
+  return (
+    code === "42P01" ||
+    code === "PGRST116" ||
+    code === "42501" ||
+    Boolean(error.message?.includes("does not exist"))
+  );
+}
+
+function revalidateCategoryStorefrontPaths(slug?: string) {
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/shop");
+  revalidatePath("/combos");
+  if (slug) {
+    revalidatePath(`/category/${slug}`);
+  }
+  revalidateTag("admin-categories");
+  revalidateTag("categories");
+}
 
 export interface AdminCategoryResult {
   success: boolean;
@@ -54,35 +81,6 @@ async function getAuthorizedAdminClient(): Promise<{
 }
 
 /**
- * Checks whether a `categories` table exists in Supabase.
- * Returns false gracefully if the table does not exist.
- */
-async function categoriesTableExists(
-  adminClient: Awaited<ReturnType<typeof createAdminClient>>
-): Promise<boolean> {
-  try {
-    const { error } = await adminClient.from("categories").select("*").limit(1);
-    if (error) {
-      const code = error.code || "";
-      if (code === "42P01" || code === "PGRST116" || error.message?.includes("does not exist")) {
-        return false;
-      }
-      if (code === "42501") {
-        console.error(
-          `[categoriesTableExists] Permission denied for public.categories (code 42501). Grant SELECT to service_role in Supabase: ${error.hint || error.message}`
-        );
-      } else {
-        console.warn("[categoriesTableExists] Unexpected error:", error.message);
-      }
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Internal computation of categories list.
  */
 async function fetchAdminCategoriesInternal(): Promise<AdminCategoryResult> {
@@ -90,56 +88,60 @@ async function fetchAdminCategoriesInternal(): Promise<AdminCategoryResult> {
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const adminClient = await createAdminClient();
-        const tableExists = await categoriesTableExists(adminClient);
+        let { data: dbCategories, error: dbError } = await adminClient
+          .from("categories")
+          .select(ADMIN_CATEGORY_COLUMNS)
+          .order("display_order", { ascending: true });
 
-        if (tableExists) {
-          let { data: dbCategories, error: dbError } = await adminClient
+        // If ordering failed because display_order column does not exist, retry without order
+        if (dbError && dbError.code === "42703") {
+          const retry = await adminClient
             .from("categories")
-            .select("*")
-            .order("display_order", { ascending: true });
+            .select(ADMIN_CATEGORY_COLUMNS);
+          dbCategories = retry.data;
+          dbError = retry.error;
+        }
 
-          // If ordering failed because display_order column does not exist, retry without order
-          if (dbError && dbError.code === "42703") {
-            const retry = await adminClient.from("categories").select("*");
-            dbCategories = retry.data;
-            dbError = retry.error;
-          }
-
-          if (dbError) {
+        if (dbError) {
+          if (dbError.code === "42501") {
+            console.error(
+              `[getAdminCategories] Permission denied for public.categories (code 42501). Grant SELECT to service_role in Supabase: ${dbError.hint || dbError.message}`
+            );
+          } else if (!isMissingCategoriesTableError(dbError)) {
             console.error(
               `[getAdminCategories] Database query error (code ${dbError.code}): ${dbError.message}`
             );
-          } else if (Array.isArray(dbCategories) && dbCategories.length > 0) {
-            const mapped: Category[] = dbCategories.map((row: any) => {
-              const rawImg = row.image_url ?? row.imageUrl ?? "";
-              const img = getCategoryDisplayImage(row.slug, rawImg);
-
-              let nameBn = row.name_bn ?? row.nameBn ?? "";
-              if (row.slug === "combos" && (nameBn.includes("সান্নাহ") || !nameBn)) {
-                nameBn = "সুন্নাহ কম্বো ও গিফট বক্স";
-              }
-
-              let sourcingOriginBn = row.sourcing_origin_bn ?? row.sourcingOriginBn;
-              if (sourcingOriginBn && sourcingOriginBn.includes("সান্নাহ")) {
-                sourcingOriginBn = sourcingOriginBn.replace("সান্নাহ", "সুন্নাহ");
-              }
-
-              return {
-                id: row.id ?? row.slug,
-                slug: row.slug,
-                nameEn: row.name_en ?? row.nameEn ?? "",
-                nameBn,
-                taglineBn: row.tagline_bn ?? row.taglineBn ?? "",
-                descriptionBn: row.description_bn ?? row.descriptionBn ?? "",
-                sourcingOriginBn,
-                purityPromiseBn: row.purity_promise_bn ?? row.purityPromiseBn,
-                imageUrl: img,
-                displayOrder: row.display_order ?? row.displayOrder ?? 0,
-                isActive: row.is_active ?? row.isActive ?? true,
-              };
-            });
-            return { success: true, data: mapped, isFromLiveDb: true };
           }
+        } else if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+          const mapped: Category[] = dbCategories.map((row: any) => {
+            const rawImg = row.image_url ?? row.imageUrl ?? "";
+            const img = getCategoryDisplayImage(row.slug, rawImg);
+
+            let nameBn = row.name_bn ?? row.nameBn ?? "";
+            if (row.slug === "combos" && (nameBn.includes("সান্নাহ") || !nameBn)) {
+              nameBn = "সুন্নাহ কম্বো ও গিফট বক্স";
+            }
+
+            let sourcingOriginBn = row.sourcing_origin_bn ?? row.sourcingOriginBn;
+            if (sourcingOriginBn && sourcingOriginBn.includes("সান্নাহ")) {
+              sourcingOriginBn = sourcingOriginBn.replace("সান্নাহ", "সুন্নাহ");
+            }
+
+            return {
+              id: row.id ?? row.slug,
+              slug: row.slug,
+              nameEn: row.name_en ?? row.nameEn ?? "",
+              nameBn,
+              taglineBn: row.tagline_bn ?? row.taglineBn ?? "",
+              descriptionBn: row.description_bn ?? row.descriptionBn ?? "",
+              sourcingOriginBn,
+              purityPromiseBn: row.purity_promise_bn ?? row.purityPromiseBn,
+              imageUrl: img,
+              displayOrder: row.display_order ?? row.displayOrder ?? 0,
+              isActive: row.is_active ?? row.isActive ?? true,
+            };
+          });
+          return { success: true, data: mapped, isFromLiveDb: true };
         }
       } catch (err: any) {
         console.warn("[getAdminCategories] Supabase fetch failed, using catalog fallback:", err?.message);
@@ -161,19 +163,12 @@ async function fetchAdminCategoriesInternal(): Promise<AdminCategoryResult> {
 }
 
 /**
- * Fast cached accessor for categories list.
- * Caches in memory for 60s; revalidates on tags ["admin-categories", "categories"].
+ * Real-time accessor for categories list in Admin Panel (no-store).
  */
-export const getCachedAdminCategories = unstable_cache(
-  async () => {
-    return await fetchAdminCategoriesInternal();
-  },
-  ["admin-categories-list"],
-  {
-    revalidate: 60,
-    tags: ["admin-categories", "categories"],
-  }
-);
+export async function getCachedAdminCategories(): Promise<AdminCategoryResult> {
+  noStore();
+  return await fetchAdminCategoriesInternal();
+}
 
 /**
  * Fetch all categories for admin panel.
@@ -196,15 +191,6 @@ export async function addAdminCategory(
   if (!adminClient) return { success: false, message: errorMsg };
 
   try {
-    const tableExists = await categoriesTableExists(adminClient);
-    if (!tableExists) {
-      return {
-        success: false,
-        message:
-          "Supabase-এ 'categories' টেবিল পাওয়া যায়নি। এই ফিচার ব্যবহারের জন্য টেবিলটি তৈরি করতে হবে।",
-      };
-    }
-
     let cleanNameBn = payload.nameBn?.trim();
     if (payload.slug === "combos" && cleanNameBn && cleanNameBn.includes("সান্নাহ")) {
       cleanNameBn = cleanNameBn.replace("সান্নাহ", "সুন্নাহ");
@@ -233,14 +219,18 @@ export async function addAdminCategory(
     ]);
 
     if (error) {
+      if (isMissingCategoriesTableError(error)) {
+        return {
+          success: false,
+          message:
+            "Supabase-এ 'categories' টেবিল পাওয়া যায়নি। এই ফিচার ব্যবহারের জন্য টেবিলটি তৈরি করতে হবে।",
+        };
+      }
       console.error("[addAdminCategory] Insert error:", error);
       return { success: false, message: `ক্যাটাগরি যোগ করতে ব্যর্থ: ${error.message}` };
     }
 
-    revalidatePath("/admin/categories");
-    revalidatePath("/admin");
-    revalidateTag("admin-categories");
-    revalidateTag("categories");
+    revalidateCategoryStorefrontPaths(payload.slug);
     return { success: true, message: "ক্যাটাগরি সফলভাবে যোগ করা হয়েছে।" };
   } catch (err: any) {
     console.error("[addAdminCategory] Error:", err);
@@ -259,15 +249,6 @@ export async function updateAdminCategory(
   if (!adminClient) return { success: false, message: errorMsg };
 
   try {
-    const tableExists = await categoriesTableExists(adminClient);
-    if (!tableExists) {
-      return {
-        success: false,
-        message:
-          "Supabase-এ 'categories' টেবিল পাওয়া যায়নি। এই ফিচার ব্যবহারের জন্য টেবিলটি তৈরি করতে হবে।",
-      };
-    }
-
     const updatePayload: Record<string, any> = {};
     if (payload.nameEn !== undefined) updatePayload.name_en = payload.nameEn;
     if (payload.nameBn !== undefined) {
@@ -299,14 +280,18 @@ export async function updateAdminCategory(
       .eq("slug", slug);
 
     if (error) {
+      if (isMissingCategoriesTableError(error)) {
+        return {
+          success: false,
+          message:
+            "Supabase-এ 'categories' টেবিল পাওয়া যায়নি। এই ফিচার ব্যবহারের জন্য টেবিলটি তৈরি করতে হবে।",
+        };
+      }
       console.error("[updateAdminCategory] Update error:", error);
       return { success: false, message: `আপডেট করতে ব্যর্থ: ${error.message}` };
     }
 
-    revalidatePath("/admin/categories");
-    revalidatePath("/admin");
-    revalidateTag("admin-categories");
-    revalidateTag("categories");
+    revalidateCategoryStorefrontPaths(slug);
     return { success: true, message: "ক্যাটাগরি সফলভাবে আপডেট করা হয়েছে।" };
   } catch (err: any) {
     console.error("[updateAdminCategory] Error:", err);
@@ -324,29 +309,24 @@ export async function deleteAdminCategory(
   if (!adminClient) return { success: false, message: errorMsg };
 
   try {
-    const tableExists = await categoriesTableExists(adminClient);
-    if (!tableExists) {
-      return {
-        success: false,
-        message:
-          "Supabase-এ 'categories' টেবিল পাওয়া যায়নি। এই ফিচার ব্যবহারের জন্য টেবিলটি তৈরি করতে হবে।",
-      };
-    }
-
     const { error } = await adminClient
       .from("categories")
       .delete()
       .eq("slug", slug);
 
     if (error) {
+      if (isMissingCategoriesTableError(error)) {
+        return {
+          success: false,
+          message:
+            "Supabase-এ 'categories' টেবিল পাওয়া যায়নি। এই ফিচার ব্যবহারের জন্য টেবিলটি তৈরি করতে হবে।",
+        };
+      }
       console.error("[deleteAdminCategory] Delete error:", error);
       return { success: false, message: `ডিলিট করতে ব্যর্থ: ${error.message}` };
     }
 
-    revalidatePath("/admin/categories");
-    revalidatePath("/admin");
-    revalidateTag("admin-categories");
-    revalidateTag("categories");
+    revalidateCategoryStorefrontPaths(slug);
     return { success: true, message: "ক্যাটাগরি সফলভাবে মুছে ফেলা হয়েছে।" };
   } catch (err: any) {
     console.error("[deleteAdminCategory] Error:", err);

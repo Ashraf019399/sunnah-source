@@ -2,7 +2,7 @@
 
 import fs from "fs/promises";
 import path from "path";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkIsAdmin } from "@/lib/auth/admin-guard";
 import {
@@ -21,13 +21,9 @@ const SETTINGS_FILE_PATH = path.join(
   "marketing-settings.json"
 );
 
-/**
- * Reads persistent Meta / Facebook Pixel configuration.
- * Always returns a validated settings object with reliable defaults.
- */
-export async function getMarketingSettings(options?: {
-  unmasked?: boolean;
-}): Promise<MarketingPixelSettings> {
+async function readMarketingSettingsFromSource(
+  unmasked: boolean
+): Promise<MarketingPixelSettings> {
   try {
     const raw = await fs.readFile(SETTINGS_FILE_PATH, "utf-8");
     const parsed = JSON.parse(raw);
@@ -52,7 +48,7 @@ export async function getMarketingSettings(options?: {
       parsed.accessToken || process.env.FACEBOOK_CAPI_ACCESS_TOKEN || ""
     ).trim();
 
-    const accessToken = options?.unmasked
+    const accessToken = unmasked
       ? rawToken
       : rawToken
       ? MASKED_SECRET
@@ -84,6 +80,28 @@ export async function getMarketingSettings(options?: {
       updatedBy: null,
     };
   }
+}
+
+const getCachedPublicMarketingSettings = unstable_cache(
+  async () => readMarketingSettingsFromSource(false),
+  ["public-marketing-settings"],
+  {
+    revalidate: 300,
+    tags: ["marketing-settings"],
+  }
+);
+
+/**
+ * Reads persistent Meta / Facebook Pixel configuration.
+ * Uses 5-minute tagged cache for public/masked reads while keeping unmasked CAPI reads live.
+ */
+export async function getMarketingSettings(options?: {
+  unmasked?: boolean;
+}): Promise<MarketingPixelSettings> {
+  if (options?.unmasked) {
+    return await readMarketingSettingsFromSource(true);
+  }
+  return await getCachedPublicMarketingSettings();
 }
 
 /**
@@ -171,6 +189,7 @@ export async function updateAdminMarketingSettingsAction(formData: {
     );
 
     // 6. Revalidate cache across all pages so changes reflect immediately
+    revalidateTag("marketing-settings");
     revalidatePath("/", "layout");
     revalidatePath("/admin/settings");
     revalidatePath("/checkout");

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache, unstable_noStore as noStore } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkIsAdmin } from "@/lib/auth/admin-guard";
 import {
@@ -10,11 +10,7 @@ import {
   DEFAULT_DELIVERY_SETTINGS,
 } from "@/types/settings.types";
 
-/**
- * Reads delivery settings from Supabase store_settings table.
- * If the table has not been migrated or query fails, gracefully returns verified defaults.
- */
-export async function getAdminDeliverySettings(): Promise<DeliveryRuleConfig> {
+async function fetchDeliverySettingsInternal(): Promise<DeliveryRuleConfig> {
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return { ...DEFAULT_DELIVERY_SETTINGS };
@@ -49,6 +45,26 @@ export async function getAdminDeliverySettings(): Promise<DeliveryRuleConfig> {
     console.error("[getAdminDeliverySettings] Failed to fetch delivery settings:", err);
     return { ...DEFAULT_DELIVERY_SETTINGS };
   }
+}
+
+/**
+ * Tagged cached accessor for public storefront/cart/checkout delivery fees.
+ */
+export const getCachedDeliverySettings = unstable_cache(
+  async () => fetchDeliverySettingsInternal(),
+  ["store-delivery-settings"],
+  {
+    revalidate: 300,
+    tags: ["delivery-settings"],
+  }
+);
+
+/**
+ * Real-time accessor for Admin Settings panel (bypasses static cache).
+ */
+export async function getAdminDeliverySettings(): Promise<DeliveryRuleConfig> {
+  noStore();
+  return await fetchDeliverySettingsInternal();
 }
 
 /**
@@ -164,8 +180,11 @@ export async function updateAdminDeliverySettingsAction(
     }
 
     // 6. Revalidate cache
+    revalidateTag("delivery-settings");
     revalidatePath("/admin/settings");
     revalidatePath("/checkout");
+    revalidatePath("/shop");
+    revalidatePath("/product", "layout");
     revalidatePath("/");
 
     return {
